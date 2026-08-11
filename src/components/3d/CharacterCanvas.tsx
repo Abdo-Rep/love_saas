@@ -599,7 +599,7 @@ export const CharacterCanvas: React.FC<Props> = ({
 
           // Attach rose to right hand
           let rightHandBone: THREE.Object3D | null = null;
-          characterFbx.traverse((child) => {
+          characterFbx.traverse((child: THREE.Object3D) => {
             const cleanName = child.name.replace(/^mixamorig[a-zA-Z0-9]*:?/i, '').toLowerCase();
             if (cleanName === 'righthand') {
               rightHandBone = child;
@@ -607,11 +607,12 @@ export const CharacterCanvas: React.FC<Props> = ({
           });
 
           if (rightHandBone) {
-            const oldRose = rightHandBone.getObjectByName('proposal_rose');
-            if (oldRose) rightHandBone.remove(oldRose);
+            const handObj: THREE.Object3D = rightHandBone;
+            const oldRose = handObj.getObjectByName('proposal_rose');
+            if (oldRose) handObj.remove(oldRose);
 
             const roseMesh = createRoseMesh();
-            rightHandBone.add(roseMesh);
+            handObj.add(roseMesh);
             roseMesh.scale.set(0, 0, 0);
           }
 
