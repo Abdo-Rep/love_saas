@@ -561,8 +561,10 @@ export const CharacterCanvas: React.FC<Props> = ({
             const mesh = child as THREE.Mesh;
             if (mesh.name.toLowerCase().includes('shadow') || mesh.name.toLowerCase().includes('helper')) return;
             if (!mesh.geometry.boundingBox) mesh.geometry.computeBoundingBox();
-            renderBbox.union(mesh.geometry.boundingBox);
-            meshesFound = true;
+            if (mesh.geometry.boundingBox) {
+              renderBbox.union(mesh.geometry.boundingBox);
+              meshesFound = true;
+            }
           }
         });
 
