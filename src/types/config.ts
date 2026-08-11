@@ -107,4 +107,17 @@ export interface AppConfig {
   countryDateText?: string;
   finalQuote?: string;
   reasons?: ReasonCard[];
+
+  // Legacy Section Fields
+  wishes?: any[];
+  quizQuestions?: any[];
+  mapPins?: any[];
+  jarQuotes?: any[];
+  memoryPages?: any[];
+  surpriseSteps?: any[];
+  surpriseFinalMessage?: string;
+  writtenQuestions?: any[];
+
+  // Allow extensible keys
+  [key: string]: any;
 }
