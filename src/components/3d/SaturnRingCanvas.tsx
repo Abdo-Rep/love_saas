@@ -20,8 +20,8 @@ export const SaturnRingCanvas: React.FC<Props> = ({ reasons }) => {
     setActiveIndex((prev) => (prev - 1 + reasons.length) % reasons.length);
   };
 
-  const toggleFlip = (id: string) => {
-    setFlippedCards((prev) => ({ ...prev, [id]: !prev[id] }));
+  const toggleFlip = (id: string | number) => {
+    setFlippedCards((prev) => ({ ...prev, [String(id)]: !prev[String(id)] }));
   };
 
   return (
@@ -59,7 +59,7 @@ export const SaturnRingCanvas: React.FC<Props> = ({ reasons }) => {
             opacity = 0.3;
           }
 
-          const isFlipped = !!flippedCards[item.id];
+          const isFlipped = !!flippedCards[String(item.id)];
 
           return (
             <div
