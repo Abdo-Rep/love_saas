@@ -54,7 +54,7 @@ export const CardQuizSection: React.FC = () => {
 
         {/* 4 Option Cards */}
         <div className="grid grid-cols-2 gap-3">
-          {activeQ.options.map((opt, idx) => (
+          {activeQ.options.map((opt: any, idx: number) => (
             <button
               key={idx}
               onClick={() => handleSelect(idx)}
