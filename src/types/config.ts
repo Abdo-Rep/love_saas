@@ -3,6 +3,7 @@ export interface ReasonCard {
   title: string;
   reason: string;
   detail: string;
+  content: string;
   icon?: string;
 }
 
