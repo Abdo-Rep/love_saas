@@ -99,4 +99,12 @@ export interface AppConfig {
   finalLetterSubtitle: string;
   finalLetterContent: string;
   finalLetterPromise: string;
+
+  // Optional Cinematic & Legacy Helper Fields
+  travelSentences?: { text: string; duration: number }[];
+  herPortraitUrl?: string;
+  couplePhotoUrl?: string;
+  countryDateText?: string;
+  finalQuote?: string;
+  reasons?: ReasonCard[];
 }
