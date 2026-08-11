@@ -1,3 +1,11 @@
+export interface ReasonCard {
+  id: number;
+  title: string;
+  reason: string;
+  detail: string;
+  icon?: string;
+}
+
 export interface BucketListItem {
   id: number;
   text: string;
