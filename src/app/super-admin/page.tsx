@@ -703,6 +703,8 @@ export default function SuperAdminPage() {
             </form>
           </div>
         </div>
+      )}
+
       {/* TENANT QR CODE MODAL */}
       {selectedQrTenant && (
         <TenantQRCodeModal

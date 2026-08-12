@@ -1132,6 +1132,8 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
+      )}
+
       {/* QR CODE MODAL FOR CLIENT SITE */}
       <TenantQRCodeModal
         slug={tenantCtx?.currentTenant?.slug || 'rawda'}
