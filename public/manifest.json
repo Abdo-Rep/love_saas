@@ -1,8 +1,8 @@
 {
-  "name": "منصة المواقع الرومانسية 👑",
-  "short_name": "منصة الحب",
-  "description": "منصة إنشاء وإدارة المواقع الرومانسية الفاخرة",
-  "start_url": "/",
+  "name": "لوحة تحكم المنصة الملكية 👑",
+  "short_name": "الأدمن 👑",
+  "description": "لوحة تحكم وإدارة النسخ والمواقع الرومانسية الفاخرة",
+  "start_url": "/super-admin",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
