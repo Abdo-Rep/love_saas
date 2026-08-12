@@ -24,8 +24,10 @@ import {
   X,
   Lock,
   Copy,
-  CheckCircle2
+  CheckCircle2,
+  QrCode
 } from 'lucide-react';
+import { TenantQRCodeModal } from '@/components/admin/TenantQRCodeModal';
 
 export default function SuperAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -38,6 +40,7 @@ export default function SuperAdminPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [selectedQrTenant, setSelectedQrTenant] = useState<Tenant | null>(null);
 
   // Unified Single Name State
   const [singleName, setSingleName] = useState('');
@@ -500,6 +503,14 @@ export default function SuperAdminPage() {
 
                 <div className="flex items-center gap-1.5">
                   <button
+                    onClick={() => setSelectedQrTenant(tenant)}
+                    className="p-2 rounded-xl bg-pink-500/20 text-pink-300 border border-pink-500/30 hover:bg-pink-500/40 transition-colors"
+                    title="عرض وتحميل رمز الـ QR"
+                  >
+                    <QrCode className="w-4 h-4" />
+                  </button>
+
+                  <button
                     onClick={() => handleToggleStatus(tenant.slug, tenant.status)}
                     className="p-2 rounded-xl bg-white/10 text-white hover:bg-rose-500/30 transition-colors"
                     title={tenant.status === 'active' ? 'تجميد النسخة' : 'تفعيل النسخة'}
@@ -521,11 +532,11 @@ export default function SuperAdminPage() {
               <div className="grid grid-cols-2 gap-2.5 text-xs font-mono bg-black/40 p-3 rounded-2xl border border-pink-400/15">
                 <div>
                   <span className="text-[10px] text-pink-200/60 block font-sans">كلمة سر الموقع:</span>
-                  <span className="text-amber-200 font-bold">{tenant.sitePassword}</span>
+                  <span className="text-amber-200 font-bold">{tenant.config?.sitePassword || tenant.sitePassword || 'love'}</span>
                 </div>
                 <div>
                   <span className="text-[10px] text-pink-200/60 block font-sans">كلمة سر الأدمن:</span>
-                  <span className="text-rose-300 font-bold">{tenant.adminPassword}</span>
+                  <span className="text-rose-300 font-bold">{tenant.adminPassword || 'love'}</span>
                 </div>
               </div>
 
@@ -692,6 +703,14 @@ export default function SuperAdminPage() {
             </form>
           </div>
         </div>
+      {/* TENANT QR CODE MODAL */}
+      {selectedQrTenant && (
+        <TenantQRCodeModal
+          slug={selectedQrTenant.slug}
+          tenantName={selectedQrTenant.name}
+          isOpen={!!selectedQrTenant}
+          onClose={() => setSelectedQrTenant(null)}
+        />
       )}
 
     </main>

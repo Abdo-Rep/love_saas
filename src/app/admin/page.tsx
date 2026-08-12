@@ -31,10 +31,18 @@ import {
   X
 } from 'lucide-react';
 
+import { TenantQRCodeModal } from '@/components/admin/TenantQRCodeModal';
+
 export default function AdminPage() {
   const { config, updateConfig } = useConfig();
+  let tenantCtx: any = null;
+  try {
+    tenantCtx = useTenant();
+  } catch (_) {}
+
   const [activeStep, setActiveStep] = useState<number>(1);
   const [saveMessage, setSaveMessage] = useState('');
+  const [showQrModal, setShowQrModal] = useState(false);
 
   // Voice recording state
   const [isRecording, setIsRecording] = useState(false);
@@ -182,12 +190,20 @@ export default function AdminPage() {
 
         <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap justify-end">
           <button
+            onClick={() => setShowQrModal(true)}
+            className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-white/10 border border-pink-400/40 text-amber-300 font-bold text-xs hover:bg-rose-500/20 transition-all flex items-center justify-center gap-2 shrink-0 cursor-pointer shadow-md"
+            style={{ fontFamily: "'Cairo', sans-serif" }}
+          >
+            <span>رمز الـ QR لموقعك 📱✨</span>
+          </button>
+
+          <button
             onClick={handleSave}
             className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-xs sm:text-sm border border-white/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_#f472b6] flex items-center justify-center gap-2 shrink-0 cursor-pointer"
             style={{ fontFamily: "'Cairo', sans-serif" }}
           >
             <Save className="w-4 h-4 text-white" />
-            <span>حفظ التغييرات وتطبيقها مباشرة 💖</span>
+            <span>حفظ التغييرات 💖</span>
           </button>
         </div>
       </header>
@@ -235,8 +251,15 @@ export default function AdminPage() {
               <input
                 type="text"
                 value={config.sitePassword}
-                onChange={(e) => updateConfig({ sitePassword: e.target.value })}
-                className="w-full p-3 rounded-xl bg-black/40 border border-pink-400/30 text-white font-mono font-bold"
+                onChange={(e) => {
+                  const val = e.target.value;
+                  updateConfig({ sitePassword: val });
+                  if (tenantCtx?.currentTenant) {
+                    TenantStore.updateTenant(tenantCtx.currentTenant.slug, { sitePassword: val });
+                    tenantCtx.refreshTenants();
+                  }
+                }}
+                className="w-full p-3 rounded-xl bg-black/40 border border-pink-400/30 text-amber-200 font-mono font-bold"
               />
             </div>
 
@@ -244,24 +267,15 @@ export default function AdminPage() {
               <label className="block text-pink-200/80 mb-1.5">كلمة سر لوحة التحكم (الأدمن):</label>
               <input
                 type="text"
-                value={(() => {
-                  try {
-                    const t = useTenant();
-                    return t?.currentTenant?.adminPassword || 'love';
-                  } catch (_) {
-                    return 'love';
-                  }
-                })()}
+                value={tenantCtx?.currentTenant?.adminPassword || 'love'}
                 onChange={(e) => {
-                  try {
-                    const t = useTenant();
-                    if (t?.currentTenant) {
-                      TenantStore.updateTenant(t.currentTenant.slug, { adminPassword: e.target.value });
-                      t.refreshTenants();
-                    }
-                  } catch (_) {}
+                  const val = e.target.value;
+                  if (tenantCtx?.currentTenant) {
+                    TenantStore.updateTenant(tenantCtx.currentTenant.slug, { adminPassword: val });
+                    tenantCtx.refreshTenants();
+                  }
                 }}
-                className="w-full p-3 rounded-xl bg-black/40 border border-pink-400/30 text-emerald-300 font-mono font-bold"
+                className="w-full p-3 rounded-xl bg-black/40 border border-pink-400/30 text-rose-300 font-mono font-bold"
               />
             </div>
 
@@ -1118,7 +1132,13 @@ export default function AdminPage() {
             </div>
           </div>
         </div>
-      )}
+      {/* QR CODE MODAL FOR CLIENT SITE */}
+      <TenantQRCodeModal
+        slug={tenantCtx?.currentTenant?.slug || 'rawda'}
+        tenantName={tenantCtx?.currentTenant?.name || 'موقعك الخاص'}
+        isOpen={showQrModal}
+        onClose={() => setShowQrModal(false)}
+      />
 
     </main>
   );
