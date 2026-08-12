@@ -1,8 +1,15 @@
+type TimeListener = (currentTime: number, duration: number) => void;
+type PlayStateListener = (playing: boolean) => void;
+
 class BgMusicManager {
   private audio: HTMLAudioElement | null = null;
   private currentUrl: string = '';
   public isPlaying: boolean = false;
-  private listeners: Set<(playing: boolean) => void> = new Set();
+  public currentTime: number = 0;
+  public duration: number = 0;
+
+  private stateListeners: Set<PlayStateListener> = new Set();
+  private timeListeners: Set<TimeListener> = new Set();
 
   public setTrack(url: string) {
     if (!url) return;
@@ -11,9 +18,32 @@ class BgMusicManager {
     if (this.audio) {
       this.audio.pause();
     }
-    this.audio = new Audio(url);
-    this.audio.loop = true;
-    this.audio.volume = 0.85;
+    const audio = new Audio(url);
+    audio.loop = true;
+    audio.volume = 0.85;
+
+    audio.addEventListener('timeupdate', () => {
+      this.currentTime = audio.currentTime;
+      this.duration = audio.duration || 0;
+      this.timeListeners.forEach((cb) => cb(this.currentTime, this.duration));
+    });
+
+    audio.addEventListener('loadedmetadata', () => {
+      this.duration = audio.duration || 0;
+      this.timeListeners.forEach((cb) => cb(this.currentTime, this.duration));
+    });
+
+    audio.addEventListener('play', () => {
+      this.isPlaying = true;
+      this.notifyState();
+    });
+
+    audio.addEventListener('pause', () => {
+      this.isPlaying = false;
+      this.notifyState();
+    });
+
+    this.audio = audio;
   }
 
   public play(url?: string) {
@@ -25,7 +55,7 @@ class BgMusicManager {
       .play()
       .then(() => {
         this.isPlaying = true;
-        this.notify();
+        this.notifyState();
       })
       .catch((e) => {
         console.log('Audio playback waiting for touch interaction:', e);
@@ -34,7 +64,7 @@ class BgMusicManager {
             ?.play()
             .then(() => {
               this.isPlaying = true;
-              this.notify();
+              this.notifyState();
             })
             .catch(() => {});
           window.removeEventListener('click', onInteraction);
@@ -49,7 +79,7 @@ class BgMusicManager {
     if (this.audio) {
       this.audio.pause();
       this.isPlaying = false;
-      this.notify();
+      this.notifyState();
     }
   }
 
@@ -61,17 +91,26 @@ class BgMusicManager {
     }
   }
 
-  public subscribe(cb: (playing: boolean) => void) {
-    this.listeners.add(cb);
-    return () => this.listeners.delete(cb);
+  public seek(seconds: number) {
+    if (this.audio && Number.isFinite(seconds)) {
+      this.audio.currentTime = seconds;
+    }
   }
 
-  private notify() {
-    this.listeners.forEach((cb) => cb(this.isPlaying));
+  public subscribeState(cb: PlayStateListener) {
+    this.stateListeners.add(cb);
+    return () => this.stateListeners.delete(cb);
+  }
+
+  public subscribeTime(cb: TimeListener) {
+    this.timeListeners.add(cb);
+    return () => this.timeListeners.delete(cb);
+  }
+
+  private notifyState() {
+    this.stateListeners.forEach((cb) => cb(this.isPlaying));
   }
 }
 
 // Global Singleton for uninterrupted background music across all steps
-const globalMusicInstance = new BgMusicManager();
-
-export const bgMusic = globalMusicInstance;
+export const bgMusic = new BgMusicManager();
