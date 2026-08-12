@@ -344,7 +344,7 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
       {!showLiveMessage && (
         <button
           onClick={handleSkip}
-          className="fixed top-5 right-5 z-50 px-4 py-2 rounded-full bg-black/75 border border-pink-400/50 text-amber-300 font-extrabold text-xs backdrop-blur-md hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,114,182,0.4)] flex items-center gap-1.5 cursor-pointer"
+          className="fixed top-5 left-5 z-50 px-4 py-2 rounded-full bg-black/75 border border-pink-400/50 text-amber-300 font-extrabold text-xs backdrop-blur-md hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,114,182,0.4)] flex items-center gap-1.5 cursor-pointer"
           style={{ fontFamily: "'Cairo', sans-serif" }}
         >
           <FastForward className="w-4 h-4 text-pink-400" />
