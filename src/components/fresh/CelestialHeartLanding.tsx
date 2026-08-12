@@ -28,7 +28,6 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
       });
     } catch (_) {}
 
-    // Instant smooth transition to next step after celebration
     setTimeout(() => {
       onStart();
     }, 600);
@@ -54,8 +53,8 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
         <div className="w-full h-full bg-[radial-gradient(#ec4899_1.5px,transparent_1.5px)] [background-size:28px_28px] animate-pulse" />
       </div>
 
-      {/* TOP DECORATIVE SPACE */}
-      <div className="relative z-10 pt-6 sm:pt-10">
+      {/* TOP DECORATIVE BADGE */}
+      <div className="relative z-10 pt-4 sm:pt-8">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-pink-400/30 text-amber-300 text-xs font-bold shadow-[0_0_20px_rgba(245,158,11,0.3)] backdrop-blur-md">
           <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin" />
           <span style={{ fontFamily: "'Cairo', sans-serif" }}>
@@ -64,28 +63,31 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
         </div>
       </div>
 
-      {/* MAIN CENTRAL LUXURY CARD */}
-      <div className="relative z-10 max-w-xl w-full my-auto py-6 flex flex-col items-center gap-6">
+      {/* MAIN CENTRAL HEART-SHAPED LUXURY CARD */}
+      <div className="relative z-10 max-w-lg w-full my-auto py-4 flex flex-col items-center">
         
-        {/* GLOWING HEART EMBLEM */}
+        {/* GLOWING FLOATING HEART EMBLEM */}
         <div
-          className="relative group cursor-pointer my-2"
+          className="relative group cursor-pointer -mb-10 z-20"
           onClick={handleTriggerUnlock}
           title="انقر للدخول ✨"
         >
-          <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 blur-2xl opacity-60 group-hover:opacity-100 transition duration-700 animate-pulse" />
-          <div className="relative w-28 h-28 sm:w-36 sm:h-36 rounded-full bg-black/80 border-2 border-rose-500/60 backdrop-blur-xl flex items-center justify-center shadow-[0_0_50px_rgba(244,63,94,0.6)] transform group-hover:scale-105 transition duration-500">
-            <Heart className="w-14 h-14 sm:w-18 sm:h-18 text-rose-500 fill-rose-500 animate-bounce" />
+          <div className="absolute -inset-4 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 blur-2xl opacity-70 group-hover:opacity-100 transition duration-700 animate-pulse" />
+          <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-gradient-to-b from-rose-600 to-pink-900 border-2 border-pink-300/80 backdrop-blur-xl flex items-center justify-center shadow-[0_0_40px_rgba(244,63,94,0.8)] transform group-hover:scale-110 transition duration-500">
+            <Heart className="w-12 h-12 sm:w-14 sm:h-14 text-white fill-white drop-shadow-[0_0_10px_rgba(255,255,255,0.8)] animate-pulse" />
           </div>
         </div>
 
-        {/* CONTAINER CARD FOR NO TEXT CLIPPING */}
-        <div className="w-full p-6 sm:p-10 rounded-3xl bg-black/40 border border-pink-400/30 backdrop-blur-2xl shadow-[0_0_60px_rgba(244,63,94,0.35)] flex flex-col items-center gap-5 text-center">
+        {/* HEART-CONTOURED LUXURY CONTAINER */}
+        <div className="w-full pt-14 pb-8 px-6 sm:px-10 rounded-t-[55px] rounded-b-[40px] bg-gradient-to-b from-[#2d0520]/90 via-[#180313]/95 to-black/90 border-2 border-pink-500/40 backdrop-blur-2xl shadow-[0_0_60px_rgba(244,63,94,0.45)] flex flex-col items-center gap-5 text-center relative overflow-hidden">
           
-          {/* TITLE WITH NO TEXT CUTOFF OR CLIPPING */}
-          <div className="w-full pt-2 pb-4 overflow-visible">
+          {/* Subtle Inner Heart Gradient Glow */}
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-64 h-48 bg-rose-500/20 rounded-full blur-3xl pointer-events-none" />
+
+          {/* TITLE */}
+          <div className="w-full pt-2 pb-2 overflow-visible">
             <h1
-              className="text-2xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-100 to-pink-300 leading-relaxed py-2 px-1 tracking-normal drop-shadow-[0_2px_12px_rgba(244,63,94,0.4)]"
+              className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-rose-100 to-pink-300 leading-relaxed py-1 px-1 tracking-normal drop-shadow-[0_2px_12px_rgba(244,63,94,0.4)]"
               style={{ fontFamily: "'Cairo', sans-serif" }}
             >
               {config.landingTitle || 'إلى أميرتي وسر سعادتي 👑💖'}
@@ -94,34 +96,34 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
 
           {/* POETIC SUBTITLE */}
           <p
-            className="text-white/90 text-xs sm:text-base max-w-md mx-auto leading-loose font-bold px-2"
+            className="text-pink-100/90 text-xs sm:text-sm max-w-md mx-auto leading-loose font-semibold px-2"
             style={{ fontFamily: "'Cairo', sans-serif" }}
           >
             {config.landingSubtitle || 'عالمٌ خُصص لأجلكِ وحدكِ.. حيث تبتسم الذكريات وتُحكى أجمل حكايات العشق ✨'}
           </p>
 
           {/* SECRET ENTRY FORM */}
-          <form onSubmit={handleSubmit} className="w-full max-w-sm flex flex-col gap-4 mt-2">
+          <form onSubmit={handleSubmit} className="w-full max-w-sm flex flex-col gap-3.5 mt-1">
             <div className="relative w-full">
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder={config.passwordPlaceholder || 'اكتب كلمة السر هنا ✨'}
-                className="w-full py-4 px-12 rounded-2xl bg-black/80 border-2 border-rose-500/50 text-center text-amber-200 placeholder-white/40 focus:outline-none focus:border-pink-300 backdrop-blur-xl shadow-[0_0_30px_rgba(244,63,94,0.3)] transition-all font-bold text-sm tracking-widest"
+                className="w-full py-3.5 px-12 rounded-2xl bg-black/80 border-2 border-rose-500/50 text-center text-amber-200 placeholder-white/40 focus:outline-none focus:border-pink-300 backdrop-blur-xl shadow-[0_0_30px_rgba(244,63,94,0.3)] transition-all font-bold text-xs sm:text-sm tracking-widest"
                 style={{ fontFamily: "'Cairo', sans-serif" }}
               />
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-rose-400 pointer-events-none" />
-              <Key className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-amber-400 pointer-events-none" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-rose-400 pointer-events-none" />
+              <Key className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-amber-400 pointer-events-none" />
             </div>
 
             <button
               type="submit"
-              className="w-full py-4 px-8 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-sm sm:text-base border border-white/30 hover:scale-105 active:scale-95 transition-all shadow-[0_0_35px_rgba(244,63,94,0.6)] flex items-center justify-center gap-2 group cursor-pointer"
+              className="w-full py-3.5 px-8 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-xs sm:text-sm border border-white/30 hover:scale-105 active:scale-95 transition-all shadow-[0_0_35px_rgba(244,63,94,0.6)] flex items-center justify-center gap-2 group cursor-pointer"
               style={{ fontFamily: "'Cairo', sans-serif" }}
             >
               <span>{config.enterButtonText || 'دخول عالمنا الخاص 🚀'}</span>
-              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             </button>
           </form>
 
@@ -129,7 +131,7 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
       </div>
 
       {/* BOTTOM FOOTER SPACING */}
-      <div className="relative z-10 pb-4 text-xs text-pink-200/40 font-semibold">
+      <div className="relative z-10 pb-3 text-[11px] text-pink-200/40 font-semibold">
         <span style={{ fontFamily: "'Cairo', sans-serif" }}>مصمم بكل الحب والملكِيّة ❤️</span>
       </div>
     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 
 interface Props {
   onBack: () => void;
@@ -9,15 +9,13 @@ interface Props {
 
 export const GlobalBackButton: React.FC<Props> = ({ onBack }) => {
   return (
-    <div className="fixed top-4 left-4 z-50">
+    <div className="fixed top-4 right-4 z-50">
       <button
         onClick={onBack}
-        className="px-3.5 py-2 rounded-full bg-black/70 border border-pink-400/40 text-amber-300 backdrop-blur-xl shadow-[0_0_20px_rgba(244,114,182,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold"
-        style={{ fontFamily: "'Cairo', sans-serif" }}
-        title="الرجوع للخطوة السابقة"
+        className="w-10 h-10 rounded-full bg-black/60 border border-pink-400/40 text-pink-300 backdrop-blur-xl shadow-[0_0_20px_rgba(244,114,182,0.3)] hover:scale-110 active:scale-90 hover:border-pink-300 hover:text-white transition-all flex items-center justify-center cursor-pointer"
+        title="رجوع للخلف"
       >
-        <ArrowLeft className="w-4 h-4 text-pink-400" />
-        <span>رجوع ↩️</span>
+        <ChevronRight className="w-5 h-5 stroke-[2.5]" />
       </button>
     </div>
   );

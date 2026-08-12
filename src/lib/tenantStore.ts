@@ -5,24 +5,24 @@ import { supabase, isSupabaseConfigured } from './supabaseClient';
 export const TENANTS_STORAGE_KEY = 'cosmic_love_saas_tenants_v1';
 export const MASTER_PASSWORD_KEY = 'cosmic_love_master_pass_v1';
 
-// DEFAULT ROMANTIC CONFIG TEMPLATE FOR NEW TENANTS
-export const createDefaultConfigForTenant = (herName: string = 'روضة', sitePassword: string = 'love'): AppConfig => ({
+// DEFAULT ROMANTIC CONFIG TEMPLATE FOR NEW TENANTS (GENERIC & UNIVERSAL - NO HARDCODED NAMES)
+export const createDefaultConfigForTenant = (herName: string = 'أميرتي', sitePassword: string = 'love'): AppConfig => ({
   sitePassword,
-  passwordGreeting: `أهلاً بكِ في عالمنا الخاص يا ${herName}.. أدخلي كلمة السر لتبدأ الرحلة ✨`,
-  herName,
+  passwordGreeting: 'أهلاً بكِ في عالمنا الخاص.. أدخلي كلمة السر لتبدأ الرحلة ✨',
+  herName: 'أميرتي',
   landingBadge: 'رحلة العشق الملكية 👑',
-  landingTitle: `إلى أميرتي ${herName} وسر سعادتي 👑💖`,
+  landingTitle: 'إلى أميرتي وسر سعادتي 👑💖',
   landingSubtitle: 'عالمٌ خُصص لأجلكِ وحدكِ.. حيث تبتسم الذكريات وتُحكى أجمل حكايات العشق ✨',
   passwordPlaceholder: 'اكتب كلمة السر هنا ✨',
   enterButtonText: 'دخول عالمنا الخاص 🚀',
 
   selectedCharacterModel: '/models/passive_marker_man.fbx',
-  theaterWalkMessage: `كل خطوة خطيتها في الطريق ده.. كانت عشان أوصل لقلبكِ يا ${herName} 🌸 أنتي مش مجرد شخص في حياتي، أنتي القصة والروح اللي اتمنيت أعيش معاها طول عمري ✨💖`,
+  theaterWalkMessage: 'كل خطوة خطيتها في الطريق ده.. كانت عشان أوصل لقلبكِ يا روحي 🌸 أنتي مش مجرد شخص في حياتي، أنتي القصة والروح اللي اتمنيت أعيش معاها طول عمري ✨💖',
   theaterButtonText: 'كلمة حلوة.. تعالي نخش جوه قصة حياتنا 💖✨',
   storySongUrl: '',
 
-  constellationName: herName.toUpperCase(),
-  constellationTitle: `نجمتي الأميرة ${herName.toUpperCase()}... 💫`,
+  constellationName: 'LOVE',
+  constellationTitle: 'نجمتي وأميرتي الغالية... 💫',
   constellationMessage: '"كتبتُ اسمكِ بين النجوم لأنكِ القمر الوحيد الذي ينور سمائي، والسر الجميل الذي يسعد قلبي في كل ثانية." ❤️✨',
   constellationButtonText: 'انتقلي لرحلة عشقنا 💖✨',
 
@@ -39,7 +39,7 @@ export const createDefaultConfigForTenant = (herName: string = 'روضة', siteP
       subtitle: 'رسالة اعتذار وحنية من قلبي',
       icon: '💔',
       badge: 'حقك عليا 🌸',
-      content: `حبيبتي ${herName} يا أغلى ما في حياتي.. عيني وحشتني وقلبي اتوجع أكثر لو كنت سبب في زعلكِ لحظة واحدة، أتمنى دايماً تكوني أسعد إنسانة عندي في الدنيا، سامحيني يا قمر.. ✨💖`,
+      content: 'حبيبتي وروحي يا أغلى ما في حياتي.. عيني وحشتني وقلبي اتوجع أكثر لو كنت سبب في زعلكِ لحظة واحدة، أتمنى دايماً تكوني أسعد إنسانة عندي في الدنيا، سامحيني يا قمر.. ✨💖',
       enabled: true
     },
     {
@@ -85,24 +85,17 @@ export const createDefaultConfigForTenant = (herName: string = 'روضة', siteP
   memoryPhotos: [
     {
       id: 1,
-      image: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?auto=format&fit=crop&w=800&q=80',
-      date: '14 مارس 2024',
-      caption: 'أول غروب شوفناه مع بعض ونظرة العيون اللي غيرت مجرى حياتي للأبد ❤️',
-      tag: 'اللقاء الأول ✨'
+      image: '/images/the_boss.jpg',
+      date: '١٤ فبراير ٢٠٢٤',
+      caption: 'أول نظرة خطفت قلبي وبداية كل حاجة حلوة في عمري 🌸',
+      tag: 'البداية 💖'
     },
     {
       id: 2,
-      image: 'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?auto=format&fit=crop&w=800&q=80',
-      date: '5 يناير 2024',
-      caption: 'يومنا في الحديقة والضحكة الفاتنة اللي بتنور أيامي وتسوى الدنيا وما فيها 🌸',
-      tag: 'يومنا في الحديقة 👑'
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1516589178581-6cd7833ae3b2?auto=format&fit=crop&w=800&q=80',
-      date: '20 فبراير 2024',
-      caption: 'ليلة لا تُنسى تحت أنوار العشق واللحظة اللي اتأكدت فيها إن قلبي ملكِك إنتي 💖',
-      tag: 'ليلة لا تُنسى 💍'
+      image: '/images/peasant_girl.jpg',
+      date: '٢٠ مارس ٢٠٢٤',
+      caption: 'ضحكتكِ اللي بتنور عتمة أيامي وتخليني أسعد إنسان ✨',
+      tag: 'سعادة 🌟'
     }
   ],
   galleryButtonText: 'التالي: رسالة بصوتي 🎙️❤️',
@@ -118,43 +111,22 @@ export const createDefaultConfigForTenant = (herName: string = 'روضة', siteP
 
   bucketListTitle: 'أحلام سنحققها معاً خطوة بخطوة 🌸',
   bucketListItems: [
-    { id: 1, text: '✨ أول لقاء يجمعنا ونظرة العيون التي بدأت بها أجمل قصة حب ❤️', completed: true },
-    { id: 2, text: '✈️ سفرية سوا لدولة أو مكان بنحبه ننسى فيها كل العالم ونستمتع بالبحر والنجوم', completed: false },
-    { id: 3, text: '🍿 سهرة سينما مخصصة تحت النجوم مع فشار وفلمنا المفضل والهدوء التام', completed: false },
-    { id: 4, text: '👩‍🍳 طبخة جديدة نجرب نعملها سوياً في المطبخ بكل حب وضحك', completed: false },
-    { id: 5, text: '🏡 تفاصيل بيت أحلامنا المستقبلي ونختار كل ركن ولون وديكور سوا لمملكتنا', completed: false }
+    { id: 1, text: 'نسافر سوا ونشوف شروق الشمس على البحر 🌅', completed: false },
+    { id: 2, text: 'نعمل عمرة سوا وإيدينا في إيدين بعض 🕋✨', completed: false },
+    { id: 3, text: 'نطبخ مع بعض أكله مجنونة ونضحك على طعمها 🍳❤️', completed: false },
+    { id: 4, text: 'نحضر حفلة موسيقية ونغني بأعلى صوتنا 🎶', completed: false },
+    { id: 5, text: 'نبني بيتنا الدافئ الصغير المليان حب وراحة 🏡💖', completed: false },
+    { id: 6, text: 'نفضل سوا لآخر العمر ونحكي حكايتنا لأولادنا 👵👴', completed: false }
   ],
   bucketListButtonText: 'التالي: الرسالة الأخيرة 💌👑',
 
   finalLetterTitle: 'كلمات نُقشت بماء الذهب',
-  finalLetterSubtitle: 'إلى أميرتي الوحيدة وسر سعادتي 💖',
-  finalLetterContent: `يا أغلى ما عندي في الدنيا ✨ لو كتبتلك كل كلام الحب اللي في العالم مش هيكفي، ولا جزء بسيط اللي حاسس بيه ناحيتك يا ${herName}. إنتي النور اللي بينور أيامي، والراحة اللي بدونها الدنيا بتكون صعبة، والسر الوحيد اللي يخليني أبتسم من غير أي سبب. نوعد بعض إننا نفضل سند لبعض، ونعدي أي حاجة، ونضحك سوا ونحقق كل أحلامنا الجاية. بحبك من أعماق قلبي.`,
-  finalLetterPromise: 'بحبك أوي أوي... ووعدتِ، عمرنا دايماً لا ينتهي 💕💖'
+  finalLetterSubtitle: 'إلى من ملكت روحي واستقرت في أعماق قلبي 👑',
+  finalLetterContent: 'يا أغلى ما عندي في الدنيا ✨ لو كتبتلك كل كلام الحب اللي في العالم مش هيكفي، ولا جزء بسيط اللي حاسس بيه ناحيتك. إنتي النور اللي بينور أيامي، والراحة اللي بدونها الدنيا بتكون صعبة، والسر الوحيد اللي يخليني أبتسم من غير أي سبب. نوعد بعض إننا نفضل سند لبعض، ونعدي أي حاجة، ونضحك سوا ونحقق كل أحلامنا الجاية. بحبك من أعماق قلبي.',
+  finalLetterPromise: 'بحبك أوي أوي... ووعد، عمرنا دايماً لا ينتهي 💕💖'
 });
 
-// INITIAL SEED TENANTS
-const seedTenants: Tenant[] = [
-  {
-    id: 'tenant_rawda',
-    slug: 'rawda',
-    name: 'نسخة روضة',
-    adminPassword: 'love',
-    sitePassword: 'love',
-    createdAt: new Date().toISOString(),
-    status: 'active',
-    config: createDefaultConfigForTenant('روضة', 'love')
-  },
-  {
-    id: 'tenant_nour',
-    slug: 'nour',
-    name: 'نسخة نور',
-    adminPassword: 'love',
-    sitePassword: 'love',
-    createdAt: new Date().toISOString(),
-    status: 'active',
-    config: createDefaultConfigForTenant('نور', 'love')
-  }
-];
+export const seedTenants: Tenant[] = [];
 
 export const TenantStore = {
   // Get all tenants
@@ -163,7 +135,6 @@ export const TenantStore = {
     try {
       const saved = localStorage.getItem(TENANTS_STORAGE_KEY);
       if (!saved) {
-        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(seedTenants));
         return seedTenants;
       }
       return JSON.parse(saved);
@@ -181,13 +152,12 @@ export const TenantStore = {
     return tenants.find((t) => t.slug.toLowerCase() === cleanSlug) || null;
   },
 
-  // Create new tenant
+  // Create new tenant (Slug & Name do NOT overwrite romantic sentences)
   createTenant: (
     slug: string,
     name: string,
     adminPassword: string,
-    sitePassword: string,
-    herName: string = 'أميرة'
+    sitePassword: string
   ): Tenant => {
     const tenants = TenantStore.getAllTenants();
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
@@ -201,12 +171,12 @@ export const TenantStore = {
     const newTenant: Tenant = {
       id: `tenant_${Date.now()}`,
       slug: cleanSlug,
-      name: name || `نسخة ${herName}`,
-      adminPassword: adminPassword || 'admin',
+      name: name || `نسخة ${cleanSlug}`,
+      adminPassword: adminPassword || 'love',
       sitePassword: sitePassword || 'love',
       createdAt: new Date().toISOString(),
       status: 'active',
-      config: createDefaultConfigForTenant(herName, sitePassword || 'love')
+      config: createDefaultConfigForTenant('أميرتي', sitePassword || 'love')
     };
 
     const updated = [...tenants, newTenant];
@@ -319,7 +289,7 @@ export const TenantStore = {
     if (!isSupabaseConfigured || !supabase) return TenantStore.getAllTenants();
     try {
       const { data, error } = await supabase.from('tenants').select('*');
-      if (data && !error && data.length > 0) {
+      if (data && !error) {
         const mapped: Tenant[] = data.map((row: any) => ({
           id: row.id,
           slug: row.slug,
@@ -328,7 +298,7 @@ export const TenantStore = {
           sitePassword: row.site_password || row.sitePassword || 'love',
           createdAt: row.created_at || new Date().toISOString(),
           status: row.status || 'active',
-          config: row.config || createDefaultConfigForTenant(row.name, row.site_password || 'love')
+          config: row.config || createDefaultConfigForTenant('أميرتي', row.site_password || 'love')
         }));
         if (typeof window !== 'undefined') {
           localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(mapped));
@@ -362,7 +332,7 @@ export const TenantStore = {
   importBackupJSON: (jsonStr: string): boolean => {
     try {
       const parsed = JSON.parse(jsonStr);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].slug) {
+      if (Array.isArray(parsed)) {
         localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(parsed));
         return true;
       }

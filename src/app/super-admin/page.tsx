@@ -37,6 +37,7 @@ export default function SuperAdminPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'suspended'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   // Unified Single Name State
   const [singleName, setSingleName] = useState('');
@@ -219,7 +220,7 @@ export default function SuperAdminPage() {
 
           <div className="flex flex-col gap-1">
             <h1 className="text-xl sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              لوحة تحكم السوبر أدمن (Super Admin) 👑
+              لوحة تحكم السوبر أدمن 👑
             </h1>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
               إدارة المنصة، إنشاء النسخ للعملاء وإدارة جميع المواقع
@@ -270,26 +271,93 @@ export default function SuperAdminPage() {
       
       {/* HEADER BAR */}
       <header className="sticky top-0 z-40 bg-[#090108]/95 backdrop-blur-xl py-4 border-b border-pink-500/30 mb-6 flex flex-col md:flex-row items-center justify-between gap-4 shadow-2xl">
-        <div className="flex items-center gap-3 text-right">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-400 flex items-center justify-center shadow-[0_0_20px_#f472b6] shrink-0">
-            <Crown className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              👑 السوبر أدمن - لوحة إدارة منصة الـ SaaS
-            </h1>
-            <div className="flex items-center gap-2 pt-1 flex-wrap">
-              <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
-                إنشاء وإدارة عدد لا نهائي من نسخ المواقع ولوحات التحكم للعملاء
-              </p>
-              <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${isSupabaseConfigured ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' : 'bg-amber-500/20 text-amber-300 border-amber-400/40'}`}>
-                {isSupabaseConfigured ? '⚡ متصل بسوبا بيز (Supabase DB) 🟢' : '💾 التخزين المحلي LocalStorage 🟡'}
-              </span>
+        <div className="flex items-center justify-between w-full md:w-auto gap-3 text-right">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-400 flex items-center justify-center shadow-[0_0_20px_#f472b6] shrink-0">
+              <Crown className="w-6 h-6 text-white" />
             </div>
+            <div>
+              <h1 className="text-base sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                لوحة إدارة منصة الـ SaaS 👑
+              </h1>
+              <div className="flex items-center gap-2 pt-0.5 flex-wrap">
+                <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${isSupabaseConfigured ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' : 'bg-amber-500/20 text-amber-300 border-amber-400/40'}`}>
+                  {isSupabaseConfigured ? '⚡ متصل بسوبا بيز 🟢' : '💾 التخزين المحلي LocalStorage 🟡'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* MOBILE ACTION MENU TOGGLE */}
+          <div className="md:hidden flex items-center gap-2">
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="p-2.5 rounded-xl bg-gradient-to-r from-rose-500 to-amber-400 text-white font-bold text-xs shadow-lg flex items-center gap-1 cursor-pointer"
+              title="إنشاء موقع عميل جديد"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>جديد</span>
+            </button>
+            <button
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="p-2.5 rounded-xl bg-white/10 border border-pink-400/30 text-amber-300 hover:bg-white/20 transition-all cursor-pointer"
+              title="القائمة"
+            >
+              <Settings className="w-4 h-4" />
+            </button>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap justify-center">
+        {/* MOBILE DROPDOWN MENU */}
+        {showMobileMenu && (
+          <div className="md:hidden w-full p-4 rounded-2xl bg-black/90 border border-pink-400/40 backdrop-blur-2xl flex flex-col gap-3 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+            <button
+              onClick={() => {
+                setShowMobileMenu(false);
+                setShowPasswordModal(true);
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-white/10 border border-pink-400/30 text-pink-200 text-xs font-bold hover:bg-rose-500/20 transition-all flex items-center justify-between cursor-pointer"
+            >
+              <span className="flex items-center gap-2">
+                <KeyRound className="w-4 h-4 text-amber-300" />
+                كلمة السر الرئيسية (Master)
+              </span>
+            </button>
+
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  setShowMobileMenu(false);
+                  handleExportBackup();
+                }}
+                className="py-2.5 px-3 rounded-xl bg-white/10 border border-pink-400/30 text-amber-300 text-xs font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+                <span>تصدير نسخة JSON</span>
+              </button>
+
+              <label className="py-2.5 px-3 rounded-xl bg-white/10 border border-pink-400/30 text-amber-300 text-xs font-bold hover:bg-white/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer">
+                <Upload className="w-4 h-4" />
+                <span>استرجاع JSON</span>
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setShowMobileMenu(false);
+                      handleImportBackup(file);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* DESKTOP ACTIONS TOOLBAR */}
+        <div className="hidden md:flex items-center gap-2.5 flex-wrap justify-center">
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-xs sm:text-sm shadow-[0_0_20px_#f472b6] hover:scale-105 active:scale-95 transition-all flex items-center gap-2 cursor-pointer"
@@ -330,65 +398,49 @@ export default function SuperAdminPage() {
         </div>
       </header>
 
-      {/* STATS OVERVIEW CARDS WITH INTERACTIVE FILTERING */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 text-right">
+      {/* COMPACT SINGLE STATS & FILTER BAR IN ONE ROW */}
+      <div className="flex items-center justify-between gap-1.5 sm:gap-3 p-1.5 sm:p-2 rounded-2xl bg-black/60 border border-pink-400/30 backdrop-blur-xl mb-6 select-none overflow-x-auto text-right">
         {/* ALL TENANTS FILTER */}
-        <div
+        <button
           onClick={() => setStatusFilter('all')}
-          className={`p-5 rounded-3xl border backdrop-blur-xl shadow-lg flex items-center justify-between cursor-pointer transition-all duration-300 ${
+          className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
             statusFilter === 'all'
-              ? 'bg-rose-500/20 border-pink-400 shadow-[0_0_25px_rgba(244,114,182,0.4)] scale-102 ring-2 ring-pink-400/50'
-              : 'bg-white/5 border-pink-400/30 hover:border-pink-400/60 opacity-80'
+              ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-[0_0_15px_rgba(244,63,94,0.5)] ring-1 ring-white/30'
+              : 'bg-white/5 text-pink-200/70 hover:bg-white/10 hover:text-white'
           }`}
+          style={{ fontFamily: "'Cairo', sans-serif" }}
         >
-          <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-pink-400/40 flex items-center justify-center text-rose-400">
-            <Users className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-2xl font-black font-mono text-amber-200">{tenants.length}</span>
-            <p className="text-xs text-pink-200/80 font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>إجمالي النسخ والعملاء</p>
-          </div>
-        </div>
+          <Users className="w-3.5 h-3.5" />
+          <span>كل النسخ ({tenants.length})</span>
+        </button>
 
         {/* ACTIVE TENANTS FILTER */}
-        <div
+        <button
           onClick={() => setStatusFilter('active')}
-          className={`p-5 rounded-3xl border backdrop-blur-xl shadow-lg flex items-center justify-between cursor-pointer transition-all duration-300 ${
+          className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
             statusFilter === 'active'
-              ? 'bg-emerald-500/20 border-emerald-400 shadow-[0_0_25px_rgba(16,185,129,0.4)] scale-102 ring-2 ring-emerald-400/50'
-              : 'bg-white/5 border-pink-400/30 hover:border-emerald-400/60 opacity-80'
+              ? 'bg-gradient-to-r from-emerald-600 to-teal-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] ring-1 ring-white/30'
+              : 'bg-white/5 text-emerald-300/70 hover:bg-white/10 hover:text-white'
           }`}
+          style={{ fontFamily: "'Cairo', sans-serif" }}
         >
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
-            <Globe className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-2xl font-black font-mono text-emerald-300">
-              {tenants.filter((t) => t.status === 'active').length}
-            </span>
-            <p className="text-xs text-pink-200/80 font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>مواقع مفعّلة ونشطة 🟢</p>
-          </div>
-        </div>
+          <Globe className="w-3.5 h-3.5" />
+          <span>نشطة 🟢 ({tenants.filter((t) => t.status === 'active').length})</span>
+        </button>
 
         {/* SUSPENDED TENANTS FILTER */}
-        <div
+        <button
           onClick={() => setStatusFilter('suspended')}
-          className={`p-5 rounded-3xl border backdrop-blur-xl shadow-lg flex items-center justify-between cursor-pointer transition-all duration-300 ${
+          className={`flex-1 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer ${
             statusFilter === 'suspended'
-              ? 'bg-rose-950/90 border-rose-500 shadow-[0_0_25px_rgba(244,63,94,0.5)] scale-102 ring-2 ring-rose-500/50'
-              : 'bg-white/5 border-pink-400/30 hover:border-rose-500/60 opacity-80'
+              ? 'bg-rose-950 border border-rose-500 text-rose-200 shadow-[0_0_15px_rgba(244,63,94,0.5)]'
+              : 'bg-white/5 text-rose-400/70 hover:bg-white/10 hover:text-white'
           }`}
+          style={{ fontFamily: "'Cairo', sans-serif" }}
         >
-          <div className="w-12 h-12 rounded-2xl bg-rose-950/60 border border-rose-500/40 flex items-center justify-center text-rose-400">
-            <PauseCircle className="w-6 h-6" />
-          </div>
-          <div>
-            <span className="text-2xl font-black font-mono text-rose-300">
-              {tenants.filter((t) => t.status === 'suspended').length}
-            </span>
-            <p className="text-xs text-pink-200/80 font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>نسخ معطلة / مجمدة ⏸️</p>
-          </div>
-        </div>
+          <PauseCircle className="w-3.5 h-3.5" />
+          <span>معطلة ⏸️ ({tenants.filter((t) => t.status === 'suspended').length})</span>
+        </button>
       </div>
 
       {/* SEARCH AND FILTER BAR */}
@@ -487,7 +539,7 @@ export default function SuperAdminPage() {
                   style={{ fontFamily: "'Cairo', sans-serif" }}
                 >
                   <ExternalLink className="w-4 h-4" />
-                  <span>🌐 موقع العميل (`/site/${tenant.slug}`)</span>
+                  <span>🌐 فتح موقع العميل</span>
                 </a>
 
                 <a
@@ -498,7 +550,7 @@ export default function SuperAdminPage() {
                   style={{ fontFamily: "'Cairo', sans-serif" }}
                 >
                   <Settings className="w-4 h-4 text-amber-300" />
-                  <span>🎛️ لوحة التحكم (`/admin/${tenant.slug}`)</span>
+                  <span>🎛️ فتح لوحة التحكم</span>
                 </a>
               </div>
             </div>
