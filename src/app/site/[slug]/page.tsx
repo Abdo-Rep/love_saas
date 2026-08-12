@@ -16,6 +16,7 @@ import { FinalHeartfeltLetter } from '@/components/couples/FinalHeartfeltLetter'
 import { AntiScreenshot } from '@/components/common/AntiScreenshot';
 import { SubtleWatermark } from '@/components/common/SubtleWatermark';
 import { GlobalBackButton } from '@/components/common/GlobalBackButton';
+import { BackgroundMusicPlayer } from '@/components/common/BackgroundMusicPlayer';
 import { Heart, PauseCircle, HelpCircle } from 'lucide-react';
 
 interface SiteClientContentProps {
@@ -104,6 +105,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     <main className="min-h-screen w-full bg-[#1c0617] text-white relative selection:bg-rose-500 selection:text-white overflow-x-hidden font-sans">
       <AntiScreenshot />
       <SubtleWatermark />
+      <BackgroundMusicPlayer currentStep={currentStep} />
 
       {currentStep > 1 && <GlobalBackButton onBack={handleBack} />}
 

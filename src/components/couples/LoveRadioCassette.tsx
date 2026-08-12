@@ -102,30 +102,31 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
       <div className="relative z-20 max-w-md mx-auto w-full my-4">
         <div className="w-full bg-white/5 border border-pink-400/30 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 shadow-[0_0_35px_rgba(244,114,182,0.25)] flex flex-col items-center gap-6 text-center">
           
-          {/* SPINNING VINYL WITH REAL PHOTO CENTER DISC */}
+          {/* FULL SPINNING DISC WITH PHOTO COVERING ENTIRE REEL */}
           <div className="relative flex items-center justify-center">
-            <div className={`relative w-44 h-44 sm:w-52 sm:h-52 rounded-full bg-gradient-to-tr from-black via-rose-950 to-pink-950 p-2 shadow-[0_0_35px_rgba(244,114,182,0.3)] border-4 border-pink-400/40 flex items-center justify-center ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '8s' }}>
-              
-              {/* Vinyl Grooves */}
-              <div className="w-full h-full rounded-full border-2 border-white/10 flex items-center justify-center p-3">
-                <div className="w-full h-full rounded-full border border-pink-500/20 flex items-center justify-center p-3">
-                  
-                  {/* PHOTO IN CENTER DISC */}
-                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-2 border-amber-300 shadow-md">
-                    <img
-                      src={config.voicePhotoUrl || '/images/peasant_girl.jpg'}
-                      alt="Voice Disc Photo"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
+            <div
+              className={`relative w-48 h-48 sm:w-56 sm:h-56 rounded-full p-1.5 shadow-[0_0_40px_rgba(244,114,182,0.5)] border-4 border-pink-400/60 flex items-center justify-center overflow-hidden bg-black ${
+                isPlaying ? 'animate-spin' : ''
+              }`}
+              style={{ animationDuration: '6s' }}
+            >
+              {/* Full Covering Image */}
+              <img
+                src={config.voicePhotoUrl || '/images/peasant_girl.jpg'}
+                alt="Voice Disc Photo"
+                className="w-full h-full object-cover rounded-full"
+              />
 
-                </div>
+              {/* Vinyl Grooves & Center Spindle Overlay */}
+              <div className="absolute inset-0 rounded-full border border-white/20 pointer-events-none" />
+              <div className="absolute inset-4 rounded-full border border-white/10 pointer-events-none" />
+              <div className="absolute w-8 h-8 rounded-full bg-gradient-to-tr from-amber-400 to-rose-500 border-2 border-white/80 shadow-[0_0_15px_rgba(245,158,11,0.8)] flex items-center justify-center pointer-events-none">
+                <div className="w-2.5 h-2.5 rounded-full bg-black" />
               </div>
-
             </div>
 
             {/* Floating Heart Icon Overlay */}
-            <div className="absolute top-2 right-2 p-2 rounded-full bg-rose-500/80 border border-pink-200 text-white shadow-lg animate-bounce">
+            <div className="absolute top-1 right-1 p-2.5 rounded-full bg-rose-500/90 border border-pink-200 text-white shadow-lg animate-bounce z-10">
               <Heart className="w-4 h-4 fill-white" />
             </div>
           </div>

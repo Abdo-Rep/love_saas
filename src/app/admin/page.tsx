@@ -52,28 +52,51 @@ export default function AdminPage() {
     setTimeout(() => setSaveMessage(''), 3500);
   };
 
-  // Image Upload handler (Base64 dataURL)
-  const handleImageUpload = (index: number, file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        const newPhotos = [...config.memoryPhotos];
-        newPhotos[index].image = e.target.result as string;
-        updateConfig({ memoryPhotos: newPhotos });
-      }
-    };
-    reader.readAsDataURL(file);
+  // Client-side WebP compression helper
+  const compressToWebP = (file: File, quality = 0.85, maxWidth = 1600): Promise<string> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            const webpData = canvas.toDataURL('image/webp', quality);
+            resolve(webpData);
+          } else {
+            resolve(img.src);
+          }
+        };
+      };
+      reader.readAsDataURL(file);
+    });
   };
 
-  // Disc photo upload handler
-  const handleDiscPhotoUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      if (e.target?.result) {
-        updateConfig({ voicePhotoUrl: e.target.result as string });
-      }
-    };
-    reader.readAsDataURL(file);
+  // Image Upload handler (Compressed to WebP)
+  const handleImageUpload = async (index: number, file: File) => {
+    const webp = await compressToWebP(file, 0.85);
+    const newPhotos = [...(config.memoryPhotos || [])];
+    if (newPhotos[index]) {
+      newPhotos[index].image = webp;
+      updateConfig({ memoryPhotos: newPhotos });
+    }
+  };
+
+  // Disc photo upload handler (Compressed to WebP)
+  const handleDiscPhotoUpload = async (file: File) => {
+    const webp = await compressToWebP(file, 0.85);
+    updateConfig({ voicePhotoUrl: webp });
   };
 
   // Voice recording handlers
@@ -732,10 +755,47 @@ export default function AdminPage() {
             </div>
           </div>
 
+          <div className="flex items-center justify-between border-b border-pink-500/20 pb-2">
+            <span className="text-xs font-bold text-pink-200">الصور الحالية ({config.memoryPhotos.length})</span>
+            <button
+              onClick={() => {
+                const newPhotos = [
+                  ...(config.memoryPhotos || []),
+                  {
+                    id: Date.now(),
+                    image: '/images/the_boss.jpg',
+                    date: '١٤ فبراير ٢٠٢٤',
+                    caption: 'لحظة جميلة محفورة في القلب والعقل ✨💖',
+                    tag: 'ذكرى 🌸'
+                  }
+                ];
+                updateConfig({ memoryPhotos: newPhotos });
+              }}
+              className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-400 text-white text-xs font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>إضافة صورة جديدة للألبوم ➕</span>
+            </button>
+          </div>
+
           <div className="space-y-4">
             {config.memoryPhotos.map((photo, idx) => (
-              <div key={photo.id} className="p-4 rounded-2xl bg-black/40 border border-pink-400/20 space-y-3 text-xs font-bold">
-                <span className="text-amber-200 font-extrabold block border-b border-white/10 pb-1">صورة الذكرى #{idx + 1}</span>
+              <div key={photo.id} className="p-4 rounded-2xl bg-black/40 border border-pink-400/20 space-y-3 text-xs font-bold relative">
+                <div className="flex items-center justify-between border-b border-white/10 pb-1">
+                  <span className="text-amber-200 font-extrabold">صورة الذكرى #{idx + 1}</span>
+                  {config.memoryPhotos.length > 1 && (
+                    <button
+                      onClick={() => {
+                        const newPhotos = config.memoryPhotos.filter((_, i) => i !== idx);
+                        updateConfig({ memoryPhotos: newPhotos });
+                      }}
+                      className="p-1.5 rounded-lg bg-red-950/60 text-red-300 hover:bg-red-900 border border-red-500/30 transition-colors"
+                      title="حذف هذه الصورة"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* Photo Preview & Direct Upload Button */}
@@ -745,7 +805,7 @@ export default function AdminPage() {
                     </div>
                     <label className="w-full py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-center cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md">
                       <Upload className="w-3.5 h-3.5" />
-                      <span>اختيار صورة من جهازك 📁</span>
+                      <span>اختيار صورة (WebP تلقائي) 📁</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -760,17 +820,33 @@ export default function AdminPage() {
 
                   <div className="md:col-span-2 space-y-2.5">
                     <div>
-                      <label className="block text-pink-200/70 mb-1">التاريخ:</label>
-                      <input
-                        type="text"
-                        value={photo.date}
-                        onChange={(e) => {
-                          const newPhotos = [...config.memoryPhotos];
-                          newPhotos[idx].date = e.target.value;
-                          updateConfig({ memoryPhotos: newPhotos });
-                        }}
-                        className="w-full p-2.5 rounded-lg bg-white/5 border border-pink-400/30 text-white"
-                      />
+                      <label className="block text-pink-200/70 mb-1">تاريخ الذكرى (تقويم حديث):</label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="date"
+                          className="p-2.5 rounded-lg bg-black/60 border border-pink-400/40 text-amber-200 font-mono text-xs focus:border-pink-300 focus:outline-none cursor-pointer"
+                          onChange={(e) => {
+                            if (!e.target.value) return;
+                            const d = new Date(e.target.value);
+                            const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'long', day: 'numeric' };
+                            const arabicDate = d.toLocaleDateString('ar-EG', options);
+                            const newPhotos = [...config.memoryPhotos];
+                            newPhotos[idx].date = arabicDate;
+                            updateConfig({ memoryPhotos: newPhotos });
+                          }}
+                        />
+                        <input
+                          type="text"
+                          value={photo.date}
+                          placeholder="أو اكتب التاريخ..."
+                          onChange={(e) => {
+                            const newPhotos = [...config.memoryPhotos];
+                            newPhotos[idx].date = e.target.value;
+                            updateConfig({ memoryPhotos: newPhotos });
+                          }}
+                          className="flex-1 p-2.5 rounded-lg bg-white/5 border border-pink-400/30 text-white text-xs"
+                        />
+                      </div>
                     </div>
 
                     <div>

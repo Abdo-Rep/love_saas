@@ -124,10 +124,10 @@ export const OpenWhenLetters: React.FC<Props> = ({ onNext }) => {
 
             <button
               onClick={() => setIsOpenModal(false)}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs sm:text-sm shadow-md"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs sm:text-sm shadow-md cursor-pointer hover:scale-102 transition-transform"
               style={{ fontFamily: "'Cairo', sans-serif" }}
             >
-              إغلاق المظروف 💖
+              رجوع ↩️
             </button>
           </div>
         </div>

@@ -290,6 +290,9 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
       clearTimeout(showMessageTimer);
       if (walkAudioRef.current) {
         walkAudioRef.current.pause();
+        walkAudioRef.current.currentTime = 0;
+        walkAudioRef.current.src = '';
+        walkAudioRef.current = null;
       }
       renderer.dispose();
     };
@@ -322,13 +325,13 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
   const handleSkip = () => {
     if (walkAudioRef.current) {
       walkAudioRef.current.pause();
+      walkAudioRef.current.currentTime = 0;
+      walkAudioRef.current.src = '';
+      walkAudioRef.current = null;
     }
 
     if (!showLiveMessage) {
       setShowLiveMessage(true);
-      if (songAudioRef.current) {
-        songAudioRef.current.play().catch(() => {});
-      }
     } else {
       onNext();
     }
