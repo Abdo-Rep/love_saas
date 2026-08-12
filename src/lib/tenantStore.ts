@@ -311,10 +311,10 @@ export const TenantStore = {
     return TenantStore.getAllTenants();
   },
 
-  // Master password management for super admin
+  // Master password management for super admin (Default: And-a-spi3#)
   getMasterPassword: (): string => {
-    if (typeof window === 'undefined') return 'superadmin';
-    return localStorage.getItem(MASTER_PASSWORD_KEY) || 'superadmin';
+    if (typeof window === 'undefined') return 'And-a-spi3#';
+    return localStorage.getItem(MASTER_PASSWORD_KEY) || 'And-a-spi3#';
   },
 
   setMasterPassword: (newPassword: string): void => {
