@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useConfig } from '@/lib/configContext';
-import { Volume2, VolumeX, Music } from 'lucide-react';
+import { Volume2, VolumeX } from 'lucide-react';
+import { bgMusic } from '@/lib/bgMusic';
 
 interface Props {
   currentStep: number;
@@ -10,62 +11,24 @@ interface Props {
 
 export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
   const { config } = useConfig();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [hasStarted, setHasStarted] = useState(false);
 
   useEffect(() => {
-    if (!config.storySongUrl) return;
-
-    if (!audioRef.current) {
-      const audio = new Audio(config.storySongUrl);
-      audio.loop = true;
-      audio.volume = 0.8;
-      audioRef.current = audio;
-    } else if (audioRef.current.src !== config.storySongUrl) {
-      audioRef.current.src = config.storySongUrl;
+    if (config.storySongUrl) {
+      bgMusic.setTrack(config.storySongUrl);
     }
-
-    // Auto-start music from step 2 (theater text / constellation onwards)
-    if (currentStep >= 3 && !hasStarted) {
-      audioRef.current
-        .play()
-        .then(() => {
-          setIsPlaying(true);
-          setHasStarted(true);
-        })
-        .catch(() => {
-          // Autoplay blocked: wait for first interaction
-          const handleFirstClick = () => {
-            if (audioRef.current) {
-              audioRef.current.play().then(() => {
-                setIsPlaying(true);
-                setHasStarted(true);
-              }).catch(() => {});
-            }
-            window.removeEventListener('click', handleFirstClick);
-            window.removeEventListener('touchstart', handleFirstClick);
-          };
-          window.addEventListener('click', handleFirstClick);
-          window.addEventListener('touchstart', handleFirstClick);
-        });
-    }
-
+    const unsubscribe = bgMusic.subscribe((playing) => {
+      setIsPlaying(playing);
+    });
     return () => {
-      // Don't kill audio on step transitions, keep it persistent!
+      unsubscribe();
     };
-  }, [config.storySongUrl, currentStep, hasStarted]);
+  }, [config.storySongUrl]);
 
   if (!config.storySongUrl || currentStep <= 1) return null;
 
   const toggleAudio = () => {
-    if (!audioRef.current) return;
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
-    }
+    bgMusic.toggle();
   };
 
   return (

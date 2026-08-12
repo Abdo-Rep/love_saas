@@ -5,8 +5,8 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Sparkles, Heart, ArrowRight, FastForward } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { remapMixamoClip } from './LuxuryTheaterStage';
 import { useConfig } from '@/lib/configContext';
+import { bgMusic } from '@/lib/bgMusic';
 
 interface Props {
   onNext: () => void;
@@ -74,16 +74,8 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
     }
 
     // 2. Romantic Song Audio that starts when typewriter message appears
-    let songAudio: HTMLAudioElement | null = null;
-    if (typeof window !== 'undefined' && config.storySongUrl) {
-      if ((window as any)._bgAudio) {
-        (window as any)._bgAudio.pause();
-      }
-      songAudio = new Audio(config.storySongUrl);
-      songAudio.loop = true;
-      songAudio.volume = 0.85;
-      (window as any)._bgAudio = songAudio;
-      songAudioRef.current = songAudio;
+    if (config.storySongUrl) {
+      bgMusic.setTrack(config.storySongUrl);
     }
 
     // AFTER CHARACTER DISAPPEARS (AT 13.5 SECONDS): SHOW LIVE TYPEWRITER MESSAGE SCREEN & PLAY CUSTOM SONG!
@@ -93,19 +85,13 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
       // Stop walk sound and start the uploaded romantic story song
       if (walkAudioRef.current) {
         walkAudioRef.current.pause();
+        walkAudioRef.current.currentTime = 0;
+        walkAudioRef.current.src = '';
+        walkAudioRef.current = null;
       }
 
-      if (songAudioRef.current) {
-        songAudioRef.current.play().catch((err) => {
-          console.log('Autoplay song blocked, waiting for touch:', err);
-          const handleSongTouch = () => {
-            songAudioRef.current?.play().catch(() => {});
-            window.removeEventListener('click', handleSongTouch);
-            window.removeEventListener('touchstart', handleSongTouch);
-          };
-          window.addEventListener('click', handleSongTouch);
-          window.addEventListener('touchstart', handleSongTouch);
-        });
+      if (config.storySongUrl) {
+        bgMusic.play(config.storySongUrl);
       }
     }, 13500);
 
@@ -332,6 +318,9 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
 
     if (!showLiveMessage) {
       setShowLiveMessage(true);
+      if (config.storySongUrl) {
+        bgMusic.play(config.storySongUrl);
+      }
     } else {
       onNext();
     }
