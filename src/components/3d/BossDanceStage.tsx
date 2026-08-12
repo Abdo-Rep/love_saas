@@ -7,6 +7,7 @@ import { Sparkles, Heart, ArrowRight, FastForward } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
 import { bgMusic } from '@/lib/bgMusic';
+import { remapMixamoClip } from './LuxuryTheaterStage';
 
 interface Props {
   onNext: () => void;
@@ -172,15 +173,21 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
             if (animFbx.animations && animFbx.animations.length > 0) {
               const rawClip = animFbx.animations[0];
               const remappedClip = remapMixamoClip(rawClip, bossModel);
-              remappedClip.tracks = remappedClip.tracks.filter(
-                (track: any) => !track.name.toLowerCase().endsWith('.position') || track.name.toLowerCase().includes('spine')
-              );
               mixer = new THREE.AnimationMixer(bossModel);
               const action = mixer.clipAction(remappedClip);
+              action.setEffectiveTimeScale(1.0);
+              action.setEffectiveWeight(1.0);
               action.play();
+            } else if (bossModel.animations && bossModel.animations.length > 0) {
+              mixer = new THREE.AnimationMixer(bossModel);
+              mixer.clipAction(bossModel.animations[0]).play();
             }
           } catch (err) {
             console.warn('Animation Remap Exception:', err);
+            if (bossModel.animations && bossModel.animations.length > 0) {
+              mixer = new THREE.AnimationMixer(bossModel);
+              mixer.clipAction(bossModel.animations[0]).play();
+            }
           }
 
           bossModel.visible = true;

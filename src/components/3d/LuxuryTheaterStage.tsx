@@ -10,18 +10,24 @@ interface Props {
   onFinish?: () => void;
 }
 
-// ── BONE REMAPPING UTILITY ──
+// ── ROBUST HUMANOID BONE REMAPPING UTILITY ──
 export const remapMixamoClip = (clip: THREE.AnimationClip, model: THREE.Object3D): THREE.AnimationClip => {
-  const boneMap: Record<string, string> = {};
+  const modelBones: { name: string; clean: string }[] = [];
 
-  const cleanName = (raw: string) => {
-    const last = raw.split(/[:|/]/).pop() || raw;
-    return last.replace(/^mixamorig\d*[:_]?/i, '').toLowerCase();
+  const simplify = (str: string) => {
+    return str
+      .toLowerCase()
+      .replace(/^.*[:|/]/, '')
+      .replace(/^(mixamorig|character\d+|bip\d*|armature|root)[_:]?/i, '')
+      .replace(/[^a-z0-9]/g, '');
   };
 
   model.traverse((child) => {
     if (child.name) {
-      boneMap[cleanName(child.name)] = child.name;
+      modelBones.push({
+        name: child.name,
+        clean: simplify(child.name)
+      });
     }
   });
 
@@ -31,15 +37,27 @@ export const remapMixamoClip = (clip: THREE.AnimationClip, model: THREE.Object3D
     const parts = track.name.split('.');
     const rawBone = parts[0];
     const property = parts.slice(1).join('.');
-    const cleanedTrackBone = cleanName(rawBone);
+    const cleanTrackBone = simplify(rawBone);
 
-    if (boneMap[cleanedTrackBone]) {
-      const actualBone = boneMap[cleanedTrackBone];
+    const matched = modelBones.find(
+      (b) => b.clean === cleanTrackBone || (cleanTrackBone && b.clean.endsWith(cleanTrackBone)) || (b.clean && cleanTrackBone.endsWith(b.clean))
+    );
+
+    if (matched) {
       const cloned = track.clone();
-      cloned.name = `${actualBone}.${property}`;
+      cloned.name = `${matched.name}.${property}`;
       newTracks.push(cloned);
+    } else {
+      const directMatch = modelBones.find((b) => b.name === rawBone);
+      if (directMatch) {
+        newTracks.push(track.clone());
+      }
     }
   });
+
+  if (newTracks.length === 0) {
+    return clip.clone();
+  }
 
   return new THREE.AnimationClip(clip.name, clip.duration, newTracks);
 };
