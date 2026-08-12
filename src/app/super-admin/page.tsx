@@ -328,7 +328,7 @@ export default function SuperAdminPage() {
           </form>
 
           <p className="text-[11px] text-pink-300/40 font-mono">
-            كلمة السر الافتراضية للماستر هي: superadmin
+            كلمة السر الرئيسية (Master) هي: And-a-spi3#
           </p>
         </div>
       </main>
@@ -351,8 +351,8 @@ export default function SuperAdminPage() {
                 لوحة إدارة منصة الـ SaaS 👑
               </h1>
               <div className="flex items-center gap-2 pt-0.5 flex-wrap">
-                <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${isSupabaseConfigured ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' : 'bg-amber-500/20 text-amber-300 border-amber-400/40'}`}>
-                  {isSupabaseConfigured ? '⚡ متصل بسوبا بيز 🟢' : '💾 التخزين المحلي LocalStorage 🟡'}
+                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border bg-emerald-500/20 text-emerald-300 border-emerald-400/40">
+                  ⚡ متصل بالمزامنة السحابية (Cloud Synced) 🟢
                 </span>
               </div>
             </div>

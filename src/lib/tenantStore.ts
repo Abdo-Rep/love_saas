@@ -126,7 +126,38 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
   finalLetterPromise: 'بحبك أوي أوي... ووعد، عمرنا دايماً لا ينتهي 💕💖'
 });
 
-export const seedTenants: Tenant[] = [];
+export const seedTenants: Tenant[] = [
+  {
+    id: 't-rawda',
+    slug: 'rawda',
+    name: 'نسخة روضة',
+    adminPassword: 'love',
+    sitePassword: 'love',
+    createdAt: new Date().toISOString(),
+    status: 'active',
+    config: createDefaultConfigForTenant('روضة', 'love')
+  },
+  {
+    id: 't-nour',
+    slug: 'nour',
+    name: 'نسخة نور',
+    adminPassword: 'love',
+    sitePassword: 'love',
+    createdAt: new Date().toISOString(),
+    status: 'active',
+    config: createDefaultConfigForTenant('نور', 'love')
+  },
+  {
+    id: 't-asmaa',
+    slug: 'asmaa',
+    name: 'موقع asmaa',
+    adminPassword: 'love',
+    sitePassword: 'osha',
+    createdAt: new Date().toISOString(),
+    status: 'active',
+    config: createDefaultConfigForTenant('asmaa', 'osha')
+  }
+];
 
 export const TenantStore = {
   // Get all tenants
@@ -135,9 +166,21 @@ export const TenantStore = {
     try {
       const saved = localStorage.getItem(TENANTS_STORAGE_KEY);
       if (!saved) {
+        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(seedTenants));
         return seedTenants;
       }
-      return JSON.parse(saved);
+      const parsed: Tenant[] = JSON.parse(saved);
+      let hasNew = false;
+      seedTenants.forEach((st) => {
+        if (!parsed.some((pt) => pt.slug.toLowerCase() === st.slug.toLowerCase())) {
+          parsed.push(st);
+          hasNew = true;
+        }
+      });
+      if (hasNew) {
+        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(parsed));
+      }
+      return parsed;
     } catch (e) {
       console.error('Error fetching tenants:', e);
       return seedTenants;
