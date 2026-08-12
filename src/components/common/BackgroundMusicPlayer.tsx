@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useConfig } from '@/lib/configContext';
-import { Play, Pause, Music, Heart, Sparkles } from 'lucide-react';
+import { Play, Pause, Music2 } from 'lucide-react';
 import { bgMusic } from '@/lib/bgMusic';
 
 interface Props {
@@ -14,12 +14,11 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
-    if (config.storySongUrl) {
-      bgMusic.setTrack(config.storySongUrl);
-    }
+    if (!config.storySongUrl) return;
+
+    bgMusic.setTrack(config.storySongUrl);
 
     const unsubState = bgMusic.subscribeState((playing) => {
       setIsPlaying(playing);
@@ -30,13 +29,19 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
       setDuration(dur);
     });
 
+    // Auto-play as soon as Step 3 is reached
+    if (currentStep >= 3) {
+      bgMusic.play(config.storySongUrl);
+    }
+
     return () => {
       unsubState();
       unsubTime();
     };
-  }, [config.storySongUrl]);
+  }, [config.storySongUrl, currentStep]);
 
-  if (!config.storySongUrl || currentStep <= 1) return null;
+  // Only render starting from Step 3 (Constellation) onwards!
+  if (!config.storySongUrl || currentStep < 3) return null;
 
   const formatTime = (seconds: number) => {
     if (!seconds || isNaN(seconds) || seconds < 0) return '0:00';
@@ -58,31 +63,40 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[94%] max-w-md animate-fade-in select-none">
-      <div className="relative rounded-full p-[1px] bg-gradient-to-r from-rose-500/60 via-pink-500/40 to-amber-400/60 shadow-[0_4px_30px_rgba(244,63,94,0.4)] backdrop-blur-2xl">
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 rounded-full bg-[#12020e]/90 border border-pink-500/30 text-white">
+    <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md animate-slide-up select-none">
+      <div className="relative rounded-full p-[1.5px] bg-gradient-to-r from-rose-500/70 via-pink-500/50 to-amber-400/70 shadow-[0_10px_40px_rgba(244,63,94,0.45)] backdrop-blur-2xl">
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-2.5 rounded-full bg-[#12020e]/95 border border-pink-500/30 text-white">
           
-          {/* LEFT: MUSIC ICON & NOTE */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className={`w-8 h-8 rounded-full bg-gradient-to-tr from-pink-600 to-rose-700 flex items-center justify-center shadow-md ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '6s' }}>
-              <Music className="w-4 h-4 text-white" />
-            </div>
+          {/* LEFT: AUDIO EQUALIZER BARS */}
+          <div className="flex items-center gap-1 shrink-0 pl-1">
+            {[45, 85, 60, 100, 70].map((h, i) => (
+              <div
+                key={i}
+                className={`w-1 rounded-full bg-gradient-to-t from-rose-500 to-amber-300 transition-all duration-300 ${
+                  isPlaying ? 'animate-pulse' : 'opacity-40'
+                }`}
+                style={{
+                  height: isPlaying ? `${Math.max(8, (h * 18) / 100)}px` : '5px',
+                  animationDelay: `${i * 0.15}s`
+                }}
+              />
+            ))}
           </div>
 
-          {/* CENTER: ROMANTIC TITLE & REAL-TIME PROGRESS BAR */}
-          <div className="flex-1 flex flex-col justify-center gap-1 min-w-0">
+          {/* CENTER: TITLE & REAL-TIME PROGRESS BAR */}
+          <div className="flex-1 flex flex-col justify-center gap-1 min-w-0 px-1">
             <div className="flex items-center justify-between gap-2">
               <span
                 className="text-[11px] sm:text-xs font-black text-amber-200 truncate dir-rtl text-right"
                 style={{ fontFamily: "'Cairo', sans-serif" }}
               >
-                أغنيتنا المفضلة.. بحبها احنا الاتنين ودايماً بتعبر عن احساسي ليكي 🎵❤️
+                أغنيتنا المفضلة.. بتعبر عن احساسي ليكي 🎵❤️
               </span>
             </div>
 
             {/* PROGRESS BAR SLIDER */}
             <div className="flex items-center gap-2 w-full">
-              <span className="text-[9px] font-mono text-pink-200/60 shrink-0">
+              <span className="text-[10px] font-mono text-pink-200/70 shrink-0">
                 {formatTime(currentTime)}
               </span>
 
@@ -94,14 +108,14 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
                   step="0.1"
                   value={currentTime}
                   onChange={handleSeek}
-                  className="w-full h-1 bg-white/10 rounded-full appearance-none cursor-pointer accent-rose-400 focus:outline-none"
+                  className="w-full h-1 bg-white/15 rounded-full appearance-none cursor-pointer accent-amber-300 focus:outline-none"
                   style={{
                     background: `linear-gradient(to right, #f43f5e 0%, #fb7185 ${progressPercent}%, rgba(255,255,255,0.15) ${progressPercent}%, rgba(255,255,255,0.15) 100%)`
                   }}
                 />
               </div>
 
-              <span className="text-[9px] font-mono text-pink-200/60 shrink-0">
+              <span className="text-[10px] font-mono text-pink-200/70 shrink-0">
                 {formatTime(duration)}
               </span>
             </div>
@@ -110,7 +124,7 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
           {/* RIGHT: CIRCULAR PLAY / PAUSE BUTTON */}
           <button
             onClick={togglePlay}
-            className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-white shadow-[0_0_20px_rgba(244,63,94,0.6)] shrink-0 cursor-pointer border border-white/40"
+            className="w-11 h-11 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 hover:scale-105 active:scale-95 transition-all flex items-center justify-center text-white shadow-[0_0_25px_rgba(244,63,94,0.7)] shrink-0 cursor-pointer border-2 border-white/50"
             title={isPlaying ? 'إيقاف مؤقت' : 'تشغيل'}
           >
             {isPlaying ? (

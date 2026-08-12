@@ -90,10 +90,6 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
         walkAudioRef.current.src = '';
         walkAudioRef.current = null;
       }
-
-      if (config.storySongUrl) {
-        bgMusic.play(config.storySongUrl);
-      }
     }, 13500);
 
     const canvas = canvasRef.current;
@@ -173,6 +169,19 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
             if (animFbx.animations && animFbx.animations.length > 0) {
               const rawClip = animFbx.animations[0];
               const remappedClip = remapMixamoClip(rawClip, bossModel);
+              
+              // Strip Z forward root displacement from keyframes to avoid loop snapping glitches!
+              remappedClip.tracks = remappedClip.tracks.map((track) => {
+                if (track.name.toLowerCase().includes('.position')) {
+                  const cloned = track.clone();
+                  for (let i = 2; i < cloned.values.length; i += 3) {
+                    cloned.values[i] = 0; // Zero Z so Three.js lerp moves the character smoothly
+                  }
+                  return cloned;
+                }
+                return track;
+              });
+
               mixer = new THREE.AnimationMixer(bossModel);
               const action = mixer.clipAction(remappedClip);
               action.setEffectiveTimeScale(1.0);
@@ -184,10 +193,6 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
             }
           } catch (err) {
             console.warn('Animation Remap Exception:', err);
-            if (bossModel.animations && bossModel.animations.length > 0) {
-              mixer = new THREE.AnimationMixer(bossModel);
-              mixer.clipAction(bossModel.animations[0]).play();
-            }
           }
 
           bossModel.visible = true;
@@ -240,35 +245,41 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
         }
         const elapsed = clock.getElapsedTime() - startTime;
 
-        if (elapsed < 2.0) {
-          ambientLight.intensity = 0;
-          spotLight.intensity = 0;
-          pinkSpot.intensity = 0;
+        if (elapsed < 1.5) {
+          // Entrance from dark distance
+          const progress = elapsed / 1.5;
+          ambientLight.intensity = progress * 0.8;
+          spotLight.intensity = progress * 2.5;
+          pinkSpot.intensity = progress * 1.5;
           bossModelRef.rotation.y = 0;
-          const progress = elapsed / 2.0;
-          bossModelRef.position.z = THREE.MathUtils.lerp(-8.5, -5.5, progress);
-        } else if (elapsed < 8.0) {
-          const lightFade = Math.min((elapsed - 2.0) / 0.8, 1.0);
+          bossModelRef.position.z = THREE.MathUtils.lerp(-8.0, -5.0, progress);
+        } else if (elapsed < 7.5) {
+          // Main entrance walk towards the camera
+          const lightFade = Math.min((elapsed - 1.5) / 1.0, 1.0);
           ambientLight.intensity = 1.6 * lightFade;
           spotLight.intensity = 4.8 * lightFade;
           pinkSpot.intensity = 3.2 * lightFade;
           bossModelRef.rotation.y = 0;
 
-          const progress = (elapsed - 2.0) / 6.0;
-          const easeProgress = 1 - Math.pow(1 - progress, 2);
-          bossModelRef.position.z = THREE.MathUtils.lerp(-5.5, -0.4, easeProgress);
+          const progress = (elapsed - 1.5) / 6.0;
+          bossModelRef.position.z = THREE.MathUtils.lerp(-5.0, -0.5, progress);
+        } else if (elapsed < 8.8) {
+          // Smooth 180-degree turnaround
+          const rotProgress = (elapsed - 7.5) / 1.3;
+          const smoothRot = 0.5 - 0.5 * Math.cos(rotProgress * Math.PI);
+          bossModelRef.rotation.y = smoothRot * Math.PI;
+          bossModelRef.position.z = -0.5;
         } else {
-          const fadeOutProgress = Math.min((elapsed - 8.0) / 5.5, 1.0);
-          const lightFade = 1.0 - Math.min((elapsed - 8.0) / 4.0, 1.0);
+          // Walk back into the distance and smoothly fade out
+          const exitElapsed = elapsed - 8.8;
+          const exitProgress = Math.min(exitElapsed / 4.2, 1.0);
+          const lightFade = Math.max(1.0 - exitProgress, 0);
 
           ambientLight.intensity = 1.6 * lightFade;
           spotLight.intensity = 4.8 * lightFade;
           pinkSpot.intensity = 3.2 * lightFade;
-
-          const rotProgress = Math.min((elapsed - 8.0) / 0.8, 1.0);
-          bossModelRef.rotation.y = THREE.MathUtils.lerp(0, Math.PI, rotProgress);
-
-          bossModelRef.position.z = THREE.MathUtils.lerp(-0.4, -8.5, fadeOutProgress);
+          bossModelRef.rotation.y = Math.PI;
+          bossModelRef.position.z = THREE.MathUtils.lerp(-0.5, -8.5, exitProgress);
         }
       }
 
@@ -325,9 +336,6 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
 
     if (!showLiveMessage) {
       setShowLiveMessage(true);
-      if (config.storySongUrl) {
-        bgMusic.play(config.storySongUrl);
-      }
     } else {
       onNext();
     }
