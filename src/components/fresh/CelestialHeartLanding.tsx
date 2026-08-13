@@ -19,15 +19,10 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
     setIsUnlocking(true);
     setError('');
 
-    // Pre-unlock audio so romantic song starts without browser autoplay block
+    // Initialize single bgMusic track
     try {
-      if (typeof window !== 'undefined' && config.storySongUrl) {
-        if (!(window as any)._bgAudio) {
-          const a = new Audio(config.storySongUrl);
-          a.loop = true;
-          a.volume = 0.85;
-          (window as any)._bgAudio = a;
-        }
+      if (config.storySongUrl) {
+        bgMusic.setTrack(config.storySongUrl);
       }
     } catch (_) {}
 

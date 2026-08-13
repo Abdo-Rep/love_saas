@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Heart, Sparkles, Mic, Play, Pause, ArrowRight, Square, RotateCcw } from 'lucide-react';
 import { useConfig } from '@/lib/configContext';
+import { bgMusic } from '@/lib/bgMusic';
 
 interface Props {
   onNext: () => void;
@@ -15,22 +16,26 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // Custom audio from config or fallback
+    // 1. Pause background romantic song immediately when arriving at voice message
+    bgMusic.pause();
+
+    // Clean up any legacy audio instance if exists
+    if (typeof window !== 'undefined' && (window as any)._bgAudio) {
+      try {
+        (window as any)._bgAudio.pause();
+        (window as any)._bgAudio = null;
+      } catch (_) {}
+    }
+
+    // Custom voice audio from config or fallback
     const src = config.voiceAudioUrl || '/sound/WhatsApp Video 2026-08-11 at 3.56.53 AM.mp4';
     setAudioUrl(src);
 
     const voiceAudio = new Audio(src);
-    voiceAudio.loop = false; // Do NOT repeat automatically
+    voiceAudio.loop = false; // Do NOT repeat voice
     audioRef.current = voiceAudio;
 
-    // 1. Pause background song immediately when arriving at voice page
-    if (typeof window !== 'undefined' && (window as any)._bgAudio) {
-      try {
-        (window as any)._bgAudio.pause();
-      } catch (_) {}
-    }
-
-    // 2. Auto-play recorded voice immediately
+    // 2. Auto-play recorded voice
     voiceAudio.play().then(() => {
       setIsPlaying(true);
     }).catch((err) => {
@@ -38,25 +43,22 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
       setIsPlaying(false);
     });
 
-    // 3. When voice finishes: stop voice, resume background song, do NOT loop voice
+    // 3. When voice finishes: stop voice, resume background song
     voiceAudio.onended = () => {
       setIsPlaying(false);
-      if (typeof window !== 'undefined' && (window as any)._bgAudio) {
-        try {
-          (window as any)._bgAudio.play().catch(() => {});
-        } catch (_) {}
+      if (config.storySongUrl) {
+        bgMusic.play(config.storySongUrl);
       }
     };
 
     return () => {
       voiceAudio.pause();
-      if (typeof window !== 'undefined' && (window as any)._bgAudio) {
-        try {
-          (window as any)._bgAudio.play().catch(() => {});
-        } catch (_) {}
+      // Resume background music when leaving step 7
+      if (config.storySongUrl) {
+        bgMusic.play(config.storySongUrl);
       }
     };
-  }, [config.voiceAudioUrl]);
+  }, [config.voiceAudioUrl, config.storySongUrl]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
