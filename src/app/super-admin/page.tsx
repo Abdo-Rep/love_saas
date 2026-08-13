@@ -50,8 +50,8 @@ export default function SuperAdminPage() {
   const [newClientName, setNewClientName] = useState('');
   const [newHerName, setNewHerName] = useState('');
   const [newSlug, setNewSlug] = useState('');
-  const [newAdminPass, setNewAdminPass] = useState('');
-  const [newSitePass, setNewSitePass] = useState('');
+  const [newAdminPass, setNewAdminPass] = useState('love');
+  const [newSitePass, setNewSitePass] = useState('love');
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState('');
 
