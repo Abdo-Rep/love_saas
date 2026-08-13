@@ -407,11 +407,18 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
 
         {/* LOADING SPINNER OVERLAY */}
         {isLoadingModel && !showLiveMessage && !hasError && (
-          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-[#10030e]/80 backdrop-blur-md">
-            <div className="w-12 h-12 border-4 border-pink-400 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_#f472b6]" />
-            <p className="text-xs sm:text-sm font-bold text-amber-200" style={{ fontFamily: "'Cairo', sans-serif" }}>
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-[#10030e]/85 backdrop-blur-md text-center p-4">
+            <div className="w-12 h-12 border-4 border-pink-400 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_#f472b6] mb-2" />
+            <p className="text-xs sm:text-sm font-bold text-amber-200 animate-pulse" style={{ fontFamily: "'Cairo', sans-serif" }}>
               جاري تجهيز العرض الملكي 🎭✨
             </p>
+            <button
+              onClick={handleSkip}
+              className="mt-4 px-6 py-3.5 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs sm:text-sm border border-white/30 hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(244,114,182,0.6)] cursor-pointer"
+              style={{ fontFamily: "'Cairo', sans-serif" }}
+            >
+              تخطي الانتظار ودخول العرض فوراً ⚡💖
+            </button>
           </div>
         )}
 
