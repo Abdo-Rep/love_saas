@@ -81,36 +81,40 @@ export default function SuperAdminPage() {
   }, [isAuthenticated]);
 
   const refreshData = async () => {
-    const localTenants = TenantStore.getAllTenants();
+    const deleted = TenantStore.getDeletedSlugs();
+    const localTenants = TenantStore.getAllTenants().filter(
+      (t) => !deleted.includes(t.slug.toLowerCase().trim())
+    );
     setTenants(localTenants);
 
     // Sync with server API route for cross-device visibility
     try {
       const res = await fetch('/api/tenants');
       const json = await res.json();
-      if (json && json.success && Array.isArray(json.tenants) && json.tenants.length > 0) {
+      if (json && json.success && Array.isArray(json.tenants)) {
+        // Strictly filter out deleted tenants from server response!
+        const serverFiltered = json.tenants.filter(
+          (st: any) => !deleted.includes((st.slug || '').toLowerCase().trim())
+        );
+
         // Merge server tenants with local
-        const merged = [...json.tenants];
+        const merged = [...serverFiltered];
         localTenants.forEach((lt) => {
-          if (!merged.some((st) => st.slug.toLowerCase() === lt.slug.toLowerCase())) {
+          if (!merged.some((st) => st.slug.toLowerCase().trim() === lt.slug.toLowerCase().trim())) {
             merged.push(lt);
           }
         });
         setTenants(merged);
         localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(merged));
-      } else if (localTenants.length > 0) {
-        // Sync local tenants to server
-        fetch('/api/tenants', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tenants: localTenants })
-        }).catch(() => {});
       }
     } catch (_) {}
 
     if (isSupabaseConfigured) {
       TenantStore.syncFromSupabase().then((data) => {
-        if (data && data.length > 0) setTenants(data);
+        if (data && data.length > 0) {
+          const clean = data.filter((t) => !deleted.includes(t.slug.toLowerCase().trim()));
+          setTenants(clean);
+        }
       });
     }
   };
@@ -213,9 +217,9 @@ export default function SuperAdminPage() {
     if (confirm(`هل أنت متأكد من إرادة حذف النسخة (${name}) نهائياً؟`)) {
       TenantStore.deleteTenant(slug);
       fetch('/api/tenants', {
-        method: 'POST',
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenants: TenantStore.getAllTenants() })
+        body: JSON.stringify({ slug })
       }).catch(() => {});
       refreshData();
     }

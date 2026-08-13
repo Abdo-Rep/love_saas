@@ -134,38 +134,7 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
   finalLetterPromise: 'بحبك أوي أوي... ووعد، عمرنا دايماً لا ينتهي 💕💖'
 });
 
-export const initialSeedTenants: Tenant[] = [
-  {
-    id: 't-rawda',
-    slug: 'rawda',
-    name: 'نسخة روضة',
-    adminPassword: 'love',
-    sitePassword: 'love',
-    createdAt: new Date().toISOString(),
-    status: 'active',
-    config: createDefaultConfigForTenant('روضة', 'love')
-  },
-  {
-    id: 't-nour',
-    slug: 'nour',
-    name: 'نسخة نور',
-    adminPassword: 'love',
-    sitePassword: 'love',
-    createdAt: new Date().toISOString(),
-    status: 'active',
-    config: createDefaultConfigForTenant('نور', 'love')
-  },
-  {
-    id: 't-asmaa',
-    slug: 'asmaa',
-    name: 'موقع asmaa',
-    adminPassword: 'love',
-    sitePassword: 'osha',
-    createdAt: new Date().toISOString(),
-    status: 'active',
-    config: createDefaultConfigForTenant('asmaa', 'osha')
-  }
-];
+export const initialSeedTenants: Tenant[] = [];
 
 export const TenantStore = {
   getDeletedSlugs: (): string[] => {
@@ -190,30 +159,24 @@ export const TenantStore = {
     } catch {}
   },
 
-  // Get all tenants (Filtered from any deleted slugs!)
+  // Get all tenants (Strictly filtered from any deleted slugs!)
   getAllTenants: (): Tenant[] => {
-    if (typeof window === 'undefined') return initialSeedTenants;
+    if (typeof window === 'undefined') return [];
     try {
       const deleted = TenantStore.getDeletedSlugs();
       const saved = localStorage.getItem(TENANTS_STORAGE_KEY);
       if (!saved) {
-        // Initial first load: only keep seed tenants that weren't deleted
-        const filteredSeeds = initialSeedTenants.filter(
-          (t) => !deleted.includes(t.slug.toLowerCase())
-        );
-        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(filteredSeeds));
-        return filteredSeeds;
+        return [];
       }
       const parsed: Tenant[] = JSON.parse(saved);
-      // Filter out deleted tenants
-      const cleanList = parsed.filter((t) => !deleted.includes(t.slug.toLowerCase()));
+      const cleanList = parsed.filter((t) => !deleted.includes(t.slug.toLowerCase().trim()));
       if (cleanList.length !== parsed.length) {
         localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
       }
       return cleanList;
     } catch (e) {
       console.error('Error fetching tenants:', e);
-      return initialSeedTenants;
+      return [];
     }
   },
 
