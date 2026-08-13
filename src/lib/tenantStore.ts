@@ -2,8 +2,9 @@ import { Tenant } from '@/types/tenant';
 import { AppConfig } from '@/types/config';
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 
-export const TENANTS_STORAGE_KEY = 'cosmic_love_saas_tenants_v1';
-export const MASTER_PASSWORD_KEY = 'cosmic_love_master_pass_v1';
+export const TENANTS_STORAGE_KEY = 'cosmic_love_saas_tenants_v3';
+export const MASTER_PASSWORD_KEY = 'cosmic_love_master_pass_v3';
+export const DELETED_SLUGS_KEY = 'cosmic_love_deleted_slugs_v3';
 
 // DEFAULT ROMANTIC CONFIG TEMPLATE FOR NEW TENANTS (GENERIC & UNIVERSAL - NO HARDCODED NAMES)
 export const createDefaultConfigForTenant = (herName: string = 'أميرتي', sitePassword: string = 'love'): AppConfig => ({
@@ -62,36 +63,43 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
     },
     {
       id: 4,
-      title: 'ارتاحي شوية وكل حاجة هتهون... ☕🌸',
-      subtitle: 'تهدئة وتخفيف للروح',
-      icon: '🎀',
-      badge: 'راحة بال ☕',
-      content: 'خدي نفس عميق وافتكري إن أي حاجة في الدنيا دي تهون وتعدي.. إنتي شاطرة وقوية ورقيقة، وأنا فخور بيكي في كل حاجة بتعمليها. ارتاحي شوية وكل حاجة هتبقى أحسن طول ما إحنا سوا ✨💖',
+      title: 'يوم ما تحسي بضيق أو خنقة... 🌧️🌸',
+      subtitle: 'حضن دافئ وطمأنينة فورية',
+      icon: '🌧️',
+      badge: 'هونيها على نفسكِ 🌸',
+      content: 'خدي نفس عميق وافتكري إن مفيش حاجة في الدنيا تستاهل زعلكِ أو حزنكِ. الدنيا دي كلها تروح فدا ضحكتكِ ولمعة عينيكي. أنا جنبكِ ومعاكي ومش هسيبكِ لوحدكِ أبداً، كل مر هيمر وإحنا سوا ✨💖',
       enabled: true
     },
     {
       id: 5,
-      title: 'ضحكتكِ هي سر سعادتي... 😊✨',
-      subtitle: 'احتفال بسيط بضحكتكِ',
-      icon: '👸',
-      badge: 'سر السعادة 💖',
-      content: 'ضحكتكِ دي هي السحر اللي بينور عتمة الدنيا كلها! يدوملي السعادة والضحكة الحلوة اللي بتخليني أحس إن الدنيا كلها بخير. خليكي دايماً بتضحكي عشان ضحكتكِ هي دوا لقلبي ✨💖',
+      title: 'لما تحتاجي تفتكري أنا بحبكِ قد إيه... ♾️💖',
+      subtitle: 'اعتراف بالحب اللانهائي',
+      icon: '♾️',
+      badge: 'حبي الأبدي 💎',
+      content: 'بحبكِ بعدد دقات قلبي، وبعدد النجوم اللي في السما، وبكل ثانية عدت من عمري من يوم ما عرفتكِ. إنتي مش بس حبيبتي، إنتي أجمل نصيب ربنا رزقني بيه، وأكبر نعمة بحمد ربنا عليها كل يوم ✨💖',
       enabled: true
     }
   ],
   openWhenLettersButtonText: 'التالي: ألبوم الذكريات 📸💖',
 
-  galleryTitle: 'ذكريات منقوشة في القلب والعقل ✨',
+  galleryTitle: 'ذكريات منقوشة في أعماق القلب',
   memoryPhotos: [
     {
       id: 1,
       image: '/images/the_boss.jpg',
       date: '١٤ فبراير ٢٠٢٤',
-      caption: 'أول نظرة خطفت قلبي وبداية كل حاجة حلوة في عمري 🌸',
-      tag: 'البداية 💖'
+      caption: 'أول ليلة حسينا فيها إن قلوبنا اتلاقت وعمر جديد بدأ سوا ✨',
+      tag: 'بدايتنا 🌸'
     },
     {
       id: 2,
+      image: '/images/passive_marker_man.jpg',
+      date: '١ مارس ٢٠٢٤',
+      caption: 'يوم ما عيونكِ ضحكت، نسيت كل تعب الدنيا في ثانية واحدة ❤️',
+      tag: 'عشق 💖'
+    },
+    {
+      id: 3,
       image: '/images/peasant_girl.jpg',
       date: '٢٠ مارس ٢٠٢٤',
       caption: 'ضحكتكِ اللي بتنور عتمة أيامي وتخليني أسعد إنسان ✨',
@@ -126,7 +134,7 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
   finalLetterPromise: 'بحبك أوي أوي... ووعد، عمرنا دايماً لا ينتهي 💕💖'
 });
 
-export const seedTenants: Tenant[] = [
+export const initialSeedTenants: Tenant[] = [
   {
     id: 't-rawda',
     slug: 'rawda',
@@ -160,30 +168,52 @@ export const seedTenants: Tenant[] = [
 ];
 
 export const TenantStore = {
-  // Get all tenants
-  getAllTenants: (): Tenant[] => {
-    if (typeof window === 'undefined') return seedTenants;
+  getDeletedSlugs: (): string[] => {
+    if (typeof window === 'undefined') return [];
     try {
+      const saved = localStorage.getItem(DELETED_SLUGS_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  addDeletedSlug: (slug: string) => {
+    if (typeof window === 'undefined') return;
+    try {
+      const current = TenantStore.getDeletedSlugs();
+      const clean = slug.toLowerCase().trim();
+      if (!current.includes(clean)) {
+        current.push(clean);
+        localStorage.setItem(DELETED_SLUGS_KEY, JSON.stringify(current));
+      }
+    } catch {}
+  },
+
+  // Get all tenants (Filtered from any deleted slugs!)
+  getAllTenants: (): Tenant[] => {
+    if (typeof window === 'undefined') return initialSeedTenants;
+    try {
+      const deleted = TenantStore.getDeletedSlugs();
       const saved = localStorage.getItem(TENANTS_STORAGE_KEY);
       if (!saved) {
-        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(seedTenants));
-        return seedTenants;
+        // Initial first load: only keep seed tenants that weren't deleted
+        const filteredSeeds = initialSeedTenants.filter(
+          (t) => !deleted.includes(t.slug.toLowerCase())
+        );
+        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(filteredSeeds));
+        return filteredSeeds;
       }
       const parsed: Tenant[] = JSON.parse(saved);
-      let hasNew = false;
-      seedTenants.forEach((st) => {
-        if (!parsed.some((pt) => pt.slug.toLowerCase() === st.slug.toLowerCase())) {
-          parsed.push(st);
-          hasNew = true;
-        }
-      });
-      if (hasNew) {
-        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(parsed));
+      // Filter out deleted tenants
+      const cleanList = parsed.filter((t) => !deleted.includes(t.slug.toLowerCase()));
+      if (cleanList.length !== parsed.length) {
+        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
       }
-      return parsed;
+      return cleanList;
     } catch (e) {
       console.error('Error fetching tenants:', e);
-      return seedTenants;
+      return initialSeedTenants;
     }
   },
 
@@ -191,85 +221,79 @@ export const TenantStore = {
   getTenantBySlug: (slug: string): Tenant | null => {
     if (!slug) return null;
     const cleanSlug = slug.toLowerCase().trim();
+    const deleted = TenantStore.getDeletedSlugs();
+    if (deleted.includes(cleanSlug)) return null;
+
     const tenants = TenantStore.getAllTenants();
     return tenants.find((t) => t.slug.toLowerCase() === cleanSlug) || null;
   },
 
-  // Create new tenant (Slug & Name do NOT overwrite romantic sentences)
+  // Create new tenant
   createTenant: (
     slug: string,
     name: string,
     adminPassword: string,
-    sitePassword: string
+    sitePassword: string,
+    herName: string = 'أميرتي'
   ): Tenant => {
     const tenants = TenantStore.getAllTenants();
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
     
-    // Check if slug exists
-    const existing = tenants.find((t) => t.slug === cleanSlug);
-    if (existing) {
-      throw new Error(`الرابط الخاص (${cleanSlug}) مستخدم بالفعل لنسخة أخرى! يرجى كتابة رابط آخر.`);
+    // Remove from deleted list if re-creating
+    if (typeof window !== 'undefined') {
+      const deleted = TenantStore.getDeletedSlugs().filter((s) => s !== cleanSlug);
+      localStorage.setItem(DELETED_SLUGS_KEY, JSON.stringify(deleted));
     }
 
     const newTenant: Tenant = {
-      id: `tenant_${Date.now()}`,
+      id: `t-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       slug: cleanSlug,
-      name: name || `نسخة ${cleanSlug}`,
+      name: name || `موقع ${cleanSlug}`,
       adminPassword: adminPassword || 'love',
       sitePassword: sitePassword || 'love',
       createdAt: new Date().toISOString(),
       status: 'active',
-      config: createDefaultConfigForTenant('أميرتي', sitePassword || 'love')
+      config: createDefaultConfigForTenant(herName || 'أميرتي', sitePassword || 'love')
     };
 
-    const updated = [...tenants, newTenant];
-    try {
-      localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(updated));
-    } catch (e) {
-      console.error('Failed to save new tenant:', e);
+    const existingIdx = tenants.findIndex((t) => t.slug.toLowerCase() === cleanSlug);
+    if (existingIdx !== -1) {
+      tenants[existingIdx] = newTenant;
+    } else {
+      tenants.push(newTenant);
     }
 
-    // Sync to Supabase in background
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('tenants').upsert({
-        id: newTenant.id,
-        slug: newTenant.slug,
-        name: newTenant.name,
-        admin_password: newTenant.adminPassword,
-        site_password: newTenant.sitePassword,
-        status: newTenant.status,
-        config: newTenant.config,
-        created_at: newTenant.createdAt
-      }).then(() => {}).catch(console.error);
+    try {
+      localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(tenants));
+    } catch (e) {
+      console.error('Failed to save tenant:', e);
     }
 
     return newTenant;
   },
 
-  // Update tenant details or status
-  updateTenant: (slug: string, partial: Partial<Tenant>): Tenant | null => {
+  // Update tenant properties
+  updateTenant: (slug: string, updates: Partial<Tenant>): Tenant | null => {
     const tenants = TenantStore.getAllTenants();
     const idx = tenants.findIndex((t) => t.slug.toLowerCase() === slug.toLowerCase());
     if (idx === -1) return null;
 
-    const updatedTenant = { ...tenants[idx], ...partial };
-    tenants[idx] = updatedTenant;
+    const currentTenant = tenants[idx];
+    const updatedTenant: Tenant = {
+      ...currentTenant,
+      ...updates,
+      config: {
+        ...currentTenant.config,
+        ...(updates.config || {}),
+        sitePassword: updates.sitePassword || updates.config?.sitePassword || currentTenant.config.sitePassword
+      }
+    };
 
+    tenants[idx] = updatedTenant;
     try {
       localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(tenants));
     } catch (e) {
       console.error('Failed to update tenant:', e);
-    }
-
-    // Sync to Supabase in background
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('tenants').update({
-        name: updatedTenant.name,
-        admin_password: updatedTenant.adminPassword,
-        site_password: updatedTenant.sitePassword,
-        status: updatedTenant.status,
-        config: updatedTenant.config
-      }).eq('slug', slug.toLowerCase()).then(() => {}).catch(console.error);
     }
 
     return updatedTenant;
@@ -296,22 +320,16 @@ export const TenantStore = {
       console.error('Failed to update tenant config:', e);
     }
 
-    // Sync to Supabase in background
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('tenants').update({
-        config: updatedConfig,
-        site_password: updatedTenant.sitePassword
-      }).eq('slug', slug.toLowerCase()).then(() => {}).catch(console.error);
-    }
-
     return updatedTenant;
   },
 
-  // Delete tenant
+  // Permanent Delete tenant
   deleteTenant: (slug: string): boolean => {
+    const cleanSlug = slug.toLowerCase().trim();
+    TenantStore.addDeletedSlug(cleanSlug);
+
     const tenants = TenantStore.getAllTenants();
-    const filtered = tenants.filter((t) => t.slug.toLowerCase() !== slug.toLowerCase());
-    if (filtered.length === tenants.length) return false;
+    const filtered = tenants.filter((t) => t.slug.toLowerCase() !== cleanSlug);
 
     try {
       localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(filtered));
@@ -319,9 +337,13 @@ export const TenantStore = {
       console.error('Failed to delete tenant:', e);
     }
 
-    // Sync to Supabase in background
-    if (isSupabaseConfigured && supabase) {
-      supabase.from('tenants').delete().eq('slug', slug.toLowerCase()).then(() => {}).catch(console.error);
+    // Sync to Cloud KV API
+    if (typeof window !== 'undefined') {
+      fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenants: filtered })
+      }).catch(() => {});
     }
 
     return true;
@@ -333,16 +355,19 @@ export const TenantStore = {
     try {
       const { data, error } = await supabase.from('tenants').select('*');
       if (data && !error) {
-        const mapped: Tenant[] = data.map((row: any) => ({
-          id: row.id,
-          slug: row.slug,
-          name: row.name,
-          adminPassword: row.admin_password || row.adminPassword || 'love',
-          sitePassword: row.site_password || row.sitePassword || 'love',
-          createdAt: row.created_at || new Date().toISOString(),
-          status: row.status || 'active',
-          config: row.config || createDefaultConfigForTenant('أميرتي', row.site_password || 'love')
-        }));
+        const deleted = TenantStore.getDeletedSlugs();
+        const mapped: Tenant[] = data
+          .filter((row: any) => !deleted.includes(row.slug.toLowerCase()))
+          .map((row: any) => ({
+            id: row.id,
+            slug: row.slug,
+            name: row.name,
+            adminPassword: row.admin_password || row.adminPassword || 'love',
+            sitePassword: row.site_password || row.sitePassword || 'love',
+            createdAt: row.created_at || new Date().toISOString(),
+            status: row.status || 'active',
+            config: row.config || createDefaultConfigForTenant('أميرتي', row.site_password || 'love')
+          }));
         if (typeof window !== 'undefined') {
           localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(mapped));
         }
