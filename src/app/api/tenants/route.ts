@@ -1,101 +1,129 @@
 import { NextResponse } from 'next/server';
 
-let bucketId: string | null = null;
-let memoryCache: any[] = [];
+// Supabase VPS - called SERVER-SIDE from Vercel (no HTTPS restriction on server!)
+const SUPABASE_URL = 'http://31.220.93.65:8000';
+const SUPABASE_KEY = 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ijc1N2Y0M2YxLTcwMTgtNDhhNS04NTY2LTk3NzFlOTk4Mjc3MyJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODA3NTA4OTcsImV4cCI6MTkzODQzMDg5N30.nR8pK74D_5XhH1aBKpJXlTDOXz1Hl_XcanlFUS2ldkENkF_LAGFd8ZcxnbY_JmIbm0qPYj8ESJHQ84RVKln0vg';
 
-async function getBucketId(): Promise<string> {
-  if (bucketId) return bucketId;
-  try {
-    const res = await fetch('https://kvdb.io/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'email=love_saas_app_2026@gmail.com'
-    });
-    if (res.ok) {
-      const id = (await res.text()).trim();
-      if (id && id.length > 5 && !id.includes('<')) {
-        bucketId = id;
-        return id;
-      }
-    }
-  } catch (_) {}
-  return 'b8x_love_saas_2026_v1';
+function getHeaders(extra?: Record<string, string>) {
+  return {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+    ...extra,
+  };
 }
 
-async function getTenantsFromCloud(): Promise<any[]> {
+function toApp(row: any) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    adminPassword: row.admin_password ?? row.adminPassword ?? 'love',
+    sitePassword: row.site_password ?? row.sitePassword ?? 'love',
+    createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
+    status: row.status ?? 'active',
+    config: row.config ?? {},
+  };
+}
+
+function toDb(t: any) {
+  return {
+    id: t.id,
+    slug: (t.slug || '').toLowerCase().trim(),
+    name: t.name || `موقع ${t.slug}`,
+    admin_password: t.adminPassword ?? t.admin_password ?? 'love',
+    site_password: t.sitePassword ?? t.site_password ?? 'love',
+    created_at: t.createdAt ?? t.created_at ?? new Date().toISOString(),
+    status: t.status ?? 'active',
+    config: t.config ?? {},
+  };
+}
+
+// GET all tenants from Supabase
+export async function GET() {
   try {
-    const id = await getBucketId();
-    const res = await fetch(`https://kvdb.io/${id}/tenants`, { cache: 'no-store' });
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/tenants?select=*&order=created_at.desc`,
+      { headers: getHeaders(), cache: 'no-store' }
+    );
+
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
-        memoryCache = data;
-        return data;
+        return NextResponse.json({ success: true, tenants: data.map(toApp) });
       }
     }
-  } catch (_) {}
-  return memoryCache;
+
+    const errText = await res.text().catch(() => '');
+    console.error('[GET /api/tenants]', res.status, errText);
+  } catch (e: any) {
+    console.error('[GET /api/tenants] error:', e?.message);
+  }
+
+  return NextResponse.json({ success: true, tenants: [] });
 }
 
-async function saveTenantsToCloud(tenants: any[]): Promise<void> {
-  memoryCache = tenants;
-  try {
-    const id = await getBucketId();
-    await fetch(`https://kvdb.io/${id}/tenants`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(tenants)
-    });
-  } catch (_) {}
-}
-
-export async function GET() {
-  const tenants = await getTenantsFromCloud();
-  return NextResponse.json({ success: true, tenants });
-}
-
+// POST: upsert tenant(s) to Supabase
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let current = await getTenantsFromCloud();
+    const toUpsert: any[] = [];
 
-    if (body && Array.isArray(body.tenants)) {
-      current = body.tenants;
-    } else if (body && body.tenant) {
-      const t = body.tenant;
-      const idx = current.findIndex(
-        (item: any) => (item.slug || '').toLowerCase().trim() === (t.slug || '').toLowerCase().trim()
-      );
-      if (idx !== -1) {
-        current[idx] = t;
-      } else {
-        current.unshift(t);
-      }
+    if (body?.tenant) {
+      toUpsert.push(body.tenant);
+    } else if (Array.isArray(body?.tenants)) {
+      toUpsert.push(...body.tenants);
     }
 
-    await saveTenantsToCloud(current);
-    return NextResponse.json({ success: true, tenants: current });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err?.message }, { status: 500 });
+    if (!toUpsert.length) {
+      return NextResponse.json({ success: false, error: 'No tenant' }, { status: 400 });
+    }
+
+    const rows = toUpsert.map(toDb);
+    const payload = rows.length === 1 ? rows[0] : rows;
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/tenants`, {
+      method: 'POST',
+      headers: getHeaders({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [data];
+      return NextResponse.json({ success: true, tenants: list.map(toApp) });
+    }
+
+    const err = await res.text();
+    console.error('[POST /api/tenants]', res.status, err);
+    return NextResponse.json({ success: false, error: err }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
   }
 }
 
+// DELETE: remove tenant by slug
 export async function DELETE(req: Request) {
   try {
     const body = await req.json();
     const slug = (body?.slug || '').toLowerCase().trim();
+
     if (!slug) {
       return NextResponse.json({ success: false, error: 'Slug required' }, { status: 400 });
     }
 
-    let current = await getTenantsFromCloud();
-    const filtered = current.filter(
-      (item: any) => (item.slug || '').toLowerCase().trim() !== slug
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}`,
+      { method: 'DELETE', headers: getHeaders() }
     );
 
-    await saveTenantsToCloud(filtered);
-    return NextResponse.json({ success: true, tenants: filtered });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err?.message }, { status: 500 });
+    if (res.ok) return NextResponse.json({ success: true });
+
+    const err = await res.text();
+    console.error('[DELETE /api/tenants]', res.status, err);
+    return NextResponse.json({ success: false, error: err }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
   }
 }
