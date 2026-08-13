@@ -222,11 +222,11 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
 
       </div>
 
-      {/* FOOTER BUTTON CONNECTED DIRECTLY TO CONFIG */}
-      <div className="relative z-20 max-w-sm mx-auto w-full text-center pb-4">
+      {/* FOOTER BUTTON CONNECTED DIRECTLY TO CONFIG WITH CLEARANCE FOR BOTTOM MUSIC PLAYER */}
+      <div className="relative z-20 max-w-sm mx-auto w-full text-center pb-24 sm:pb-28">
         <button
           onClick={onNext}
-          className="w-full py-4 px-8 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs md:text-sm border border-rose-300/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_35px_rgba(244,114,182,0.6)] flex items-center justify-center gap-2"
+          className="w-full py-4 px-8 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs md:text-sm border border-rose-300/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_35px_rgba(244,114,182,0.6)] flex items-center justify-center gap-2 cursor-pointer"
           style={{ fontFamily: "'Cairo', sans-serif" }}
         >
           <span>{config.constellationButtonText || 'انتقلي لرحلة عشقنا 💖✨'}</span>

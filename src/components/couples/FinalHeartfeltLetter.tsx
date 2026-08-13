@@ -78,12 +78,12 @@ export const FinalHeartfeltLetter: React.FC<Props> = ({ onRestart }) => {
         </div>
       </div>
 
-      {/* FOOTER */}
-      <div className="relative z-20 max-w-sm mx-auto w-full text-center pb-6">
+      {/* FOOTER WITH CLEARANCE */}
+      <div className="relative z-20 max-w-sm mx-auto w-full text-center pb-24 sm:pb-28">
         {onRestart && (
           <button
             onClick={onRestart}
-            className="w-full py-4 px-8 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs md:text-sm border border-rose-300/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(244,114,182,0.5)] flex items-center justify-center gap-2"
+            className="w-full py-4 px-8 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs md:text-sm border border-rose-300/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(244,114,182,0.5)] flex items-center justify-center gap-2 cursor-pointer"
             style={{ fontFamily: "'Cairo', sans-serif" }}
           >
             <RefreshCw className="w-4 h-4" />

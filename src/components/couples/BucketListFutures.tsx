@@ -122,12 +122,12 @@ export const BucketListFutures: React.FC<Props> = ({ onNext }) => {
         })}
       </div>
 
-      {/* FOOTER BUTTON */}
-      <div className="relative z-20 max-w-sm mx-auto w-full text-center pb-4">
+      {/* FOOTER BUTTON WITH CLEARANCE */}
+      <div className="relative z-20 max-w-sm mx-auto w-full text-center pb-24 sm:pb-28">
         {onNext && (
           <button
             onClick={onNext}
-            className="w-full py-4 px-8 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs md:text-sm border border-rose-300/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(244,114,182,0.5)] flex items-center justify-center gap-2"
+            className="w-full py-4 px-8 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs md:text-sm border border-rose-300/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(244,114,182,0.5)] flex items-center justify-center gap-2 cursor-pointer"
             style={{ fontFamily: "'Cairo', sans-serif" }}
           >
             <span>{config.bucketListButtonText || 'التالي: الرسالة الأخيرة 💌👑'}</span>
