@@ -28,11 +28,49 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [cloudTenant, setCloudTenant] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
+    const localTenant = TenantStore.getTenantBySlug(slug);
     loadTenantBySlug(slug);
-    setIsLoading(false);
+
+    if (localTenant) {
+      setIsLoading(false);
+    } else {
+      // Keep spinner while fetching from cloud
+      setIsLoading(true);
+      const fetchFromCloud = async () => {
+        try {
+          const res = await fetch('/api/tenants');
+          const json = await res.json();
+          if (json?.success && Array.isArray(json.tenants)) {
+            const found = json.tenants.find(
+              (t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim()
+            );
+            if (found) {
+              const { TenantStore: ts, createDefaultConfigForTenant: cdf } = await import('@/lib/tenantStore');
+              const withConfig = {
+                ...found,
+                config: found.config || cdf(found.name || 'أميرتي', found.sitePassword || 'love')
+              };
+              const all = ts.getAllTenants();
+              if (!all.some((t) => t.slug.toLowerCase() === slug.toLowerCase())) {
+                all.push(withConfig);
+                localStorage.setItem(
+                  (await import('@/lib/tenantStore')).TENANTS_STORAGE_KEY,
+                  JSON.stringify(all)
+                );
+              }
+              setCloudTenant(withConfig);
+              loadTenantBySlug(slug);
+            }
+          }
+        } catch (_) {}
+        setIsLoading(false);
+      };
+      fetchFromCloud();
+    }
 
     const handleSync = () => {
       loadTenantBySlug(slug);
@@ -46,7 +84,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     };
   }, [slug]);
 
-  if (!mounted) {
+  if (!mounted || isLoading) {
     return (
       <div className="min-h-screen w-full bg-[#090108] text-white flex items-center justify-center p-4">
         <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
@@ -54,7 +92,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     );
   }
 
-  const directTenant = TenantStore.getTenantBySlug(slug);
+  const directTenant = TenantStore.getTenantBySlug(slug) || cloudTenant;
   const activeTenant = (currentTenant && currentTenant.slug.toLowerCase() === slug.toLowerCase()) ? currentTenant : directTenant;
 
   // 1. CHECK IF TENANT IS DELETED OR SUSPENDED -> SHOW BROWSER OFFLINE ERROR

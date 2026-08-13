@@ -116,7 +116,10 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
           </p>
 
           {/* SECRET ENTRY FORM */}
-          <form onSubmit={handleSubmit} className="w-full max-w-xs flex flex-col gap-3.5 mt-2">
+          <form onSubmit={handleSubmit} className="w-full max-w-xs flex flex-col gap-3.5 mt-2" autoComplete="off">
+            {/* Hidden dummy fields to trick browser autofill away from real input */}
+            <input type="text" name="username" autoComplete="username" style={{ display: 'none' }} readOnly />
+            <input type="password" name="prevent_autofill" autoComplete="new-password" style={{ display: 'none' }} readOnly />
             <div className="relative w-full">
               <input
                 type="password"
@@ -126,6 +129,8 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
                   if (error) setError('');
                 }}
                 placeholder={config.passwordPlaceholder || 'اكتب كلمة السر هنا ✨'}
+                autoComplete="new-password"
+                name="site_password"
                 className="w-full py-3.5 px-10 rounded-2xl bg-black/80 border border-pink-500/40 text-center text-amber-200 placeholder-white/40 focus:outline-none focus:border-pink-300 backdrop-blur-xl shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-all font-bold text-xs sm:text-sm tracking-widest"
                 style={{ fontFamily: "'Cairo', sans-serif" }}
               />
