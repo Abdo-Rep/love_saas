@@ -104,6 +104,8 @@ export default function SuperAdminPage() {
             merged.push(lt);
           }
         });
+        // Sort newest first!
+        merged.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
         setTenants(merged);
         localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(merged));
       }

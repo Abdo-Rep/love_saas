@@ -159,7 +159,7 @@ export const TenantStore = {
     } catch {}
   },
 
-  // Get all tenants (Strictly filtered from any deleted slugs!)
+  // Get all tenants (Strictly filtered from any deleted slugs, sorted newest first!)
   getAllTenants: (): Tenant[] => {
     if (typeof window === 'undefined') return [];
     try {
@@ -170,6 +170,8 @@ export const TenantStore = {
       }
       const parsed: Tenant[] = JSON.parse(saved);
       const cleanList = parsed.filter((t) => !deleted.includes(t.slug.toLowerCase().trim()));
+      // Sort newest first
+      cleanList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       if (cleanList.length !== parsed.length) {
         localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
       }
@@ -223,7 +225,7 @@ export const TenantStore = {
     if (existingIdx !== -1) {
       tenants[existingIdx] = newTenant;
     } else {
-      tenants.push(newTenant);
+      tenants.unshift(newTenant); // Newest first!
     }
 
     try {
