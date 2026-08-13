@@ -173,8 +173,6 @@ export default function SuperAdminPage() {
         newHerName || slugToUse
       );
 
-      setCreateSuccess(`تم إنشاء النسخة بنجاح! الرابط: /site/${created.slug}`);
-      
       // Sync immediately with server API
       fetch('/api/tenants', {
         method: 'POST',
@@ -184,18 +182,15 @@ export default function SuperAdminPage() {
 
       refreshData();
 
-      // Reset form
+      // Reset form and close modal immediately
       setSingleName('');
       setNewClientName('');
       setNewHerName('');
       setNewSlug('');
       setNewAdminPass('love');
       setNewSitePass('love');
-
-      setTimeout(() => {
-        setShowCreateModal(false);
-        setCreateSuccess('');
-      }, 2000);
+      setShowCreateModal(false);
+      setCreateSuccess('');
     } catch (err: any) {
       setCreateError(err.message || 'حدث خطأ أثناء إنشاء النسخة!');
     }
