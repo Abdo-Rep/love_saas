@@ -48,6 +48,7 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
 
   const [hasError, setHasError] = useState(false);
   const [curtainsOpen, setCurtainsOpen] = useState(false);
+  const [isLoadingModel, setIsLoadingModel] = useState(true);
 
   // Live Typewriter State after character disappears
   const [showLiveMessage, setShowLiveMessage] = useState(false);
@@ -144,12 +145,18 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
     let bossModelRef: THREE.Object3D | null = null;
     let startTime: number | null = null;
 
+    // 3.5s Safety fallback timer: if 3D model takes too long, hide spinner & open curtains gracefully
+    const safetyTimer = setTimeout(() => {
+      setIsLoadingModel(false);
+    }, 3500);
+
     setCurtainsOpen(true);
 
     // DYNAMICALLY LOAD THE CHOSEN 3D CHARACTER MODEL
     fbxLoader.load(
       characterModelPath,
       (bossModel) => {
+        setIsLoadingModel(false);
         const box = new THREE.Box3().setFromObject(bossModel);
         const size = box.getSize(new THREE.Vector3());
         if (size.y > 0) {
@@ -216,6 +223,7 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
       undefined,
       (err) => {
         console.warn('Model Load Error:', err);
+        setIsLoadingModel(false);
         setHasError(true);
       }
     );
@@ -292,6 +300,7 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animId);
       clearTimeout(showMessageTimer);
+      clearTimeout(safetyTimer);
       if (walkAudioRef.current) {
         walkAudioRef.current.pause();
         walkAudioRef.current.currentTime = 0;
@@ -394,6 +403,16 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
           </div>
         ) : (
           <canvas ref={canvasRef} className="w-full h-full" />
+        )}
+
+        {/* LOADING SPINNER OVERLAY */}
+        {isLoadingModel && !showLiveMessage && !hasError && (
+          <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-[#10030e]/80 backdrop-blur-md">
+            <div className="w-12 h-12 border-4 border-pink-400 border-t-transparent rounded-full animate-spin shadow-[0_0_20px_#f472b6]" />
+            <p className="text-xs sm:text-sm font-bold text-amber-200" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              جاري تجهيز العرض الملكي 🎭✨
+            </p>
+          </div>
         )}
 
         {/* LIVE TYPEWRITER MESSAGE OVERLAY SCREEN */}
