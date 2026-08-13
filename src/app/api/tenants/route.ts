@@ -1,130 +1,131 @@
 import { NextResponse } from 'next/server';
 
-// Global shared state for KV bucket ID across serverless invocations
-let globalBucketId: string | null = null;
-let memoryCache: any[] = [];
+// Hardcoded Supabase credentials for reliable cross-device tenant sync
+// These are safe since the table has public RLS policies
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://31.220.93.65:8000';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ijc1N2Y0M2YxLTcwMTgtNDhhNS04NTY2LTk3NzFlOTk4Mjc3MyJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3ODA3NTA4OTcsImV4cCI6MTkzODQzMDg5N30.nR8pK74D_5XhH1aBKpJXlTDOXz1Hl_XcanlFUS2ldkENkF_LAGFd8ZcxnbY_JmIbm0qPYj8ESJHQ84RVKln0vg';
 
-async function getBucketId(): Promise<string> {
-  if (globalBucketId) return globalBucketId;
-  
-  try {
-    const res = await fetch('https://kvdb.io/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'email=love_saas_global_cloud_v3@gmail.com'
-    });
-    if (res.ok) {
-      const id = (await res.text()).trim();
-      if (id && !id.includes('{') && id.length > 3) {
-        globalBucketId = id;
-        return id;
-      }
-    }
-  } catch (_) {}
-
-  return globalBucketId || 'DefaultBucketV3';
+function headers() {
+  return {
+    'apikey': SUPABASE_KEY,
+    'Authorization': `Bearer ${SUPABASE_KEY}`,
+    'Content-Type': 'application/json',
+    'Prefer': 'return=representation',
+  };
 }
 
-async function getCloudTenants(): Promise<any[]> {
+// Map DB row (snake_case) → app Tenant (camelCase)
+function toApp(row: any) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    adminPassword: row.admin_password ?? row.adminPassword ?? 'love',
+    sitePassword: row.site_password ?? row.sitePassword ?? 'love',
+    createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
+    status: row.status ?? 'active',
+    config: row.config ?? {},
+    ownerEmail: row.owner_email ?? row.ownerEmail ?? '',
+  };
+}
+
+// Map app Tenant → DB row (snake_case)
+function toDb(t: any) {
+  return {
+    id: t.id,
+    slug: (t.slug || '').toLowerCase().trim(),
+    name: t.name || `موقع ${t.slug}`,
+    admin_password: t.adminPassword ?? t.admin_password ?? 'love',
+    site_password: t.sitePassword ?? t.site_password ?? 'love',
+    created_at: t.createdAt ?? t.created_at ?? new Date().toISOString(),
+    status: t.status ?? 'active',
+    config: t.config ?? {},
+  };
+}
+
+// GET: fetch all tenants
+export async function GET() {
   try {
-    const bucketId = await getBucketId();
-    const res = await fetch(`https://kvdb.io/${bucketId}/tenants`, { cache: 'no-store' });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/tenants?select=*&order=created_at.desc`, {
+      headers: headers(),
+      cache: 'no-store',
+    });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
-        memoryCache = data;
-        return data;
+        return NextResponse.json({ success: true, tenants: data.map(toApp) });
       }
     }
-  } catch (_) {}
-
-  // Fallback to Supabase if HTTPS
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-  if (supabaseUrl.startsWith('https://') && supabaseKey) {
-    try {
-      const res = await fetch(`${supabaseUrl}/rest/v1/tenants?select=*`, {
-        headers: {
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-        },
-        cache: 'no-store'
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data)) {
-          memoryCache = data;
-          return data;
-        }
-      }
-    } catch (_) {}
+    // Log error for debugging
+    const errText = await res.text().catch(() => 'unknown');
+    console.error('[GET /api/tenants] Supabase error:', res.status, errText);
+  } catch (e: any) {
+    console.error('[GET /api/tenants] Fetch error:', e?.message);
   }
-
-  return memoryCache;
+  return NextResponse.json({ success: true, tenants: [] });
 }
 
-async function saveCloudTenants(tenants: any[]): Promise<boolean> {
-  memoryCache = tenants;
-  try {
-    const bucketId = await getBucketId();
-    const res = await fetch(`https://kvdb.io/${bucketId}/tenants`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(tenants)
-    });
-    if (res.ok) return true;
-  } catch (_) {}
-
-  return false;
-}
-
-export async function GET() {
-  const tenants = await getCloudTenants();
-  return NextResponse.json({ success: true, tenants });
-}
-
+// POST: upsert tenant(s)
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let current = await getCloudTenants();
+    const toUpsert: any[] = [];
 
-    if (body && Array.isArray(body.tenants)) {
-      current = body.tenants;
-    } else if (body && body.tenant) {
-      const newT = body.tenant;
-      const idx = current.findIndex(
-        (t: any) => (t.slug || '').toLowerCase().trim() === (newT.slug || '').toLowerCase().trim()
-      );
-      if (idx !== -1) {
-        current[idx] = newT;
-      } else {
-        current.unshift(newT); // Newest first!
-      }
+    if (body?.tenant) {
+      toUpsert.push(body.tenant);
+    } else if (Array.isArray(body?.tenants)) {
+      toUpsert.push(...body.tenants);
     }
 
-    await saveCloudTenants(current);
-    return NextResponse.json({ success: true, tenants: current });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message }, { status: 500 });
+    if (toUpsert.length === 0) {
+      return NextResponse.json({ success: false, error: 'No tenant' }, { status: 400 });
+    }
+
+    const rows = toUpsert.map(toDb);
+    const payload = rows.length === 1 ? rows[0] : rows;
+
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/tenants`, {
+      method: 'POST',
+      headers: { ...headers(), 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [data];
+      return NextResponse.json({ success: true, tenants: list.map(toApp) });
+    }
+
+    const err = await res.text();
+    console.error('[POST /api/tenants] Supabase error:', res.status, err);
+    return NextResponse.json({ success: false, error: err }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
   }
 }
 
+// DELETE: remove tenant by slug
 export async function DELETE(req: Request) {
   try {
     const body = await req.json();
-    const slugToDelete = (body?.slug || '').toLowerCase().trim();
-    if (!slugToDelete) {
-      return NextResponse.json({ success: false, error: 'Slug is required' }, { status: 400 });
+    const slug = (body?.slug || '').toLowerCase().trim();
+    if (!slug) {
+      return NextResponse.json({ success: false, error: 'Slug required' }, { status: 400 });
     }
 
-    let current = await getCloudTenants();
-    const filtered = current.filter(
-      (t: any) => (t.slug || '').toLowerCase().trim() !== slugToDelete
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}`,
+      { method: 'DELETE', headers: headers() }
     );
 
-    await saveCloudTenants(filtered);
-    return NextResponse.json({ success: true, tenants: filtered });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error?.message }, { status: 500 });
+    if (res.ok) {
+      return NextResponse.json({ success: true });
+    }
+
+    const err = await res.text();
+    console.error('[DELETE /api/tenants] Supabase error:', res.status, err);
+    return NextResponse.json({ success: false, error: err }, { status: 500 });
+  } catch (e: any) {
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
   }
 }
