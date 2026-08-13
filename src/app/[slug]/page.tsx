@@ -36,30 +36,49 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     if (localTenant) {
       setIsLoading(false);
     } else {
-      // Keep spinner while we fetch from cloud for cross-device support
       setIsLoading(true);
       const fetchFromCloud = async () => {
         try {
+          // 1. Try API route first
           const res = await fetch('/api/tenants');
           const json = await res.json();
-          if (json?.success && Array.isArray(json.tenants)) {
-            const found = json.tenants.find(
-              (t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim()
-            );
-            if (found) {
-              const { TenantStore: ts, createDefaultConfigForTenant: cdf, TENANTS_STORAGE_KEY } = await import('@/lib/tenantStore');
-              const withConfig = {
-                ...found,
-                config: found.config || cdf(found.name || 'أميرتي', found.sitePassword || 'love')
-              };
-              const all = ts.getAllTenants();
-              if (!all.some((t) => t.slug.toLowerCase() === slug.toLowerCase())) {
-                all.push(withConfig);
-                localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(all));
+          let found = json?.success && Array.isArray(json.tenants)
+            ? json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim())
+            : null;
+
+          // 2. Try Supabase directly if available
+          if (!found) {
+            const { supabase, isSupabaseConfigured } = await import('@/lib/supabaseClient');
+            if (isSupabaseConfigured && supabase) {
+              const { data } = await supabase.from('tenants').select('*').eq('slug', slug.toLowerCase().trim()).single();
+              if (data) {
+                found = {
+                  id: data.id,
+                  slug: data.slug,
+                  name: data.name,
+                  adminPassword: data.admin_password || data.adminPassword || 'love',
+                  sitePassword: data.site_password || data.sitePassword || 'love',
+                  createdAt: data.created_at || new Date().toISOString(),
+                  status: data.status || 'active',
+                  config: data.config
+                };
               }
-              setCloudTenant(withConfig);
-              loadTenantBySlug(slug);
             }
+          }
+
+          if (found) {
+            const { TenantStore: ts, createDefaultConfigForTenant: cdf, TENANTS_STORAGE_KEY } = await import('@/lib/tenantStore');
+            const withConfig = {
+              ...found,
+              config: found.config || cdf(found.name || 'أميرتي', found.sitePassword || 'love')
+            };
+            const all = ts.getAllTenants();
+            if (!all.some((t) => t.slug.toLowerCase() === slug.toLowerCase())) {
+              all.unshift(withConfig);
+              localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(all));
+            }
+            setCloudTenant(withConfig);
+            loadTenantBySlug(slug);
           }
         } catch (_) {}
         setIsLoading(false);
@@ -104,7 +123,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
             لا يمكن الوصول إلى هذا الموقع الإلكتروني
           </h1>
           <p className="text-sm text-gray-400">
-            رفض <span className="font-mono text-gray-300">localhost</span> الاتصال.
+            رفض <span className="font-mono text-gray-300">الموقع</span> الاتصال.
           </p>
           <div className="text-xs text-gray-500 space-y-1 pt-2 w-full text-right">
             <p>يمكنك محاولة:</p>

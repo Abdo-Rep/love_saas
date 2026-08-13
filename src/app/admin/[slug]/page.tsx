@@ -48,7 +48,7 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
             لا يمكن الوصول إلى هذا الموقع الإلكتروني
           </h1>
           <p className="text-sm text-gray-400">
-            رفض <span className="font-mono text-gray-300">localhost</span> الاتصال.
+            رفض <span className="font-mono text-gray-300">الموقع</span> الاتصال.
           </p>
           <div className="text-xs text-gray-500 space-y-1 pt-2 w-full text-right">
             <p>يمكنك محاولة:</p>

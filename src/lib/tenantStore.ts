@@ -234,6 +234,28 @@ export const TenantStore = {
       console.error('Failed to save tenant:', e);
     }
 
+    // Auto-sync to API and Supabase
+    if (typeof window !== 'undefined') {
+      fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant: newTenant })
+      }).catch(() => {});
+
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('tenants').upsert({
+          id: newTenant.id,
+          slug: newTenant.slug,
+          name: newTenant.name,
+          admin_password: newTenant.adminPassword,
+          site_password: newTenant.sitePassword,
+          created_at: newTenant.createdAt,
+          status: newTenant.status,
+          config: newTenant.config
+        }).then(() => {}).catch(() => {});
+      }
+    }
+
     return newTenant;
   },
 
@@ -261,6 +283,27 @@ export const TenantStore = {
       console.error('Failed to update tenant:', e);
     }
 
+    if (typeof window !== 'undefined') {
+      fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant: updatedTenant })
+      }).catch(() => {});
+
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('tenants').upsert({
+          id: updatedTenant.id,
+          slug: updatedTenant.slug,
+          name: updatedTenant.name,
+          admin_password: updatedTenant.adminPassword,
+          site_password: updatedTenant.sitePassword,
+          created_at: updatedTenant.createdAt,
+          status: updatedTenant.status,
+          config: updatedTenant.config
+        }).then(() => {}).catch(() => {});
+      }
+    }
+
     return updatedTenant;
   },
 
@@ -285,6 +328,27 @@ export const TenantStore = {
       console.error('Failed to update tenant config:', e);
     }
 
+    if (typeof window !== 'undefined') {
+      fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant: updatedTenant })
+      }).catch(() => {});
+
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('tenants').upsert({
+          id: updatedTenant.id,
+          slug: updatedTenant.slug,
+          name: updatedTenant.name,
+          admin_password: updatedTenant.adminPassword,
+          site_password: updatedTenant.sitePassword,
+          created_at: updatedTenant.createdAt,
+          status: updatedTenant.status,
+          config: updatedTenant.config
+        }).then(() => {}).catch(() => {});
+      }
+    }
+
     return updatedTenant;
   },
 
@@ -302,13 +366,17 @@ export const TenantStore = {
       console.error('Failed to delete tenant:', e);
     }
 
-    // Sync to Cloud KV API
+    // Sync to Cloud KV API and Supabase
     if (typeof window !== 'undefined') {
       fetch('/api/tenants', {
-        method: 'POST',
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenants: filtered })
+        body: JSON.stringify({ slug: cleanSlug })
       }).catch(() => {});
+
+      if (isSupabaseConfigured && supabase) {
+        supabase.from('tenants').delete().eq('slug', cleanSlug).then(() => {}).catch(() => {});
+      }
     }
 
     return true;
