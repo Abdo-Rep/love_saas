@@ -50,8 +50,8 @@ export default function SuperAdminPage() {
   const [newClientName, setNewClientName] = useState('');
   const [newHerName, setNewHerName] = useState('');
   const [newSlug, setNewSlug] = useState('');
-  const [newAdminPass, setNewAdminPass] = useState('love');
-  const [newSitePass, setNewSitePass] = useState('love');
+  const [newAdminPass, setNewAdminPass] = useState('');
+  const [newSitePass, setNewSitePass] = useState('');
   const [createError, setCreateError] = useState('');
   const [createSuccess, setCreateSuccess] = useState('');
 
@@ -147,8 +147,7 @@ export default function SuperAdminPage() {
     setNewSlug(clean);
     setNewClientName(clean ? `موقع ${clean}` : '');
     setNewHerName(clean || 'أميرة');
-    if (!newAdminPass) setNewAdminPass('love');
-    if (!newSitePass) setNewSitePass('love');
+    // Leave passwords as-is (user types their own)
   };
 
   const handleCreateClient = (e: React.FormEvent) => {
