@@ -16,8 +16,8 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
-    // 1. Pause background romantic song immediately when arriving at voice message
-    bgMusic.pause();
+    // 1. Temporary auto-pause background song when arriving at voice message
+    bgMusic.pause(false);
 
     // Clean up any legacy audio instance if exists
     if (typeof window !== 'undefined' && (window as any)._bgAudio) {
@@ -43,19 +43,19 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
       setIsPlaying(false);
     });
 
-    // 3. When voice finishes: stop voice, resume background song
+    // 3. When voice finishes: stop voice, resume background song (only if not manually muted by user)
     voiceAudio.onended = () => {
       setIsPlaying(false);
       if (config.storySongUrl) {
-        bgMusic.play(config.storySongUrl);
+        bgMusic.play(config.storySongUrl, false);
       }
     };
 
     return () => {
       voiceAudio.pause();
-      // Resume background music when leaving step 7
+      // Resume background music when leaving step 7 (only if not manually muted by user)
       if (config.storySongUrl) {
-        bgMusic.play(config.storySongUrl);
+        bgMusic.play(config.storySongUrl, false);
       }
     };
   }, [config.voiceAudioUrl, config.storySongUrl]);

@@ -5,6 +5,7 @@ class BgMusicManager {
   private audio: HTMLAudioElement | null = null;
   private currentUrl: string = '';
   public isPlaying: boolean = false;
+  public isManuallyPaused: boolean = false;
   public currentTime: number = 0;
   public duration: number = 0;
 
@@ -46,7 +47,14 @@ class BgMusicManager {
     this.audio = audio;
   }
 
-  public play(url?: string) {
+  public play(url?: string, force: boolean = false) {
+    // If the user manually muted/paused the song, respect their preference unless explicitly forced!
+    if (this.isManuallyPaused && !force) return;
+
+    if (force) {
+      this.isManuallyPaused = false;
+    }
+
     if (url) this.setTrack(url);
     if (!this.audio && this.currentUrl) this.setTrack(this.currentUrl);
     if (!this.audio) return;
@@ -60,13 +68,15 @@ class BgMusicManager {
       .catch((e) => {
         console.log('Audio playback waiting for touch interaction:', e);
         const onInteraction = () => {
-          this.audio
-            ?.play()
-            .then(() => {
-              this.isPlaying = true;
-              this.notifyState();
-            })
-            .catch(() => {});
+          if (!this.isManuallyPaused) {
+            this.audio
+              ?.play()
+              .then(() => {
+                this.isPlaying = true;
+                this.notifyState();
+              })
+              .catch(() => {});
+          }
           window.removeEventListener('click', onInteraction);
           window.removeEventListener('touchstart', onInteraction);
         };
@@ -75,7 +85,10 @@ class BgMusicManager {
       });
   }
 
-  public pause() {
+  public pause(isManual: boolean = false) {
+    if (isManual) {
+      this.isManuallyPaused = true;
+    }
     if (this.audio) {
       this.audio.pause();
       this.isPlaying = false;
@@ -85,9 +98,10 @@ class BgMusicManager {
 
   public toggle() {
     if (this.isPlaying) {
-      this.pause();
+      this.pause(true); // User explicitly clicked pause!
     } else {
-      this.play();
+      this.isManuallyPaused = false; // User explicitly clicked play!
+      this.play(undefined, true);
     }
   }
 
