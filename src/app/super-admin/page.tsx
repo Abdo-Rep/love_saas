@@ -553,7 +553,7 @@ export default function SuperAdminPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         {filteredTenants.map((tenant) => {
           const siteUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/site/${tenant.slug}`;
-          const adminUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/admin/${tenant.slug}`;
+          const adminUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/${tenant.slug}/admin`;
 
           return (
             <div
@@ -639,7 +639,7 @@ export default function SuperAdminPage() {
                 </a>
 
                 <a
-                  href={`/admin/${tenant.slug}`}
+                  href={`/${tenant.slug}/admin`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-3 rounded-xl bg-gradient-to-r from-purple-800/80 to-pink-800/80 border border-purple-300/40 text-white font-extrabold text-xs flex items-center justify-center gap-2 hover:scale-102 transition-all shadow-md"
