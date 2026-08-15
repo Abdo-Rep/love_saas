@@ -5,6 +5,8 @@ import { Heart, Lock, Key, ArrowLeft, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
 
+import { bgMusic } from '@/lib/bgMusic';
+
 interface Props {
   onStart: () => void;
 }
@@ -15,6 +17,12 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
   const [error, setError] = useState('');
   const [isUnlocking, setIsUnlocking] = useState(false);
 
+  React.useEffect(() => {
+    if (config.storySongUrl) {
+      bgMusic.play(config.storySongUrl);
+    }
+  }, [config.storySongUrl]);
+
   const handleTriggerUnlock = () => {
     setIsUnlocking(true);
     setError('');
@@ -22,7 +30,7 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
     // Initialize single bgMusic track
     try {
       if (config.storySongUrl) {
-        bgMusic.setTrack(config.storySongUrl);
+        bgMusic.play(config.storySongUrl, true);
       }
     } catch (_) {}
 

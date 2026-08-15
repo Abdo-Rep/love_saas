@@ -48,7 +48,7 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
 
   const [hasError, setHasError] = useState(false);
   const [curtainsOpen, setCurtainsOpen] = useState(false);
-  const [isLoadingModel, setIsLoadingModel] = useState(true);
+  const [isLoadingModel, setIsLoadingModel] = useState(false); // Start as false so no loading screen shows!
 
   // Live Typewriter State after character disappears
   const [showLiveMessage, setShowLiveMessage] = useState(false);
@@ -73,6 +73,19 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
       walkAudio = new Audio('/sound/WhatsApp Video 2026-08-11 at 3.56.53 AM.mp4');
       walkAudio.volume = 1.0;
       walkAudioRef.current = walkAudio;
+
+      // Play walk sound immediately on entering the theater!
+      walkAudio.play().catch(() => {
+        const handleFirstTouch = () => {
+          if (walkAudioRef.current) {
+            walkAudioRef.current.play().catch(() => {});
+          }
+          window.removeEventListener('click', handleFirstTouch);
+          window.removeEventListener('touchstart', handleFirstTouch);
+        };
+        window.addEventListener('click', handleFirstTouch);
+        window.addEventListener('touchstart', handleFirstTouch);
+      });
     }
 
     // 2. Romantic Song Audio that starts when typewriter message appears
@@ -205,18 +218,6 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
           bossModel.visible = true;
           if (startTime === null && clock) {
             startTime = clock.getElapsedTime();
-          }
-
-          if (walkAudio) {
-            walkAudio.play().catch(() => {
-              const handleFirstTouch = () => {
-                walkAudio!.play().catch(() => {});
-                window.removeEventListener('click', handleFirstTouch);
-                window.removeEventListener('touchstart', handleFirstTouch);
-              };
-              window.addEventListener('click', handleFirstTouch);
-              window.addEventListener('touchstart', handleFirstTouch);
-            });
           }
         });
       },
