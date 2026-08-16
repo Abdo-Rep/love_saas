@@ -29,8 +29,8 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
       setDuration(dur);
     });
 
-    // Auto-play as soon as Step 1 is reached (except Step 7 voice recording)
-    if (currentStep >= 1 && currentStep !== 7) {
+    // Auto-play as soon as Step 3 is reached (except Step 7 voice recording)
+    if (currentStep >= 3 && currentStep !== 7) {
       bgMusic.play(config.storySongUrl);
     }
 
@@ -40,8 +40,8 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
     };
   }, [config.storySongUrl, currentStep]);
 
-  // Only render UI starting from Step 1 (Passcode gate) onwards, and HIDE during Step 7 (Voice)!
-  if (!config.storySongUrl || currentStep < 1 || currentStep === 7) return null;
+  // Only render UI starting from Step 3 (Constellation) onwards, and HIDE during Step 7 (Voice)!
+  if (!config.storySongUrl || currentStep < 3 || currentStep === 7) return null;
 
   const formatTime = (seconds: number) => {
     if (!seconds || isNaN(seconds) || seconds < 0) return '0:00';
