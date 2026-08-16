@@ -48,7 +48,7 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
 
   const [hasError, setHasError] = useState(false);
   const [curtainsOpen, setCurtainsOpen] = useState(false);
-  const [isLoadingModel, setIsLoadingModel] = useState(false); // Start as false so no loading screen shows!
+  const [isLoadingModel, setIsLoadingModel] = useState(true); // Keep curtains closed and show loading screen first!
 
   // Live Typewriter State after character disappears
   const [showLiveMessage, setShowLiveMessage] = useState(false);
@@ -73,19 +73,6 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
       walkAudio = new Audio('/sound/WhatsApp Video 2026-08-11 at 3.56.53 AM.mp4');
       walkAudio.volume = 1.0;
       walkAudioRef.current = walkAudio;
-
-      // Play walk sound immediately on entering the theater!
-      walkAudio.play().catch(() => {
-        const handleFirstTouch = () => {
-          if (walkAudioRef.current) {
-            walkAudioRef.current.play().catch(() => {});
-          }
-          window.removeEventListener('click', handleFirstTouch);
-          window.removeEventListener('touchstart', handleFirstTouch);
-        };
-        window.addEventListener('click', handleFirstTouch);
-        window.addEventListener('touchstart', handleFirstTouch);
-      });
     }
 
     // 2. Romantic Song Audio that starts when typewriter message appears
@@ -159,17 +146,20 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
     let startTime: number | null = null;
 
     // 3.5s Safety fallback timer: if 3D model takes too long, hide spinner & open curtains gracefully
+    // 3.5s Safety fallback: if 3D model takes too long, skip 3D stage and go directly to typewriter message!
     const safetyTimer = setTimeout(() => {
+      if (walkAudioRef.current) {
+        walkAudioRef.current.pause();
+        walkAudioRef.current.src = '';
+      }
       setIsLoadingModel(false);
+      setShowLiveMessage(true);
     }, 3500);
-
-    setCurtainsOpen(true);
 
     // DYNAMICALLY LOAD THE CHOSEN 3D CHARACTER MODEL
     fbxLoader.load(
       characterModelPath,
       (bossModel) => {
-        setIsLoadingModel(false);
         const box = new THREE.Box3().setFromObject(bossModel);
         const size = box.getSize(new THREE.Vector3());
         if (size.y > 0) {
@@ -219,11 +209,31 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
           if (startTime === null && clock) {
             startTime = clock.getElapsedTime();
           }
+
+          // Model is fully ready: open curtains, play walk sound, and hide loading!
+          clearTimeout(safetyTimer);
+          setIsLoadingModel(false);
+          setCurtainsOpen(true);
+
+          if (walkAudio) {
+            walkAudio.play().catch(() => {
+              const handleFirstTouch = () => {
+                if (walkAudioRef.current) {
+                  walkAudioRef.current.play().catch(() => {});
+                }
+                window.removeEventListener('click', handleFirstTouch);
+                window.removeEventListener('touchstart', handleFirstTouch);
+              };
+              window.addEventListener('click', handleFirstTouch);
+              window.addEventListener('touchstart', handleFirstTouch);
+            });
+          }
         });
       },
       undefined,
       (err) => {
         console.warn('Model Load Error:', err);
+        clearTimeout(safetyTimer);
         setIsLoadingModel(false);
         setHasError(true);
       }
