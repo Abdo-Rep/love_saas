@@ -66,53 +66,64 @@ export default function AdminPage() {
   const uploadAudioToCloud = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
     setUploadError('');
-    
-    // 1. Try client-side upload to Catbox.moe via CORS proxy (No 4.5MB server limit!)
-    try {
-      const catboxForm = new FormData();
-      catboxForm.append('reqtype', 'fileupload');
-      catboxForm.append('fileToUpload', file);
 
-      const resProxy = await fetch('https://corsproxy.io/?https://catbox.moe/d.php', {
-        method: 'POST',
-        body: catboxForm,
-      });
-
-      if (resProxy.ok) {
-        const fileUrl = await resProxy.text();
-        if (fileUrl.trim().startsWith('http')) {
-          setIsUploadingAudio(false);
-          return fileUrl.trim();
+    // Helper: try uploading to 0x0.st (supports CORS natively, permanent, up to 512MB)
+    const tryZeroX = async (): Promise<string | null> => {
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch('https://0x0.st', { method: 'POST', body: form });
+        if (res.ok) {
+          const url = (await res.text()).trim();
+          if (url.startsWith('https://')) return url;
         }
-      }
-    } catch (proxyErr) {
-      console.warn('Proxy upload failed, attempting server fallback...', proxyErr);
-    }
+      } catch (_) {}
+      return null;
+    };
 
-    // 2. Fallback: upload via server API route (works for files < 4.5MB)
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && json.url) {
-          setIsUploadingAudio(false);
-          return json.url;
-        } else if (json.error) {
-          throw new Error(json.error);
+    // Helper: try uploading to catbox.moe via allorigins proxy
+    const tryCatbox = async (): Promise<string | null> => {
+      try {
+        const form = new FormData();
+        form.append('reqtype', 'fileupload');
+        form.append('fileToUpload', file);
+        const res = await fetch('https://api.allorigins.win/raw?url=https://catbox.moe/d.php', {
+          method: 'POST',
+          body: form,
+        });
+        if (res.ok) {
+          const url = (await res.text()).trim();
+          if (url.startsWith('https://')) return url;
         }
-      }
-    } catch (e: any) {
-      console.error(e);
-      setUploadError(e.message || 'حدث خطأ أثناء رفع الأغنية!');
-    }
-    
+      } catch (_) {}
+      return null;
+    };
+
+    // Helper: try server-side API (< 4.5MB only)
+    const tryServer = async (): Promise<string | null> => {
+      try {
+        const form = new FormData();
+        form.append('file', file);
+        const res = await fetch('/api/upload', { method: 'POST', body: form });
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.url) return json.url;
+        }
+      } catch (_) {}
+      return null;
+    };
+
+    // Try all methods in parallel, take first success
+    const url =
+      (await tryZeroX()) ||
+      (await tryCatbox()) ||
+      (await tryServer());
+
     setIsUploadingAudio(false);
-    throw new Error('فشل رفع الأغنية للسيرفر السحابي، يرجى المحاولة مرة أخرى ❌');
+
+    if (url) return url;
+    setUploadError('فشل رفع الأغنية، يرجى التحقق من الاتصال والمحاولة مرة أخرى ❌');
+    throw new Error('فشل رفع الأغنية');
   };
 
   // Client-side WebP compression helper
