@@ -17,6 +17,12 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
   const [error, setError] = useState('');
   const [isUnlocking, setIsUnlocking] = useState(false);
 
+  const startAudioOnInteraction = () => {
+    if (config.storySongUrl) {
+      bgMusic.play(config.storySongUrl);
+    }
+  };
+
   React.useEffect(() => {
     if (config.storySongUrl) {
       bgMusic.play(config.storySongUrl);
@@ -62,6 +68,8 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
 
   return (
     <div
+      onClick={startAudioOnInteraction}
+      onTouchStart={startAudioOnInteraction}
       className={`relative w-full min-h-[100dvh] overflow-y-auto bg-gradient-to-b from-[#1c0617] via-[#10030e] to-[#090108] flex flex-col items-center justify-between p-4 sm:p-8 text-center select-none transition-all duration-700 ${
         isUnlocking ? 'scale-110 opacity-0 blur-sm' : 'scale-100 opacity-100'
       }`}
@@ -136,6 +144,7 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
                   setPassword(e.target.value);
                   if (error) setError('');
                 }}
+                onFocus={startAudioOnInteraction}
                 placeholder={config.passwordPlaceholder || 'اكتب كلمة السر هنا ✨'}
                 autoComplete="new-password"
                 name="site_password"
