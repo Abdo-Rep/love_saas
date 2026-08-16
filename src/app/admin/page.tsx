@@ -66,9 +66,33 @@ export default function AdminPage() {
   const uploadAudioToCloud = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
     setUploadError('');
-    const formData = new FormData();
-    formData.append('file', file);
+    
+    // 1. Try client-side upload to Catbox.moe via CORS proxy (No 4.5MB server limit!)
     try {
+      const catboxForm = new FormData();
+      catboxForm.append('reqtype', 'fileupload');
+      catboxForm.append('fileToUpload', file);
+
+      const resProxy = await fetch('https://corsproxy.io/?https://catbox.moe/d.php', {
+        method: 'POST',
+        body: catboxForm,
+      });
+
+      if (resProxy.ok) {
+        const fileUrl = await resProxy.text();
+        if (fileUrl.trim().startsWith('http')) {
+          setIsUploadingAudio(false);
+          return fileUrl.trim();
+        }
+      }
+    } catch (proxyErr) {
+      console.warn('Proxy upload failed, attempting server fallback...', proxyErr);
+    }
+
+    // 2. Fallback: upload via server API route (works for files < 4.5MB)
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
       const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
@@ -86,6 +110,7 @@ export default function AdminPage() {
       console.error(e);
       setUploadError(e.message || 'حدث خطأ أثناء رفع الأغنية!');
     }
+    
     setIsUploadingAudio(false);
     throw new Error('فشل رفع الأغنية للسيرفر السحابي، يرجى المحاولة مرة أخرى ❌');
   };
