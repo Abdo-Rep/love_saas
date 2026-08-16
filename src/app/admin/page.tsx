@@ -69,20 +69,22 @@ export default function AdminPage() {
     const formData = new FormData();
     formData.append('file', file);
     try {
-      const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+      const res = await fetch('/api/upload', {
         method: 'POST',
         body: formData,
       });
       if (res.ok) {
         const json = await res.json();
-        if (json.status === 'success' && json.data?.url) {
-          const directUrl = json.data.url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/');
+        if (json.success && json.url) {
           setIsUploadingAudio(false);
-          return directUrl;
+          return json.url;
+        } else if (json.error) {
+          throw new Error(json.error);
         }
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setUploadError(e.message || 'حدث خطأ أثناء رفع الأغنية!');
     }
     setIsUploadingAudio(false);
     throw new Error('فشل رفع الأغنية للسيرفر السحابي، يرجى المحاولة مرة أخرى ❌');
