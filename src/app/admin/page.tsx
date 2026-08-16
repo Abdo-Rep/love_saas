@@ -60,6 +60,34 @@ export default function AdminPage() {
     setTimeout(() => setSaveMessage(''), 3500);
   };
 
+  const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  const uploadAudioToCloud = async (file: File): Promise<string> => {
+    setIsUploadingAudio(true);
+    setUploadError('');
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const res = await fetch('https://tmpfiles.org/api/v1/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.status === 'success' && json.data?.url) {
+          const directUrl = json.data.url.replace('https://tmpfiles.org/', 'https://tmpfiles.org/dl/');
+          setIsUploadingAudio(false);
+          return directUrl;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setIsUploadingAudio(false);
+    throw new Error('فشل رفع الأغنية للسيرفر السحابي، يرجى المحاولة مرة أخرى ❌');
+  };
+
   // Client-side WebP compression helper
   const compressToWebP = (file: File, quality = 0.85, maxWidth = 1600): Promise<string> => {
     return new Promise((resolve) => {
@@ -405,27 +433,42 @@ export default function AdminPage() {
               </div>
             )}
 
-            {/* UPLOAD BUTTON */}
-            <label className="cursor-pointer flex items-center justify-center gap-2.5 p-4 rounded-2xl bg-gradient-to-r from-purple-800/60 via-rose-800/50 to-pink-800/60 border border-purple-300/30 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] text-white font-black text-xs">
-              <Upload className="w-5 h-5 text-purple-200" />
-              <span>📂 اختار أغنية من جهازك (MP3، MP4، OGG، WAV)</span>
-              <input
-                type="file"
-                accept="audio/*,video/mp4"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (!file) return;
-                  const reader = new FileReader();
-                  reader.onload = (ev) => {
-                    const dataUrl = ev.target?.result as string;
-                    if (dataUrl) updateConfig({ storySongUrl: dataUrl });
-                  };
-                  reader.readAsDataURL(file);
-                  e.target.value = '';
-                }}
-              />
-            </label>
+            {/* UPLOAD BUTTON / STATUS */}
+            {isUploadingAudio ? (
+              <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl bg-purple-950/40 border border-purple-500/30">
+                <div className="w-8 h-8 border-3 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-black text-purple-300">جاري رفع الأغنية للسيرفر السحابي الآمن... يرجى الانتظار ⏳</p>
+              </div>
+            ) : (
+              <label className="cursor-pointer flex items-center justify-center gap-2.5 p-4 rounded-2xl bg-gradient-to-r from-purple-800/60 via-rose-800/50 to-pink-800/60 border border-purple-300/30 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] text-white font-black text-xs">
+                <Upload className="w-5 h-5 text-purple-200" />
+                <span>📂 اختار أغنية من جهازك (MP3، MP4، OGG، WAV)</span>
+                <input
+                  type="file"
+                  accept="audio/*,video/mp4"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const cloudUrl = await uploadAudioToCloud(file);
+                      if (cloudUrl) {
+                        updateConfig({ storySongUrl: cloudUrl });
+                      }
+                    } catch (err: any) {
+                      setUploadError(err.message || 'حدث خطأ أثناء رفع الأغنية!');
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+            )}
+
+            {uploadError && (
+              <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/30 text-red-300 text-xs font-bold text-center">
+                {uploadError}
+              </div>
+            )}
           </div>
 
           <Live3DModelPicker />

@@ -146,7 +146,7 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
     let startTime: number | null = null;
 
     // 3.5s Safety fallback timer: if 3D model takes too long, hide spinner & open curtains gracefully
-    // 3.5s Safety fallback: if 3D model takes too long, skip 3D stage and go directly to typewriter message!
+    // 20s Safety fallback: if 3D model takes too long, skip 3D stage and go directly to typewriter message!
     const safetyTimer = setTimeout(() => {
       if (walkAudioRef.current) {
         walkAudioRef.current.pause();
@@ -154,7 +154,7 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
       }
       setIsLoadingModel(false);
       setShowLiveMessage(true);
-    }, 3500);
+    }, 20000);
 
     // DYNAMICALLY LOAD THE CHOSEN 3D CHARACTER MODEL
     fbxLoader.load(
