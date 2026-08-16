@@ -53,6 +53,11 @@ export const FinalHeartfeltLetter: React.FC<Props> = ({ onRestart }) => {
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200" style={{ fontFamily: "'Cairo', sans-serif" }}>
           {config.finalLetterTitle || 'كلمات نُقشت بماء الذهب'}
         </h1>
+        {config.finalLetterSubtitle && (
+          <p className="text-xs sm:text-sm font-medium text-pink-200/80 animate-fade-in" style={{ fontFamily: "'Cairo', sans-serif" }}>
+            {config.finalLetterSubtitle}
+          </p>
+        )}
       </div>
 
       {/* PARCHMENT LETTER SCROLL BOX */}
