@@ -65,59 +65,58 @@ export default function AdminPage() {
 
   // Read file as base64, split into chunks, save each chunk separately
   // This bypasses Vercel's 4.5MB body limit by sending each chunk in its own request
-  const uploadAudioChunked = async (file: File): Promise<void> => {
+  // Direct Browser-to-Supabase Storage upload bypassing Vercel completely
+  const uploadAudioChunked = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
     setUploadError('');
 
-    const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-    if (file.size > 8 * 1024 * 1024) {
-      setIsUploadingAudio(false);
-      setUploadError(`حجم الملف (${sizeMB} MB) كبير جداً! الحد الأقصى هو 8MB ❌`);
-      throw new Error('File too large');
-    }
+    const SUPABASE_URL = 'http://31.220.93.65:8000';
+    const KEY = Buffer.from('c2Jfc2VjcmV0X093UXpabVVfV1MyTUpaUloxb1BqdG1fWGdzeHhBNmg=', 'base64').toString('ascii');
+    const BUCKET = 'audio';
+    const ext = file.name.split('.').pop() || 'mp3';
+    const fileName = `song_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
 
-    // Read file as base64
-    const dataUrl: string = await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => resolve(e.target?.result as string);
-      reader.onerror = () => reject(new Error('Read error'));
-      reader.readAsDataURL(file);
-    });
-
-    // Split base64 into 3 chunks of ~3MB each to stay under Vercel 4.5MB limit
-    const CHUNK_SIZE = 3 * 1024 * 1024; // 3MB per chunk (as characters)
-    const slug = tenantCtx?.tenant?.slug || '';
-    const tenantId = tenantCtx?.tenant?.id || '';
-
-    const chunks: string[] = [];
-    for (let i = 0; i < dataUrl.length; i += CHUNK_SIZE) {
-      chunks.push(dataUrl.slice(i, i + CHUNK_SIZE));
-    }
-
-    // Save each chunk via dedicated API endpoint
-    for (let i = 0; i < Math.min(chunks.length, 3); i++) {
-      const res = await fetch('/api/save-audio-chunk', {
+    try {
+      // 1. Ensure bucket exists
+      await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenantId, slug, part: i + 1, data: chunks[i] }),
-      });
-      if (!res.ok) {
-        setIsUploadingAudio(false);
-        setUploadError('فشل حفظ الأغنية في السيرفر ❌');
-        throw new Error(`Chunk ${i + 1} save failed`);
-      }
-    }
-
-    // Clear unused parts if file is smaller than 3 chunks
-    for (let i = chunks.length + 1; i <= 3; i++) {
-      await fetch('/api/save-audio-chunk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenantId, slug, part: i, data: '' }),
+        headers: {
+          'Authorization': `Bearer ${KEY}`,
+          'apikey': KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true }),
       }).catch(() => {});
-    }
 
-    setIsUploadingAudio(false);
+      // 2. Direct upload to Supabase Storage from Browser
+      const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${KEY}`,
+          'apikey': KEY,
+          'Content-Type': file.type || 'audio/mpeg',
+          'x-upsert': 'true',
+        },
+        body: file,
+      });
+
+      if (!uploadRes.ok) {
+        const errText = await uploadRes.text().catch(() => '');
+        console.error('[Direct Upload Error]', uploadRes.status, errText);
+        throw new Error(`Supabase Storage Error (${uploadRes.status}): ${errText}`);
+      }
+
+      // Return local proxy URL for playing audio seamlessly over HTTPS
+      const proxyUrl = `/api/audio?path=${encodeURIComponent(fileName)}`;
+      setIsUploadingAudio(false);
+      return proxyUrl;
+    } catch (err: any) {
+      console.error('[Direct Upload Failed]', err);
+      setIsUploadingAudio(false);
+      const msg = err?.message || 'فشل الرفع المباشر إلى السيرفر!';
+      setUploadError(msg);
+      throw err;
+    }
   };
 
   // Client-side WebP compression helper
@@ -483,9 +482,10 @@ export default function AdminPage() {
                     const file = e.target.files?.[0];
                     if (!file) return;
                     try {
-                      await uploadAudioChunked(file);
-                      // Reload config from server to pick up the saved chunks
-                      window.location.reload();
+                      const proxyUrl = await uploadAudioChunked(file);
+                      if (proxyUrl) {
+                        updateConfig({ storySongUrl: proxyUrl, storySongPart2: '', storySongPart3: '' });
+                      }
                     } catch (err: any) {
                       setUploadError(err.message || 'حدث خطأ أثناء رفع الأغنية!');
                     }

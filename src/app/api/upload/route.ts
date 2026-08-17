@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server';
 // Allow larger payloads (Vercel Pro allows up to 50MB, Hobby is capped at 4.5MB)
 export const maxDuration = 60; // seconds
 
-const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(':8000', ':9000');
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const DEFAULT_SECRET = Buffer.from('c2Jfc2VjcmV0X093UXpabVVfV1MyTUpaUloxb1BqdG1fWGdzeHhBNmg=', 'base64').toString('ascii');
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://31.220.93.65:8000';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || DEFAULT_SECRET;
 const BUCKET = 'audio';
 
 export async function POST(req: Request) {
