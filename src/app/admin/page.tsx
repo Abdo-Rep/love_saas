@@ -63,67 +63,61 @@ export default function AdminPage() {
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   const [uploadError, setUploadError] = useState('');
 
-  const uploadAudioToCloud = async (file: File): Promise<string> => {
+  // Read file as base64, split into chunks, save each chunk separately
+  // This bypasses Vercel's 4.5MB body limit by sending each chunk in its own request
+  const uploadAudioChunked = async (file: File): Promise<void> => {
     setIsUploadingAudio(true);
     setUploadError('');
 
-    // Helper: try uploading to 0x0.st (supports CORS natively, permanent, up to 512MB)
-    const tryZeroX = async (): Promise<string | null> => {
-      try {
-        const form = new FormData();
-        form.append('file', file);
-        const res = await fetch('https://0x0.st', { method: 'POST', body: form });
-        if (res.ok) {
-          const url = (await res.text()).trim();
-          if (url.startsWith('https://')) return url;
-        }
-      } catch (_) {}
-      return null;
-    };
+    const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+    if (file.size > 8 * 1024 * 1024) {
+      setIsUploadingAudio(false);
+      setUploadError(`حجم الملف (${sizeMB} MB) كبير جداً! الحد الأقصى هو 8MB ❌`);
+      throw new Error('File too large');
+    }
 
-    // Helper: try uploading to catbox.moe via allorigins proxy
-    const tryCatbox = async (): Promise<string | null> => {
-      try {
-        const form = new FormData();
-        form.append('reqtype', 'fileupload');
-        form.append('fileToUpload', file);
-        const res = await fetch('https://api.allorigins.win/raw?url=https://catbox.moe/d.php', {
-          method: 'POST',
-          body: form,
-        });
-        if (res.ok) {
-          const url = (await res.text()).trim();
-          if (url.startsWith('https://')) return url;
-        }
-      } catch (_) {}
-      return null;
-    };
+    // Read file as base64
+    const dataUrl: string = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = () => reject(new Error('Read error'));
+      reader.readAsDataURL(file);
+    });
 
-    // Helper: try server-side API (< 4.5MB only)
-    const tryServer = async (): Promise<string | null> => {
-      try {
-        const form = new FormData();
-        form.append('file', file);
-        const res = await fetch('/api/upload', { method: 'POST', body: form });
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.url) return json.url;
-        }
-      } catch (_) {}
-      return null;
-    };
+    // Split base64 into 3 chunks of ~3MB each to stay under Vercel 4.5MB limit
+    const CHUNK_SIZE = 3 * 1024 * 1024; // 3MB per chunk (as characters)
+    const slug = tenantCtx?.tenant?.slug || '';
+    const tenantId = tenantCtx?.tenant?.id || '';
 
-    // Try all methods in parallel, take first success
-    const url =
-      (await tryZeroX()) ||
-      (await tryCatbox()) ||
-      (await tryServer());
+    const chunks: string[] = [];
+    for (let i = 0; i < dataUrl.length; i += CHUNK_SIZE) {
+      chunks.push(dataUrl.slice(i, i + CHUNK_SIZE));
+    }
+
+    // Save each chunk via dedicated API endpoint
+    for (let i = 0; i < Math.min(chunks.length, 3); i++) {
+      const res = await fetch('/api/save-audio-chunk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId, slug, part: i + 1, data: chunks[i] }),
+      });
+      if (!res.ok) {
+        setIsUploadingAudio(false);
+        setUploadError('فشل حفظ الأغنية في السيرفر ❌');
+        throw new Error(`Chunk ${i + 1} save failed`);
+      }
+    }
+
+    // Clear unused parts if file is smaller than 3 chunks
+    for (let i = chunks.length + 1; i <= 3; i++) {
+      await fetch('/api/save-audio-chunk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId, slug, part: i, data: '' }),
+      }).catch(() => {});
+    }
 
     setIsUploadingAudio(false);
-
-    if (url) return url;
-    setUploadError('فشل رفع الأغنية، يرجى التحقق من الاتصال والمحاولة مرة أخرى ❌');
-    throw new Error('فشل رفع الأغنية');
   };
 
   // Client-side WebP compression helper
@@ -489,10 +483,9 @@ export default function AdminPage() {
                     const file = e.target.files?.[0];
                     if (!file) return;
                     try {
-                      const cloudUrl = await uploadAudioToCloud(file);
-                      if (cloudUrl) {
-                        updateConfig({ storySongUrl: cloudUrl });
-                      }
+                      await uploadAudioChunked(file);
+                      // Reload config from server to pick up the saved chunks
+                      window.location.reload();
                     } catch (err: any) {
                       setUploadError(err.message || 'حدث خطأ أثناء رفع الأغنية!');
                     }

@@ -15,10 +15,19 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  useEffect(() => {
-    if (!config.storySongUrl) return;
+  // Reconstruct full base64 from chunks if needed
+  const getFullSongUrl = () => {
+    if (!config.storySongUrl) return '';
+    if (!config.storySongPart2) return config.storySongUrl;
+    // Combine all parts
+    return config.storySongUrl + (config.storySongPart2 || '') + (config.storySongPart3 || '');
+  };
 
-    bgMusic.setTrack(config.storySongUrl);
+  useEffect(() => {
+    const songUrl = getFullSongUrl();
+    if (!songUrl) return;
+
+    bgMusic.setTrack(songUrl);
 
     const unsubState = bgMusic.subscribeState((playing) => {
       setIsPlaying(playing);
@@ -31,14 +40,14 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
 
     // Auto-play as soon as Step 3 is reached (except Step 7 voice recording)
     if (currentStep >= 3 && currentStep !== 7) {
-      bgMusic.play(config.storySongUrl);
+      bgMusic.play(songUrl);
     }
 
     return () => {
       unsubState();
       unsubTime();
     };
-  }, [config.storySongUrl, currentStep]);
+  }, [config.storySongUrl, config.storySongPart2, config.storySongPart3, currentStep]);
 
   // Only render UI starting from Step 3 (Constellation) onwards, and HIDE during Step 7 (Voice)!
   if (!config.storySongUrl || currentStep < 3 || currentStep === 7) return null;

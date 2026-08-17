@@ -1,0 +1,44 @@
+import { NextResponse } from 'next/server';
+
+const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(':8000', ':9000');
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const BUCKET = 'audio';
+
+export async function GET(req: Request) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const path = searchParams.get('path');
+    if (!path) {
+      return new NextResponse('Missing path', { status: 400 });
+    }
+
+    // Proxy the audio file from Supabase (server-side, no mixed content issue)
+    const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`, {
+      headers: {
+        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+        'apikey': SERVICE_ROLE_KEY,
+      },
+    });
+
+    if (!res.ok) {
+      return new NextResponse('Audio not found', { status: 404 });
+    }
+
+    const contentType = res.headers.get('content-type') || 'audio/mpeg';
+    const body = await res.arrayBuffer();
+
+    return new NextResponse(body, {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        'Content-Length': body.byteLength.toString(),
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=31536000',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  } catch (err: any) {
+    console.error('[API Audio Proxy] Error:', err);
+    return new NextResponse('Server error', { status: 500 });
+  }
+}

@@ -54,7 +54,9 @@ export interface AppConfig {
   selectedCharacterModel: string;
   theaterWalkMessage: string;
   theaterButtonText: string;
-  storySongUrl: string; // Custom romantic song that auto-plays right after theater when typewriter message appears
+  storySongUrl: string; // Custom romantic song - part 1 of potentially chunked base64
+  storySongPart2?: string; // Part 2 of base64 audio (for large files)
+  storySongPart3?: string; // Part 3 of base64 audio (for large files)
 
   // Step 3: Star Constellation Name
   constellationName: string;

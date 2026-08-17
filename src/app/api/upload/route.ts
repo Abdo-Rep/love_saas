@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server';
 
+// Allow larger payloads (Vercel Pro allows up to 50MB, Hobby is capped at 4.5MB)
+export const maxDuration = 60; // seconds
+
+const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(':8000', ':9000');
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const BUCKET = 'audio';
+
 export async function POST(req: Request) {
   try {
     const formData = await req.formData();
@@ -8,36 +15,79 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
     }
 
-    // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    const fileName = `song_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const contentType = file.type || 'audio/mpeg';
 
-    // Create a new FormData for Catbox
-    const catboxForm = new FormData();
-    catboxForm.append('reqtype', 'fileupload');
-    
-    // Append the file as a Blob/File
-    const blob = new Blob([buffer], { type: file.type });
-    catboxForm.append('fileToUpload', blob, file.name);
-
-    // POST to Catbox server-side (bypasses CORS restrictions)
-    const res = await fetch('https://catbox.moe/d.php', {
+    // Ensure bucket exists first
+    await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
       method: 'POST',
-      body: catboxForm,
+      headers: {
+        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+        'Content-Type': 'application/json',
+        'apikey': SERVICE_ROLE_KEY,
+      },
+      body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true }),
+    }).catch(() => {/* bucket may already exist */});
+
+    // Upload file to Supabase Storage
+    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+        'Content-Type': contentType,
+        'apikey': SERVICE_ROLE_KEY,
+        'x-upsert': 'true',
+      },
+      body: buffer,
     });
 
-    if (res.ok) {
-      const fileUrl = await res.text();
-      if (fileUrl.startsWith('http')) {
-        return NextResponse.json({ success: true, url: fileUrl.trim() });
-      }
+    if (uploadRes.ok) {
+      // Return public URL via our own proxy to avoid mixed content issues on client
+      const publicUrl = `/api/audio?path=${encodeURIComponent(fileName)}`;
+      return NextResponse.json({ success: true, url: publicUrl });
     }
 
-    const errText = await res.text().catch(() => '');
-    console.error('[API Upload] Catbox failed:', res.status, errText);
-    return NextResponse.json({ success: false, error: 'Failed to upload file to permanent host' }, { status: 500 });
+    const errText = await uploadRes.text().catch(() => '');
+    console.error('[Upload] Supabase storage error:', uploadRes.status, errText);
+
+    // Fallback: try 0x0.st server-side (no CORS issue from server)
+    try {
+      const form = new FormData();
+      const blob = new Blob([buffer], { type: contentType });
+      form.append('file', blob, file.name || 'audio.mp3');
+      const res = await fetch('https://0x0.st', { method: 'POST', body: form });
+      if (res.ok) {
+        const url = (await res.text()).trim();
+        if (url.startsWith('http')) {
+          return NextResponse.json({ success: true, url: url.replace('http://', 'https://') });
+        }
+      }
+    } catch (e) {
+      console.warn('[Upload] 0x0.st fallback failed:', e);
+    }
+
+    // Final fallback: catbox.moe
+    try {
+      const form = new FormData();
+      form.append('reqtype', 'fileupload');
+      const blob = new Blob([buffer], { type: contentType });
+      form.append('fileToUpload', blob, file.name || 'audio.mp3');
+      const res = await fetch('https://catbox.moe/d.php', { method: 'POST', body: form });
+      if (res.ok) {
+        const url = (await res.text()).trim();
+        if (url.startsWith('http')) {
+          return NextResponse.json({ success: true, url: url.replace('http://', 'https://') });
+        }
+      }
+    } catch (e) {
+      console.warn('[Upload] catbox fallback failed:', e);
+    }
+
+    return NextResponse.json({ success: false, error: 'All upload services failed' }, { status: 500 });
   } catch (err: any) {
-    console.error('[API Upload] Error:', err);
+    console.error('[API Upload] Fatal error:', err);
     return NextResponse.json({ success: false, error: err?.message || 'Internal server error' }, { status: 500 });
   }
 }
