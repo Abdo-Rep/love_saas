@@ -65,29 +65,32 @@ export default function AdminPage() {
 
   // Read file as base64, split into chunks, save each chunk separately
   // This bypasses Vercel's 4.5MB body limit by sending each chunk in its own request
-  // Upload via Server-to-Server /api/storage-proxy route to bypass browser Mixed Content restrictions
+  // Client-side Upload to Vercel Blob API Route (Streaming Body - Bypass 4.5MB Serverless Form Limit)
   const uploadAudioChunked = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
     setUploadError('');
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
+      const ext = file.name.split('.').pop() || 'mp3';
+      const filename = `song_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
 
-      const res = await fetch('/api/storage-proxy', {
+      const res = await fetch(`/api/upload-blob?filename=${encodeURIComponent(filename)}`, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'content-type': file.type || 'audio/mpeg',
+        },
+        body: file, // Direct binary stream request body
       });
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'فشل رفع الأغنية عبر السيرفر الوسيط!');
+        throw new Error(json.error || 'فشل رفع الأغنية!');
       }
 
       setIsUploadingAudio(false);
       return json.url;
     } catch (err: any) {
-      console.error('[Storage Proxy Upload Failed]', err);
+      console.error('[Blob Upload Failed]', err);
       setIsUploadingAudio(false);
       const msg = err?.message || 'حدث خطأ أثناء رفع الملف!';
       setUploadError(msg);
