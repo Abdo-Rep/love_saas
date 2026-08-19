@@ -65,19 +65,20 @@ export default function AdminPage() {
 
   // Read file as base64, split into chunks, save each chunk separately
   // This bypasses Vercel's 4.5MB body limit by sending each chunk in its own request
-  // Direct Browser-to-Supabase Storage upload bypassing Vercel completely
+  // Fetch upload token from Vercel API then upload directly to Supabase Storage
   const uploadAudioChunked = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
     setUploadError('');
 
-    const SUPABASE_URL = 'http://31.220.93.65:8000';
-    const KEY = Buffer.from('c2Jfc2VjcmV0X093UXpabVVfV1MyTUpaUloxb1BqdG1fWGdzeHhBNmg=', 'base64').toString('ascii');
-    const BUCKET = 'audio';
-    const ext = file.name.split('.').pop() || 'mp3';
-    const fileName = `song_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
-
     try {
-      // 1. Ensure bucket exists
+      // 1. Fetch credentials securely from /api/get-upload-token
+      const tokenRes = await fetch('/api/get-upload-token');
+      const { url: SUPABASE_URL, key: KEY } = await tokenRes.json();
+      const BUCKET = 'audio';
+      const ext = file.name.split('.').pop() || 'mp3';
+      const fileName = `song_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+
+      // 2. Ensure bucket exists
       await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
         method: 'POST',
         headers: {
@@ -88,7 +89,7 @@ export default function AdminPage() {
         body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true }),
       }).catch(() => {});
 
-      // 2. Direct upload to Supabase Storage from Browser
+      // 3. Direct upload to Supabase Storage bucket 'audio'
       const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`, {
         method: 'POST',
         headers: {
@@ -106,7 +107,7 @@ export default function AdminPage() {
         throw new Error(`Supabase Storage Error (${uploadRes.status}): ${errText}`);
       }
 
-      // Return local proxy URL for playing audio seamlessly over HTTPS
+      // Return proxy URL to save to database and play seamlessly over HTTPS
       const proxyUrl = `/api/audio?path=${encodeURIComponent(fileName)}`;
       setIsUploadingAudio(false);
       return proxyUrl;
