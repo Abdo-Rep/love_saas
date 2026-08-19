@@ -65,56 +65,31 @@ export default function AdminPage() {
 
   // Read file as base64, split into chunks, save each chunk separately
   // This bypasses Vercel's 4.5MB body limit by sending each chunk in its own request
-  // Fetch upload token from Vercel API then upload directly to Supabase Storage
+  // Upload via Server-to-Server /api/storage-proxy route to bypass browser Mixed Content restrictions
   const uploadAudioChunked = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
     setUploadError('');
 
     try {
-      // 1. Fetch credentials securely from /api/get-upload-token
-      const tokenRes = await fetch('/api/get-upload-token');
-      const { url: SUPABASE_URL, key: KEY } = await tokenRes.json();
-      const BUCKET = 'audio';
-      const ext = file.name.split('.').pop() || 'mp3';
-      const fileName = `song_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+      const formData = new FormData();
+      formData.append('file', file);
 
-      // 2. Ensure bucket exists
-      await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
+      const res = await fetch('/api/storage-proxy', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${KEY}`,
-          'apikey': KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true }),
-      }).catch(() => {});
-
-      // 3. Direct upload to Supabase Storage bucket 'audio'
-      const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${KEY}`,
-          'apikey': KEY,
-          'Content-Type': file.type || 'audio/mpeg',
-          'x-upsert': 'true',
-        },
-        body: file,
+        body: formData,
       });
 
-      if (!uploadRes.ok) {
-        const errText = await uploadRes.text().catch(() => '');
-        console.error('[Direct Upload Error]', uploadRes.status, errText);
-        throw new Error(`Supabase Storage Error (${uploadRes.status}): ${errText}`);
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || 'فشل رفع الأغنية عبر السيرفر الوسيط!');
       }
 
-      // Return proxy URL to save to database and play seamlessly over HTTPS
-      const proxyUrl = `/api/audio?path=${encodeURIComponent(fileName)}`;
       setIsUploadingAudio(false);
-      return proxyUrl;
+      return json.url;
     } catch (err: any) {
-      console.error('[Direct Upload Failed]', err);
+      console.error('[Storage Proxy Upload Failed]', err);
       setIsUploadingAudio(false);
-      const msg = err?.message || 'فشل الرفع المباشر إلى السيرفر!';
+      const msg = err?.message || 'حدث خطأ أثناء رفع الملف!';
       setUploadError(msg);
       throw err;
     }
