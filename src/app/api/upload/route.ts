@@ -15,18 +15,22 @@ export async function POST(req: Request) {
 
     const formData = await req.formData();
     const file = formData.get('file') as File;
+    const uploadId = formData.get('uploadId') as string;
+    const chunkIndexStr = formData.get('chunkIndex') as string;
+    const totalChunksStr = formData.get('totalChunks') as string;
+
     if (!file) {
       return NextResponse.json({ success: false, error: 'No file provided' }, { status: 400 });
     }
 
+    const chunkIndex = chunkIndexStr ? parseInt(chunkIndexStr, 10) : 0;
+    const totalChunks = totalChunksStr ? parseInt(totalChunksStr, 10) : 1;
+
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const ext = file.name.split('.').pop() || 'mp3';
-    const fileName = `${category}-${Date.now()}.${ext}`;
-    const filePath = `${slug}/${category}/${fileName}`;
     const contentType = file.type || 'audio/mpeg';
 
-    // 1. Ensure bucket 'site-media' exists (try on REST port 8000 and Storage port 9000)
+    // 1. Ensure bucket 'site-media' exists
     for (const host of [SUPABASE_REST_URL, SUPABASE_STORAGE_URL]) {
       try {
         await fetch(`${host}/storage/v1/bucket`, {
@@ -41,13 +45,108 @@ export async function POST(req: Request) {
       } catch (_) {}
     }
 
-    // 2. Upload file to Supabase Storage VPS (site-media bucket)
-    let uploadSuccess = false;
-    let lastErr = '';
+    // Single chunk / small file upload
+    if (totalChunks <= 1) {
+      const ext = file.name.split('.').pop() || 'mp3';
+      const fileName = `${category}-${Date.now()}.${ext}`;
+      const filePath = `${slug}/${category}/${fileName}`;
 
+      for (const host of [SUPABASE_STORAGE_URL, SUPABASE_REST_URL]) {
+        try {
+          const uploadRes = await fetch(`${host}/storage/v1/object/${BUCKET}/${filePath}`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+              'Content-Type': contentType,
+              'apikey': SERVICE_ROLE_KEY,
+              'x-upsert': 'true',
+            },
+            body: buffer,
+          });
+
+          if (uploadRes.ok) {
+            const directUrl = `${SUPABASE_STORAGE_URL}/storage/v1/object/public/${BUCKET}/${filePath}`;
+            const proxyUrl = `/api/audio?path=${encodeURIComponent(filePath)}`;
+            return NextResponse.json({ success: true, url: directUrl, proxyUrl, isComplete: true });
+          }
+        } catch (_) {}
+      }
+
+      return NextResponse.json({ success: false, error: 'Failed to save file to Supabase' }, { status: 500 });
+    }
+
+    // Chunked upload for files > 3.5MB to bypass Vercel 4.5MB limit
+    const activeUploadId = uploadId || `up_${Date.now()}`;
+    const tmpPath = `tmp_${activeUploadId}_part_${chunkIndex}`;
+
+    // Upload current chunk to temp location in Supabase
+    let chunkSaved = false;
     for (const host of [SUPABASE_STORAGE_URL, SUPABASE_REST_URL]) {
       try {
-        const uploadRes = await fetch(`${host}/storage/v1/object/${BUCKET}/${filePath}`, {
+        const chunkRes = await fetch(`${host}/storage/v1/object/${BUCKET}/${tmpPath}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+            'Content-Type': 'application/octet-stream',
+            'apikey': SERVICE_ROLE_KEY,
+            'x-upsert': 'true',
+          },
+          body: buffer,
+        });
+
+        if (chunkRes.ok) {
+          chunkSaved = true;
+          break;
+        }
+      } catch (_) {}
+    }
+
+    if (!chunkSaved) {
+      return NextResponse.json({ success: false, error: `Failed to save chunk ${chunkIndex}` }, { status: 500 });
+    }
+
+    // If not the last chunk, acknowledge receipt
+    if (chunkIndex < totalChunks - 1) {
+      return NextResponse.json({ success: true, isComplete: false });
+    }
+
+    // LAST CHUNK: Assemble all chunks into final file
+    const buffers: Buffer[] = [];
+    for (let i = 0; i < totalChunks; i++) {
+      const partPath = `tmp_${activeUploadId}_part_${i}`;
+      let partBuf: Buffer | null = null;
+
+      for (const host of [SUPABASE_STORAGE_URL, SUPABASE_REST_URL]) {
+        try {
+          const getRes = await fetch(`${host}/storage/v1/object/${BUCKET}/${partPath}`, {
+            headers: {
+              'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+              'apikey': SERVICE_ROLE_KEY,
+            },
+          });
+          if (getRes.ok) {
+            partBuf = Buffer.from(await getRes.arrayBuffer());
+            break;
+          }
+        } catch (_) {}
+      }
+
+      if (!partBuf) {
+        return NextResponse.json({ success: false, error: `Failed to assemble chunk ${i}` }, { status: 500 });
+      }
+      buffers.push(partBuf);
+    }
+
+    const finalBuffer = Buffer.concat(buffers);
+    const ext = file.name.split('.').pop() || 'mp3';
+    const fileName = `${category}-${Date.now()}.${ext}`;
+    const filePath = `${slug}/${category}/${fileName}`;
+
+    // Upload assembled final file
+    let finalSaved = false;
+    for (const host of [SUPABASE_STORAGE_URL, SUPABASE_REST_URL]) {
+      try {
+        const finalRes = await fetch(`${host}/storage/v1/object/${BUCKET}/${filePath}`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
@@ -55,69 +154,38 @@ export async function POST(req: Request) {
             'apikey': SERVICE_ROLE_KEY,
             'x-upsert': 'true',
           },
-          body: buffer,
+          body: finalBuffer,
         });
 
-        if (uploadRes.ok) {
-          uploadSuccess = true;
+        if (finalRes.ok) {
+          finalSaved = true;
           break;
-        } else {
-          lastErr = await uploadRes.text().catch(() => '');
         }
-      } catch (e: any) {
-        lastErr = e?.message || 'Connection error';
+      } catch (_) {}
+    }
+
+    // Clean up temp parts
+    for (let i = 0; i < totalChunks; i++) {
+      const partPath = `tmp_${activeUploadId}_part_${i}`;
+      for (const host of [SUPABASE_STORAGE_URL, SUPABASE_REST_URL]) {
+        fetch(`${host}/storage/v1/object/${BUCKET}/${partPath}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+            'apikey': SERVICE_ROLE_KEY,
+          },
+        }).catch(() => {});
       }
     }
 
-    // Direct public URL as requested
-    const directUrl = `${SUPABASE_STORAGE_URL}/storage/v1/object/public/${BUCKET}/${filePath}`;
-    // HTTPS proxy URL so client browsers can stream over HTTPS without mixed-content issues
-    const proxyUrl = `/api/audio?path=${encodeURIComponent(filePath)}`;
-
-    if (uploadSuccess) {
-      return NextResponse.json({
-        success: true,
-        url: directUrl,
-        proxyUrl: proxyUrl,
-        path: filePath,
-      });
+    if (finalSaved) {
+      const directUrl = `${SUPABASE_STORAGE_URL}/storage/v1/object/public/${BUCKET}/${filePath}`;
+      const proxyUrl = `/api/audio?path=${encodeURIComponent(filePath)}`;
+      return NextResponse.json({ success: true, url: directUrl, proxyUrl, isComplete: true });
     }
 
-    console.warn('[Upload] VPS Storage upload failed, trying fallbacks. Error:', lastErr);
+    return NextResponse.json({ success: false, error: 'Failed to assemble audio on Supabase' }, { status: 500 });
 
-    // Fallback 1: 0x0.st server-side
-    try {
-      const form = new FormData();
-      const blob = new Blob([buffer], { type: contentType });
-      form.append('file', blob, file.name || 'audio.mp3');
-      const res = await fetch('https://0x0.st', { method: 'POST', body: form });
-      if (res.ok) {
-        const fallbackUrl = (await res.text()).trim();
-        if (fallbackUrl.startsWith('http')) {
-          return NextResponse.json({ success: true, url: fallbackUrl.replace('http://', 'https://') });
-        }
-      }
-    } catch (_) {}
-
-    // Fallback 2: catbox.moe
-    try {
-      const form = new FormData();
-      form.append('reqtype', 'fileupload');
-      const blob = new Blob([buffer], { type: contentType });
-      form.append('fileToUpload', blob, file.name || 'audio.mp3');
-      const res = await fetch('https://catbox.moe/d.php', { method: 'POST', body: form });
-      if (res.ok) {
-        const fallbackUrl = (await res.text()).trim();
-        if (fallbackUrl.startsWith('http')) {
-          return NextResponse.json({ success: true, url: fallbackUrl.replace('http://', 'https://') });
-        }
-      }
-    } catch (_) {}
-
-    return NextResponse.json(
-      { success: false, error: lastErr || 'Failed to save file to Supabase Storage' },
-      { status: 500 }
-    );
   } catch (err: any) {
     console.error('[API Upload] Exception:', err);
     return NextResponse.json({ success: false, error: err?.message || 'Internal server error' }, { status: 500 });

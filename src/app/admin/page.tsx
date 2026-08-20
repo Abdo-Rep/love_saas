@@ -66,28 +66,46 @@ export default function AdminPage() {
   // Read file as base64, split into chunks, save each chunk separately
   // This bypasses Vercel's 4.5MB body limit by sending each chunk in its own request
   // Soulove Music Flow: Upload audio to /api/upload?category=music&slug=SLUG
+  // Seamlessly handles files of any size (slices into 2.5MB chunks to bypass Vercel 4.5MB limit)
   const uploadAudioToCloud = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
     setUploadError('');
 
     try {
       const slug = tenantCtx?.tenant?.slug || 'default';
-      const formData = new FormData();
-      formData.append('file', file);
+      const CHUNK_SIZE = 2.5 * 1024 * 1024; // 2.5MB per chunk to stay strictly under Vercel 4.5MB limit
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const uploadId = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
-      const res = await fetch(`/api/upload?category=music&slug=${encodeURIComponent(slug)}`, {
-        method: 'POST',
-        body: formData,
-      });
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(file.size, start + CHUNK_SIZE);
+        const chunkBlob = file.slice(start, end, file.type);
 
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'فشل رفع الملف إلى مجلد الميديا الخاص بالموقع!');
+        const formData = new FormData();
+        formData.append('file', chunkBlob, file.name);
+        formData.append('uploadId', uploadId);
+        formData.append('chunkIndex', i.toString());
+        formData.append('totalChunks', totalChunks.toString());
+
+        const res = await fetch(`/api/upload?category=music&slug=${encodeURIComponent(slug)}`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        const json = await res.json().catch(() => ({ error: 'فشل الرفع إلى السيرفر' }));
+        if (!res.ok || !json.success) {
+          throw new Error(json.error || `فشل رفع جزء ${i + 1} من ${totalChunks}`);
+        }
+
+        if (json.isComplete && (json.url || json.proxyUrl)) {
+          setIsUploadingAudio(false);
+          return json.url || json.proxyUrl;
+        }
       }
 
       setIsUploadingAudio(false);
-      // Return returned URL (or proxy URL for HTTPS compatibility)
-      return json.url || json.proxyUrl;
+      throw new Error('فشل استكمال رفع الملف');
     } catch (err: any) {
       console.error('[Music Upload Failed]', err);
       setIsUploadingAudio(false);
