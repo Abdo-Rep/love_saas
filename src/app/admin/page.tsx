@@ -5,6 +5,7 @@ import { useConfig } from '@/lib/configContext';
 import { useTenant } from '@/lib/tenantContext';
 import { TenantStore } from '@/lib/tenantStore';
 import { Live3DModelPicker } from '@/components/admin/Live3DModelPicker';
+import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
 import {
   KeyRound,
   Settings,
@@ -98,9 +99,9 @@ export default function AdminPage() {
           throw new Error(json.error || `فشل رفع جزء ${i + 1} من ${totalChunks}`);
         }
 
-        if (json.isComplete && (json.url || json.proxyUrl)) {
+        if (json.isComplete && (json.proxyUrl || json.url)) {
           setIsUploadingAudio(false);
-          return json.url || json.proxyUrl;
+          return json.proxyUrl || json.url;
         }
       }
 
@@ -443,7 +444,7 @@ export default function AdminPage() {
                 <Music className="w-5 h-5 text-green-400 shrink-0 animate-pulse" />
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-black text-green-300">✅ أغنية محملة وجاهزة للتشغيل!</p>
-                  <audio controls src={config.storySongUrl} className="w-full mt-2 h-8" style={{ filter: 'invert(0.8) hue-rotate(270deg)' }} />
+                  <audio controls src={getPlayableAudioUrl(config.storySongUrl)} className="w-full mt-2 h-8" style={{ filter: 'invert(0.8) hue-rotate(270deg)' }} />
                 </div>
                 <button
                   onClick={() => updateConfig({ storySongUrl: '' })}

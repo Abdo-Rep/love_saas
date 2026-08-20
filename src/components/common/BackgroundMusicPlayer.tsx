@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useConfig } from '@/lib/configContext';
 import { Play, Pause, Music2 } from 'lucide-react';
 import { bgMusic } from '@/lib/bgMusic';
+import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
 
 interface Props {
   currentStep: number;
@@ -15,12 +16,14 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // Reconstruct full base64 from chunks if needed
+  // Reconstruct full url or convert to HTTPS proxy URL
   const getFullSongUrl = () => {
-    if (!config.storySongUrl) return '';
-    if (!config.storySongPart2) return config.storySongUrl;
-    // Combine all parts
-    return config.storySongUrl + (config.storySongPart2 || '') + (config.storySongPart3 || '');
+    if (!config.storySongUrl && !config.music_src) return '';
+    const rawUrl = config.storySongUrl || config.music_src || '';
+    if (config.storySongPart2) {
+      return getPlayableAudioUrl(rawUrl + (config.storySongPart2 || '') + (config.storySongPart3 || ''));
+    }
+    return getPlayableAudioUrl(rawUrl);
   };
 
   useEffect(() => {

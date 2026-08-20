@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { Heart, Lock, Key, ArrowLeft, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
+import { bgMusic } from '@/lib/bgMusic';
+import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
 
 interface Props {
   onStart: () => void;
@@ -42,7 +44,7 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
       // Autoplay Bypass Trigger: Start audio playback directly on the user gesture event!
       const songUrl = config.storySongUrl || config.music_src;
       if (songUrl) {
-        bgMusic.play(songUrl, true);
+        bgMusic.play(getPlayableAudioUrl(songUrl), true);
       }
       handleTriggerUnlock();
     } else {
