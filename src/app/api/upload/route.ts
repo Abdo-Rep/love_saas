@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
 
-// Allow larger payloads (Vercel Pro allows up to 50MB, Hobby is capped at 4.5MB)
-export const maxDuration = 60; // seconds
-
 const DEFAULT_SECRET = Buffer.from('c2Jfc2VjcmV0X093UXpabVVfV1MyTUpaUloxb1BqdG1fWGdzeHhBNmg=', 'base64').toString('ascii');
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://31.220.93.65:8000';
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || DEFAULT_SECRET;
-const BUCKET = 'audio';
+
+const SUPABASE_REST_URL = 'http://31.220.93.65:8000';
+const SUPABASE_STORAGE_URL = 'http://31.220.93.65:9000';
+const BUCKET = 'site-media';
 
 export async function POST(req: Request) {
   try {
+    const { searchParams } = new URL(req.url);
+    const category = searchParams.get('category') || 'music';
+    const slug = searchParams.get('slug') || 'default';
+
     const formData = await req.formData();
     const file = formData.get('file') as File;
     if (!file) {
@@ -18,58 +21,85 @@ export async function POST(req: Request) {
 
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const fileName = `song_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+    const ext = file.name.split('.').pop() || 'mp3';
+    const fileName = `${category}-${Date.now()}.${ext}`;
+    const filePath = `${slug}/${category}/${fileName}`;
     const contentType = file.type || 'audio/mpeg';
 
-    // Ensure bucket exists first
-    await fetch(`${SUPABASE_URL}/storage/v1/bucket`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json',
-        'apikey': SERVICE_ROLE_KEY,
-      },
-      body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true }),
-    }).catch(() => {/* bucket may already exist */});
-
-    // Upload file to Supabase Storage
-    const uploadRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${fileName}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
-        'Content-Type': contentType,
-        'apikey': SERVICE_ROLE_KEY,
-        'x-upsert': 'true',
-      },
-      body: buffer,
-    });
-
-    if (uploadRes.ok) {
-      // Return public URL via our own proxy to avoid mixed content issues on client
-      const publicUrl = `/api/audio?path=${encodeURIComponent(fileName)}`;
-      return NextResponse.json({ success: true, url: publicUrl });
+    // 1. Ensure bucket 'site-media' exists (try on REST port 8000 and Storage port 9000)
+    for (const host of [SUPABASE_REST_URL, SUPABASE_STORAGE_URL]) {
+      try {
+        await fetch(`${host}/storage/v1/bucket`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+            'Content-Type': 'application/json',
+            'apikey': SERVICE_ROLE_KEY,
+          },
+          body: JSON.stringify({ id: BUCKET, name: BUCKET, public: true }),
+        });
+      } catch (_) {}
     }
 
-    const errText = await uploadRes.text().catch(() => '');
-    console.error('[Upload] Supabase storage error:', uploadRes.status, errText);
+    // 2. Upload file to Supabase Storage VPS (site-media bucket)
+    let uploadSuccess = false;
+    let lastErr = '';
 
-    // Fallback: try 0x0.st server-side (no CORS issue from server)
+    for (const host of [SUPABASE_STORAGE_URL, SUPABASE_REST_URL]) {
+      try {
+        const uploadRes = await fetch(`${host}/storage/v1/object/${BUCKET}/${filePath}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${SERVICE_ROLE_KEY}`,
+            'Content-Type': contentType,
+            'apikey': SERVICE_ROLE_KEY,
+            'x-upsert': 'true',
+          },
+          body: buffer,
+        });
+
+        if (uploadRes.ok) {
+          uploadSuccess = true;
+          break;
+        } else {
+          lastErr = await uploadRes.text().catch(() => '');
+        }
+      } catch (e: any) {
+        lastErr = e?.message || 'Connection error';
+      }
+    }
+
+    // Direct public URL as requested
+    const directUrl = `${SUPABASE_STORAGE_URL}/storage/v1/object/public/${BUCKET}/${filePath}`;
+    // HTTPS proxy URL so client browsers can stream over HTTPS without mixed-content issues
+    const proxyUrl = `/api/audio?path=${encodeURIComponent(filePath)}`;
+
+    if (uploadSuccess) {
+      return NextResponse.json({
+        success: true,
+        url: directUrl,
+        proxyUrl: proxyUrl,
+        path: filePath,
+      });
+    }
+
+    console.warn('[Upload] VPS Storage upload failed, trying fallbacks. Error:', lastErr);
+
+    // Fallback 1: 0x0.st server-side
     try {
       const form = new FormData();
       const blob = new Blob([buffer], { type: contentType });
       form.append('file', blob, file.name || 'audio.mp3');
       const res = await fetch('https://0x0.st', { method: 'POST', body: form });
       if (res.ok) {
-        const url = (await res.text()).trim();
-        if (url.startsWith('http')) {
-          return NextResponse.json({ success: true, url: url.replace('http://', 'https://') });
+        const fallbackUrl = (await res.text()).trim();
+        if (fallbackUrl.startsWith('http')) {
+          return NextResponse.json({ success: true, url: fallbackUrl.replace('http://', 'https://') });
         }
       }
-    } catch (e) {
-      console.warn('[Upload] 0x0.st fallback failed:', e);
-    }
+    } catch (_) {}
 
-    // Final fallback: catbox.moe
+    // Fallback 2: catbox.moe
     try {
       const form = new FormData();
       form.append('reqtype', 'fileupload');
@@ -77,18 +107,19 @@ export async function POST(req: Request) {
       form.append('fileToUpload', blob, file.name || 'audio.mp3');
       const res = await fetch('https://catbox.moe/d.php', { method: 'POST', body: form });
       if (res.ok) {
-        const url = (await res.text()).trim();
-        if (url.startsWith('http')) {
-          return NextResponse.json({ success: true, url: url.replace('http://', 'https://') });
+        const fallbackUrl = (await res.text()).trim();
+        if (fallbackUrl.startsWith('http')) {
+          return NextResponse.json({ success: true, url: fallbackUrl.replace('http://', 'https://') });
         }
       }
-    } catch (e) {
-      console.warn('[Upload] catbox fallback failed:', e);
-    }
+    } catch (_) {}
 
-    return NextResponse.json({ success: false, error: 'All upload services failed' }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: lastErr || 'Failed to save file to Supabase Storage' },
+      { status: 500 }
+    );
   } catch (err: any) {
-    console.error('[API Upload] Fatal error:', err);
+    console.error('[API Upload] Exception:', err);
     return NextResponse.json({ success: false, error: err?.message || 'Internal server error' }, { status: 500 });
   }
 }

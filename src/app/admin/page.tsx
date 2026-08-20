@@ -65,32 +65,31 @@ export default function AdminPage() {
 
   // Read file as base64, split into chunks, save each chunk separately
   // This bypasses Vercel's 4.5MB body limit by sending each chunk in its own request
-  // Client-side Upload to Vercel Blob API Route (Streaming Body - Bypass 4.5MB Serverless Form Limit)
-  const uploadAudioChunked = async (file: File): Promise<string> => {
+  // Soulove Music Flow: Upload audio to /api/upload?category=music&slug=SLUG
+  const uploadAudioToCloud = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
     setUploadError('');
 
     try {
-      const ext = file.name.split('.').pop() || 'mp3';
-      const filename = `song_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.${ext}`;
+      const slug = tenantCtx?.tenant?.slug || 'default';
+      const formData = new FormData();
+      formData.append('file', file);
 
-      const res = await fetch(`/api/upload-blob?filename=${encodeURIComponent(filename)}`, {
+      const res = await fetch(`/api/upload?category=music&slug=${encodeURIComponent(slug)}`, {
         method: 'POST',
-        headers: {
-          'content-type': file.type || 'audio/mpeg',
-        },
-        body: file, // Direct binary stream request body
+        body: formData,
       });
 
       const json = await res.json();
       if (!res.ok || !json.success) {
-        throw new Error(json.error || 'فشل رفع الأغنية!');
+        throw new Error(json.error || 'فشل رفع الملف إلى مجلد الميديا الخاص بالموقع!');
       }
 
       setIsUploadingAudio(false);
-      return json.url;
+      // Return returned URL (or proxy URL for HTTPS compatibility)
+      return json.url || json.proxyUrl;
     } catch (err: any) {
-      console.error('[Blob Upload Failed]', err);
+      console.error('[Music Upload Failed]', err);
       setIsUploadingAudio(false);
       const msg = err?.message || 'حدث خطأ أثناء رفع الملف!';
       setUploadError(msg);
@@ -461,9 +460,9 @@ export default function AdminPage() {
                     const file = e.target.files?.[0];
                     if (!file) return;
                     try {
-                      const proxyUrl = await uploadAudioChunked(file);
-                      if (proxyUrl) {
-                        updateConfig({ storySongUrl: proxyUrl, storySongPart2: '', storySongPart3: '' });
+                      const songUrl = await uploadAudioToCloud(file);
+                      if (songUrl) {
+                        updateConfig({ storySongUrl: songUrl, music_src: songUrl, storySongPart2: '', storySongPart3: '' });
                       }
                     } catch (err: any) {
                       setUploadError(err.message || 'حدث خطأ أثناء رفع الأغنية!');
