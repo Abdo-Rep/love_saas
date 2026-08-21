@@ -20,6 +20,7 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
   selectedCharacterModel: '/models/passive_marker_man.fbx',
   theaterWalkMessage: 'كل خطوة خطيتها في الطريق ده.. كانت عشان أوصل لقلبكِ يا روحي 🌸 أنتي مش مجرد شخص في حياتي، أنتي القصة والروح اللي اتمنيت أعيش معاها طول عمري ✨💖',
   theaterButtonText: 'كلمة حلوة.. تعالي نخش جوه قصة حياتنا 💖✨',
+  theaterAudioUrl: '',
   storySongUrl: '',
 
   constellationName: 'LOVE',

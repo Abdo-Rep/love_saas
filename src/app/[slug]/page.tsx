@@ -35,56 +35,61 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
 
     if (localTenant) {
       setIsLoading(false);
-    } else {
-      setIsLoading(true);
-      const fetchFromCloud = async () => {
-        try {
-          // 1. Try API route first
-          const res = await fetch('/api/tenants');
-          const json = await res.json();
-          let found = json?.success && Array.isArray(json.tenants)
-            ? json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim())
-            : null;
-
-          // 2. Try Supabase directly if available
-          if (!found) {
-            const { supabase, isSupabaseConfigured } = await import('@/lib/supabaseClient');
-            if (isSupabaseConfigured && supabase) {
-              const { data } = await supabase.from('tenants').select('*').eq('slug', slug.toLowerCase().trim()).single();
-              if (data) {
-                found = {
-                  id: data.id,
-                  slug: data.slug,
-                  name: data.name,
-                  adminPassword: data.admin_password || data.adminPassword || 'love',
-                  sitePassword: data.site_password || data.sitePassword || 'love',
-                  createdAt: data.created_at || new Date().toISOString(),
-                  status: data.status || 'active',
-                  config: data.config
-                };
-              }
-            }
-          }
-
-          if (found) {
-            const { TenantStore: ts, createDefaultConfigForTenant: cdf, TENANTS_STORAGE_KEY } = await import('@/lib/tenantStore');
-            const withConfig = {
-              ...found,
-              config: found.config || cdf(found.name || 'أميرتي', found.sitePassword || 'love')
-            };
-            const all = ts.getAllTenants();
-            if (!all.some((t) => t.slug.toLowerCase() === slug.toLowerCase())) {
-              all.unshift(withConfig);
-              localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(all));
-            }
-            setCloudTenant(withConfig);
-            loadTenantBySlug(slug);
-          }
-        } catch (_) {}
-        setIsLoading(false);
-      };
-      fetchFromCloud();
     }
+
+    const fetchFromCloud = async () => {
+      try {
+        // 1. Try API route first
+        const res = await fetch('/api/tenants');
+        const json = await res.json();
+        let found = json?.success && Array.isArray(json.tenants)
+          ? json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim())
+          : null;
+
+        // 2. Try Supabase directly if available
+        if (!found) {
+          const { supabase, isSupabaseConfigured } = await import('@/lib/supabaseClient');
+          if (isSupabaseConfigured && supabase) {
+            const { data } = await supabase.from('tenants').select('*').eq('slug', slug.toLowerCase().trim()).single();
+            if (data) {
+              found = {
+                id: data.id,
+                slug: data.slug,
+                name: data.name,
+                adminPassword: data.admin_password || data.adminPassword || 'love',
+                sitePassword: data.site_password || data.sitePassword || 'love',
+                createdAt: data.created_at || new Date().toISOString(),
+                status: data.status || 'active',
+                config: data.config
+              };
+            }
+          }
+        }
+
+        if (found) {
+          const { TenantStore: ts, createDefaultConfigForTenant: cdf, TENANTS_STORAGE_KEY } = await import('@/lib/tenantStore');
+          const withConfig = {
+            ...found,
+            config: {
+              ...cdf(found.name || 'أميرتي', found.sitePassword || 'love'),
+              ...(found.config || {})
+            }
+          };
+          const all = ts.getAllTenants();
+          const existingIdx = all.findIndex((t) => t.slug.toLowerCase() === slug.toLowerCase());
+          if (existingIdx !== -1) {
+            all[existingIdx] = withConfig;
+          } else {
+            all.unshift(withConfig);
+          }
+          localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(all));
+          setCloudTenant(withConfig);
+          loadTenantBySlug(slug);
+        }
+      } catch (_) {}
+      setIsLoading(false);
+    };
+    fetchFromCloud();
 
     const handleSync = () => {
       loadTenantBySlug(slug);

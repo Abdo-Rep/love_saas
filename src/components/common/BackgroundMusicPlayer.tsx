@@ -77,7 +77,7 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-md animate-slide-up select-none">
+    <div className="fixed bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-md animate-slide-up select-none pointer-events-auto">
       <div className="relative rounded-full p-[1.5px] bg-gradient-to-r from-rose-500/70 via-pink-500/50 to-amber-400/70 shadow-[0_10px_40px_rgba(244,63,94,0.45)] backdrop-blur-2xl">
         <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-2.5 rounded-full bg-[#12020e]/95 border border-pink-500/30 text-white">
           

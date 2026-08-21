@@ -48,8 +48,8 @@ export const FinalHeartfeltLetter: React.FC<Props> = ({ onRestart }) => {
       {/* Soft Ambient Rose Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(244,114,182,0.22)_0%,_transparent_75%)] pointer-events-none" />
 
-      {/* HEADER */}
-      <div className="relative z-20 text-center max-w-xl mx-auto flex flex-col gap-2 pt-4">
+      {/* HEADER WITH CLEARANCE FOR BACK BUTTON */}
+      <div className="relative z-20 text-center max-w-xl mx-auto flex flex-col gap-2 pt-12 sm:pt-14 px-12 sm:px-16">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200" style={{ fontFamily: "'Cairo', sans-serif" }}>
           {config.finalLetterTitle || 'كلمات نُقشت بماء الذهب'}
         </h1>
@@ -84,7 +84,7 @@ export const FinalHeartfeltLetter: React.FC<Props> = ({ onRestart }) => {
       </div>
 
       {/* FOOTER WITH CLEARANCE */}
-      <div className="relative z-20 max-w-sm mx-auto w-full text-center pb-24 sm:pb-28">
+      <div className="relative z-20 max-w-sm mx-auto w-full text-center pb-32 sm:pb-36">
         {onRestart && (
           <button
             onClick={onRestart}
@@ -96,6 +96,8 @@ export const FinalHeartfeltLetter: React.FC<Props> = ({ onRestart }) => {
           </button>
         )}
       </div>
+
+      <div className="h-24 sm:h-28 shrink-0 pointer-events-none" />
 
     </div>
   );

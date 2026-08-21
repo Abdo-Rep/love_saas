@@ -151,11 +151,6 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
 
         </div>
       </div>
-
-      {/* BOTTOM FOOTER */}
-      <div className="relative z-10 pb-3 text-[11px] text-pink-200/40 font-semibold">
-        <span style={{ fontFamily: "'Cairo', sans-serif" }}>مصمم بكل الحب والملكِيّة ❤️</span>
-      </div>
     </div>
   );
 };
