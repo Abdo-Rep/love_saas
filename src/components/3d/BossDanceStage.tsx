@@ -173,9 +173,32 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
         }
 
         bossModel.position.set(0, 0, -8.5);
-        bossModel.visible = false;
+        bossModel.visible = true;
         scene.add(bossModel);
         bossModelRef = bossModel;
+
+        // Open floral curtains & hide loading spinner instantly!
+        clearTimeout(safetyTimer);
+        setIsLoadingModel(false);
+        setCurtainsOpen(true);
+
+        if (startTime === null && clock) {
+          startTime = clock.getElapsedTime();
+        }
+
+        if (walkAudio) {
+          walkAudio.play().catch(() => {
+            const handleFirstTouch = () => {
+              if (walkAudioRef.current) {
+                walkAudioRef.current.play().catch(() => {});
+              }
+              window.removeEventListener('click', handleFirstTouch);
+              window.removeEventListener('touchstart', handleFirstTouch);
+            };
+            window.addEventListener('click', handleFirstTouch);
+            window.addEventListener('touchstart', handleFirstTouch);
+          });
+        }
 
         preloadWalkingFbx((animFbx) => {
           try {
@@ -206,30 +229,6 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
             }
           } catch (err) {
             console.warn('Animation Remap Exception:', err);
-          }
-
-          bossModel.visible = true;
-          if (startTime === null && clock) {
-            startTime = clock.getElapsedTime();
-          }
-
-          // Model is fully ready: open curtains, play walk sound, and hide loading!
-          clearTimeout(safetyTimer);
-          setIsLoadingModel(false);
-          setCurtainsOpen(true);
-
-          if (walkAudio) {
-            walkAudio.play().catch(() => {
-              const handleFirstTouch = () => {
-                if (walkAudioRef.current) {
-                  walkAudioRef.current.play().catch(() => {});
-                }
-                window.removeEventListener('click', handleFirstTouch);
-                window.removeEventListener('touchstart', handleFirstTouch);
-              };
-              window.addEventListener('click', handleFirstTouch);
-              window.addEventListener('touchstart', handleFirstTouch);
-            });
           }
         });
       },
@@ -379,21 +378,109 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
         </button>
       )}
 
-      {/* ROYAL THEATER CURTAINS */}
+      {/* FLORAL ROSE CURTAINS (ستارة الزهور والورود الملكية بأشكال متنوعة) */}
       <div
         style={{
           transform: curtainsOpen ? 'translateX(-105%)' : 'translateX(0%)',
-          transition: 'transform 1.2s cubic-bezier(0.25, 1, 0.5, 1)'
+          transition: 'transform 0.55s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
-        className="fixed inset-y-0 left-0 w-1/2 bg-gradient-to-r from-[#2a041c] via-[#1a0212] to-black border-r-2 border-amber-400 z-50 pointer-events-none will-change-transform"
-      />
+        className="fixed inset-y-0 left-0 w-1/2 bg-gradient-to-r from-[#2e051c] via-[#1a0212] to-black border-r-2 border-pink-400/80 z-50 pointer-events-none will-change-transform flex flex-col justify-between p-4 overflow-hidden shadow-[10px_0_40px_rgba(0,0,0,0.9)]"
+      >
+        {/* Background Floral Pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(#f472b6_1.5px,transparent_1.5px)] [background-size:24px_24px] opacity-20 pointer-events-none" />
+        
+        {/* Floating Petals Effect */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(244,114,182,0.25)_0%,_transparent_70%)] pointer-events-none" />
+
+        {/* Top Left Floral Bouquet */}
+        <div className="relative z-10 flex flex-col items-start gap-1">
+          <div className="flex items-center gap-2 text-3xl sm:text-4xl filter drop-shadow-[0_0_12px_#f472b6] animate-pulse">
+            <span>🌹</span>
+            <span>🌸</span>
+            <span>🌺</span>
+          </div>
+          <div className="h-[1px] w-32 bg-gradient-to-r from-pink-400 to-transparent" />
+        </div>
+
+        {/* Center Floral Vine Column */}
+        <div className="relative z-10 my-auto flex flex-col items-center gap-4 text-center">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-pink-500/30 to-rose-900/40 border-2 border-pink-400/60 backdrop-blur-md flex items-center justify-center text-4xl sm:text-5xl shadow-[0_0_30px_rgba(244,114,182,0.5)] animate-bounce">
+            💐
+          </div>
+          <div className="flex items-center gap-3 text-2xl sm:text-3xl opacity-90">
+            <span>🌷</span>
+            <span>🌻</span>
+            <span>🏵️</span>
+            <span>🌼</span>
+          </div>
+        </div>
+
+        {/* Bottom Left Floral Border */}
+        <div className="relative z-10 flex flex-col items-start gap-1">
+          <div className="h-[1px] w-32 bg-gradient-to-r from-pink-400 to-transparent" />
+          <div className="flex items-center gap-2 text-3xl sm:text-4xl filter drop-shadow-[0_0_12px_#f472b6]">
+            <span>🥀</span>
+            <span>🌸</span>
+            <span>🌹</span>
+          </div>
+        </div>
+      </div>
+
       <div
         style={{
           transform: curtainsOpen ? 'translateX(105%)' : 'translateX(0%)',
-          transition: 'transform 1.2s cubic-bezier(0.25, 1, 0.5, 1)'
+          transition: 'transform 0.55s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
-        className="fixed inset-y-0 right-0 w-1/2 bg-gradient-to-l from-[#2a041c] via-[#1a0212] to-black border-l-2 border-amber-400 z-50 pointer-events-none will-change-transform"
-      />
+        className="fixed inset-y-0 right-0 w-1/2 bg-gradient-to-l from-[#2e051c] via-[#1a0212] to-black border-l-2 border-pink-400/80 z-50 pointer-events-none will-change-transform flex flex-col justify-between p-4 overflow-hidden shadow-[-10px_0_40px_rgba(0,0,0,0.9)]"
+      >
+        {/* Background Floral Pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(#f472b6_1.5px,transparent_1.5px)] [background-size:24px_24px] opacity-20 pointer-events-none" />
+        
+        {/* Floating Petals Effect */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(244,114,182,0.25)_0%,_transparent_70%)] pointer-events-none" />
+
+        {/* Top Right Floral Bouquet */}
+        <div className="relative z-10 flex flex-col items-end gap-1">
+          <div className="flex items-center gap-2 text-3xl sm:text-4xl filter drop-shadow-[0_0_12px_#f472b6] animate-pulse">
+            <span>🌺</span>
+            <span>🌸</span>
+            <span>🌹</span>
+          </div>
+          <div className="h-[1px] w-32 bg-gradient-to-l from-pink-400 to-transparent" />
+        </div>
+
+        {/* Center Floral Vine Column */}
+        <div className="relative z-10 my-auto flex flex-col items-center gap-4 text-center">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-pink-500/30 to-rose-900/40 border-2 border-pink-400/60 backdrop-blur-md flex items-center justify-center text-4xl sm:text-5xl shadow-[0_0_30px_rgba(244,114,182,0.5)] animate-bounce">
+            🌹
+          </div>
+          <div className="flex items-center gap-3 text-2xl sm:text-3xl opacity-90">
+            <span>🌼</span>
+            <span>🏵️</span>
+            <span>🌻</span>
+            <span>🌷</span>
+          </div>
+        </div>
+
+        {/* Bottom Right Floral Border */}
+        <div className="relative z-10 flex flex-col items-end gap-1">
+          <div className="h-[1px] w-32 bg-gradient-to-l from-pink-400 to-transparent" />
+          <div className="flex items-center gap-2 text-3xl sm:text-4xl filter drop-shadow-[0_0_12px_#f472b6]">
+            <span>🌹</span>
+            <span>🌸</span>
+            <span>🥀</span>
+          </div>
+        </div>
+      </div>
+
+      {/* CENTER FLORAL SEAL EMBLEM (Splits open gracefully) */}
+      {!curtainsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none animate-pulse">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-pink-500 via-rose-600 to-amber-400 border-2 border-amber-300 flex items-center justify-center text-3xl sm:text-4xl shadow-[0_0_40px_rgba(244,114,182,0.9)]">
+            🌹
+          </div>
+        </div>
+      )}
 
       {/* Ambient Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(244,114,182,0.2)_0%,_transparent_75%)] pointer-events-none" />
