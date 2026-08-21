@@ -95,6 +95,10 @@ export const RomanticPhotoGallery: React.FC<Props> = ({ onNext }) => {
     }
   ];
 
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startXRef = useRef<number | null>(null);
+
   const handleNextCard = () => {
     if (currentIndex < photoCards.length - 1) {
       setCurrentIndex((prev) => prev + 1);
@@ -105,6 +109,32 @@ export const RomanticPhotoGallery: React.FC<Props> = ({ onNext }) => {
     if (currentIndex > 0) {
       setCurrentIndex((prev) => prev - 1);
     }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsDragging(true);
+    startXRef.current = e.clientX;
+    setDragOffset(0);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging || startXRef.current === null) return;
+    const currentX = e.clientX;
+    const diff = currentX - startXRef.current;
+    setDragOffset(diff);
+  };
+
+  const handlePointerUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    if (dragOffset > 35) {
+      handlePrevCard();
+    } else if (dragOffset < -35) {
+      handleNextCard();
+    }
+    setDragOffset(0);
+    startXRef.current = null;
   };
 
   return (
@@ -137,7 +167,11 @@ export const RomanticPhotoGallery: React.FC<Props> = ({ onNext }) => {
         {/* SWIPABLE CARD CONTAINER */}
         <div 
           ref={scrollContainerRef}
-          className="w-full h-[52vh] min-h-[380px] max-h-[520px] relative flex items-center justify-center perspective-1000"
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="w-full h-[52vh] min-h-[380px] max-h-[520px] relative flex items-center justify-center perspective-1000 cursor-grab active:cursor-grabbing touch-pan-y"
         >
           {photoCards.map((card, index) => {
             const offset = index - currentIndex;
@@ -149,7 +183,7 @@ export const RomanticPhotoGallery: React.FC<Props> = ({ onNext }) => {
             let zIndexStyle = 0;
 
             if (isActive) {
-              transformStyle = 'translateX(0%) scale(1) rotate(0deg)';
+              transformStyle = `translateX(${dragOffset}px) scale(1) rotate(0deg)`;
               opacityStyle = 1;
               zIndexStyle = 30;
             } else if (offset === 1) {

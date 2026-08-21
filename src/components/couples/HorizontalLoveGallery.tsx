@@ -45,9 +45,9 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
     setIsDragging(false);
 
     if (dragOffset > 35) {
-      handleNext();
-    } else if (dragOffset < -35) {
       handlePrev();
+    } else if (dragOffset < -35) {
+      handleNext();
     }
     setDragOffset(0);
     startXRef.current = null;

@@ -43,6 +43,36 @@ export const RomanticPhotoGallery: React.FC<Props> = ({ onNext }) => {
     setCurrentIndex((prev) => (prev - 1 + PHOTOS.length) % PHOTOS.length);
   };
 
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const startXRef = useRef<number | null>(null);
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setIsDragging(true);
+    startXRef.current = e.clientX;
+    setDragOffset(0);
+  };
+
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging || startXRef.current === null) return;
+    const currentX = e.clientX;
+    const diff = currentX - startXRef.current;
+    setDragOffset(diff);
+  };
+
+  const handlePointerUp = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+
+    if (dragOffset > 35) {
+      handlePrev();
+    } else if (dragOffset < -35) {
+      handleNext();
+    }
+    setDragOffset(0);
+    startXRef.current = null;
+  };
+
   const activePhoto = PHOTOS[currentIndex];
 
   return (
@@ -68,14 +98,22 @@ export const RomanticPhotoGallery: React.FC<Props> = ({ onNext }) => {
       <div className="relative z-20 max-w-4xl mx-auto w-full my-6 flex flex-col items-center">
         
         {/* Main Photo Card Frame */}
-        <div className="relative w-full max-w-lg bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-rose-500/50 rounded-3xl p-5 shadow-[0_0_50px_rgba(244,63,94,0.3)] backdrop-blur-xl flex flex-col items-center gap-4">
+        <div 
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          className="relative w-full max-w-lg bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-rose-500/50 rounded-3xl p-5 shadow-[0_0_50px_rgba(244,63,94,0.3)] backdrop-blur-xl flex flex-col items-center gap-4 cursor-grab active:cursor-grabbing touch-pan-y"
+        >
           
           {/* Photo Image Frame */}
           <div className="relative w-full h-72 md:h-96 rounded-2xl overflow-hidden border border-white/20 shadow-2xl group cursor-pointer" onClick={() => setIsZoomed(true)}>
             <img
               src={activePhoto.url}
               alt="Romantic Memory"
-              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700"
+              className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-700 select-none"
+              draggable={false}
+              style={{ transform: isDragging ? `translateX(${dragOffset}px)` : 'none' }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <span className="px-4 py-2 rounded-full bg-black/70 text-white text-xs font-bold flex items-center gap-2 border border-white/20 backdrop-blur-md">

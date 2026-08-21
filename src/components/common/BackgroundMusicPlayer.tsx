@@ -41,9 +41,11 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
       setDuration(dur);
     });
 
-    // Auto-play as soon as Step 3 is reached (except Step 7 voice recording)
+    // Auto-play ONLY when Step 3 (Constellation) or later is reached (except Step 7 voice recording)
     if (currentStep >= 3 && currentStep !== 7) {
       bgMusic.play(songUrl);
+    } else {
+      bgMusic.pause(false);
     }
 
     return () => {

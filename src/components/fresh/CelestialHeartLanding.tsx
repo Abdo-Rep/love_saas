@@ -41,11 +41,6 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
     const cleanExpected = (config.sitePassword || 'love').trim().toLowerCase();
 
     if (!cleanExpected || cleanInput === cleanExpected) {
-      // Autoplay Bypass Trigger: Start audio playback directly on the user gesture event!
-      const songUrl = config.storySongUrl || config.music_src;
-      if (songUrl) {
-        bgMusic.play(getPlayableAudioUrl(songUrl), true);
-      }
       handleTriggerUnlock();
     } else {
       setError('كلمة السر غير صحيحة 💔 جربي مرة تانية يا روحي ✨');
