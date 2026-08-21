@@ -7,6 +7,7 @@ import { Sparkles, Heart, ArrowRight, FastForward } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
 import { bgMusic } from '@/lib/bgMusic';
+import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
 import { remapMixamoClip } from './LuxuryTheaterStage';
 
 interface Props {
@@ -67,10 +68,12 @@ export const BossDanceStage: React.FC<Props> = ({ onNext }) => {
       });
     } catch (_) {}
 
-    // 1. Walking entrance sound (WhatsApp Video clip)
+    // 1. Walking entrance sound (Custom theater audio if set, otherwise default WhatsApp Video clip)
     let walkAudio: HTMLAudioElement | null = null;
     if (typeof window !== 'undefined') {
-      walkAudio = new Audio('/sound/WhatsApp Video 2026-08-11 at 3.56.53 AM.mp4');
+      const defaultWalkSound = '/sound/WhatsApp Video 2026-08-11 at 3.56.53 AM.mp4';
+      const customWalkSound = config.theaterAudioUrl ? getPlayableAudioUrl(config.theaterAudioUrl) : defaultWalkSound;
+      walkAudio = new Audio(customWalkSound);
       walkAudio.volume = 1.0;
       walkAudioRef.current = walkAudio;
     }

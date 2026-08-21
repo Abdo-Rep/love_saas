@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js';
 import { Volume2, VolumeX, Heart, Check, RefreshCw } from 'lucide-react';
 import { ANIMATION_LIST, AnimationItem } from '@/components/3d/CharacterCanvas';
+import { useConfig } from '@/lib/configContext';
+import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
 
 interface Props {
   onFinish?: () => void;
@@ -63,6 +65,7 @@ export const remapMixamoClip = (clip: THREE.AnimationClip, model: THREE.Object3D
 };
 
 export const LuxuryTheaterStage: React.FC<Props> = ({ onFinish }) => {
+  const { config } = useConfig();
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -88,10 +91,32 @@ export const LuxuryTheaterStage: React.FC<Props> = ({ onFinish }) => {
   const isDraggingRef = useRef(false);
   const prevMouseRef = useRef({ x: 0, y: 0 });
 
-  // ── ROMANTIC LOVE R&B BEAT (95 BPM) ──
+  // ── ROMANTIC STAGE MUSIC (CUSTOM OR BUILT-IN SYNTHESIZER) ──
   const startMusic = () => {
     try {
       if (musicCleanupRef.current) { musicCleanupRef.current(); musicCleanupRef.current = null; }
+
+      // Check if custom audio URL is set in Admin Config
+      if (config.theaterAudioUrl && config.theaterAudioUrl.trim() !== '') {
+        const customUrl = getPlayableAudioUrl(config.theaterAudioUrl);
+        const audio = new Audio(customUrl);
+        audio.loop = true;
+        audio.volume = isMutedRef.current ? 0 : 0.8;
+        audio.play().then(() => {
+          setIsPlayingMusic(true);
+        }).catch((err) => {
+          console.warn('Custom theater audio play failed:', err);
+        });
+
+        musicCleanupRef.current = () => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.src = '';
+        };
+        return;
+      }
+
+      // FALLBACK: DEFAULT SYNTHESIZER SOUND (النسخة الافتراضية)
       const AC = window.AudioContext || (window as any).webkitAudioContext;
       if (!AC) return;
       const ctx = new AC();

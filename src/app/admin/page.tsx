@@ -499,6 +499,87 @@ export default function AdminPage() {
             )}
           </div>
 
+          {/* CUSTOM THEATER STAGE AUDIO UPLOAD / SELECTOR */}
+          <div className="rounded-2xl bg-gradient-to-br from-amber-950/60 via-rose-950/40 to-black/60 border border-amber-400/30 p-5 space-y-4">
+            <h4 className="text-xs font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              <Music className="w-4 h-4 text-amber-400 animate-pulse" />
+              <span>🎭 صوت/موسيقى المسرح الملكي (أثناء عرض وتدفق الشخصية)</span>
+            </h4>
+            <p className="text-[11px] text-amber-200/70 leading-relaxed" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              النسخة الافتراضية تشغّل الموسيقى المدمجة الافتراضية للمسرح. يمكنك اختيار وتخصيص صوت أو أغنية مخصصة من جهازك ليتم تشغيلها بدلاً من الصوت الافتراضي للمسرح.
+            </p>
+
+            {/* CURRENT THEATER AUDIO STATUS */}
+            {config.theaterAudioUrl ? (
+              <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-xl bg-amber-950/60 border border-amber-400/40">
+                <Music className="w-5 h-5 text-amber-400 shrink-0 animate-bounce" />
+                <div className="flex-1 min-w-0 w-full">
+                  <p className="text-[11px] font-black text-amber-300">✅ تم تخصيص صوت مخصص للمسرح!</p>
+                  <audio controls src={getPlayableAudioUrl(config.theaterAudioUrl)} className="w-full mt-1.5 h-8" style={{ filter: 'invert(0.8) hue-rotate(30deg)' }} />
+                </div>
+                <button
+                  onClick={() => updateConfig({ theaterAudioUrl: '' })}
+                  className="shrink-0 px-3 py-2 rounded-xl bg-rose-950/80 border border-rose-400/40 text-rose-200 text-xs font-bold hover:bg-rose-900/80 transition flex items-center gap-1"
+                  title="إعادة الصوت الافتراضي للمسرح"
+                >
+                  <X className="w-4 h-4" />
+                  <span>إعادة الصوت الافتراضي</span>
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-black/30 border border-dashed border-amber-400/40">
+                <Music className="w-5 h-5 text-amber-400/50" />
+                <p className="text-[11px] text-amber-200/60">
+                  ℹ️ يتم تشغيل الصوت الافتراضي المدمج للمسرح حالياً. إذا أردت تغيير الصوت، ارفع صوت من جهازك أدناه 👇
+                </p>
+              </div>
+            )}
+
+            {/* UPLOAD CUSTOM THEATER AUDIO BUTTON */}
+            {isUploadingAudio ? (
+              <div className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-amber-950/40 border border-amber-500/30">
+                <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+                <p className="text-xs font-black text-amber-300">جاري رفع صوت المسرح... يرجى الانتظار ⏳</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <label className="cursor-pointer flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-gradient-to-r from-amber-800/60 via-rose-800/50 to-pink-800/60 border border-amber-300/40 hover:scale-[1.01] active:scale-95 transition-all shadow-[0_0_15px_rgba(245,158,11,0.25)] text-white font-black text-xs">
+                  <Upload className="w-4 h-4 text-amber-200" />
+                  <span>📂 اختار صوت مخصص للمسرح من جهازك (MP3، WAV، OGG، MP4)</span>
+                  <input
+                    type="file"
+                    accept="audio/*,video/mp4"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const audioUrl = await uploadAudioToCloud(file);
+                        if (audioUrl) {
+                          updateConfig({ theaterAudioUrl: audioUrl });
+                        }
+                      } catch (err: any) {
+                        setUploadError(err.message || 'حدث خطأ أثناء رفع صوت المسرح!');
+                      }
+                      e.target.value = '';
+                    }}
+                  />
+                </label>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-[11px] text-amber-200/60 font-bold shrink-0">أو ضع رابط صوت مباشر:</span>
+                  <input
+                    type="text"
+                    placeholder="https://..."
+                    value={config.theaterAudioUrl || ''}
+                    onChange={(e) => updateConfig({ theaterAudioUrl: e.target.value })}
+                    className="flex-1 p-2 rounded-xl bg-black/40 border border-amber-400/30 text-xs text-white dir-ltr font-mono"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           <Live3DModelPicker />
         </div>
       )}

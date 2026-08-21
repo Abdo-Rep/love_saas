@@ -54,6 +54,7 @@ export interface AppConfig {
   selectedCharacterModel: string;
   theaterWalkMessage: string;
   theaterButtonText: string;
+  theaterAudioUrl?: string; // Custom audio for theater stage walk (overrides default sound)
   storySongUrl: string; // Custom romantic song - part 1 of potentially chunked base64
   storySongPart2?: string; // Part 2 of base64 audio (for large files)
   storySongPart3?: string; // Part 3 of base64 audio (for large files)

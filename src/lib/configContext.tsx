@@ -27,6 +27,7 @@ const defaultConfig: AppConfig = {
   selectedCharacterModel: '/models/passive_marker_man.fbx',
   theaterWalkMessage: 'كل خطوة خطيتها في الطريق ده.. كانت عشان أوصل لقلبكِ يا روضة 🌸 أنتي مش مجرد شخص في حياتي، أنتي القصة والروح اللي اتمنيت أعيش معاها طول عمري ✨💖',
   theaterButtonText: 'كلمة حلوة.. تعالي نخش جوه قصة حياتنا 💖✨',
+  theaterAudioUrl: '', // Custom theater audio - empty means default synthesized/built-in audio clip
   storySongUrl: '', // Romantic song that auto-plays continuously after the theater entrance
 
   // Step 3: Star Constellation Name
