@@ -4,7 +4,6 @@ import React, { useState, useRef } from 'react';
 import { useConfig } from '@/lib/configContext';
 import { useTenant } from '@/lib/tenantContext';
 import { TenantStore } from '@/lib/tenantStore';
-import { Live3DModelPicker } from '@/components/admin/Live3DModelPicker';
 import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
 import {
   KeyRound,
@@ -30,7 +29,10 @@ import {
   Trash2,
   Music,
   X,
-  Heart
+  Heart,
+  Eye,
+  EyeOff,
+  Copy
 } from 'lucide-react';
 
 import { TenantQRCodeModal } from '@/components/admin/TenantQRCodeModal';
@@ -58,6 +60,18 @@ export default function AdminPage() {
   const [saveMessage, setSaveMessage] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  // Password Visibility & Copy States
+  const [showSitePassword, setShowSitePassword] = useState<boolean>(false);
+  const [showAdminPassword, setShowAdminPassword] = useState<boolean>(false);
+  const [copyToast, setCopyToast] = useState<string>('');
+
+  const handleCopyText = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopyToast(`تم نسخ ${label} بنجاح ✨`);
+    setTimeout(() => setCopyToast(''), 2500);
+  };
 
   // Admin Authentication State
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
@@ -425,321 +439,115 @@ export default function AdminPage() {
         })}
       </div>
 
-      {/* STEP 1: PASSWORD GATE & WELCOME */}
+      {/* STEP 1: DUAL PASSWORDS GATE */}
       {activeStep === 1 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <KeyRound className="w-5 h-5 text-pink-400" />
-              <span>🔑 1. كلمة سر دخول الموقع ورسائل الترحيب</span>
+              <span>🔑 كلمات سر دخول الموقع ولوحة التحكم</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              💡 هنا يمكنك تحديد كلمة السر التي تدخل بها حبيبتك، واسمها الذي يظهر في بداية الموقع!
+              💡 هنا يمكنك تحديد كلمة سر الدخول الخاصة بحبيبتك، وكلمة سر لوحة التحكم الخاصة بك مع إمكانية عرضها ونسخها بضغطة واحدة!
             </p>
           </div>
 
+          {copyToast && (
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-emerald-500/30 via-green-500/20 to-teal-500/30 border border-green-400/50 text-green-200 font-extrabold text-xs text-center animate-fadeIn shadow-[0_0_20px_rgba(34,197,94,0.3)]">
+              {copyToast}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-bold">
-            <div>
-              <label className="block text-amber-300 text-sm mb-1.5 font-extrabold">🔑 كلمة سر دخول الموقع لحبيبتك:</label>
-              <input
-                type="text"
-                placeholder="اكتب كلمة سر الموقع هنا..."
-                value={config.sitePassword}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  updateConfig({ sitePassword: val });
-                  if (tenantCtx?.currentTenant) {
-                    TenantStore.updateTenant(tenantCtx.currentTenant.slug, { sitePassword: val });
-                    tenantCtx.refreshTenants();
-                  }
-                }}
-                className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-amber-300 font-mono font-black text-base focus:border-amber-300 transition-all shadow-inner"
-              />
-              <span className="text-[11px] text-pink-200/60 mt-1 block">تكتبها حبيبتك في بداية الصفحة لدخول الموقع.</span>
+            {/* SITE PASSWORD FOR HER */}
+            <div className="space-y-2">
+              <label className="block text-amber-300 text-sm font-extrabold">🔑 كلمة سر دخول الموقع لحبيبتك:</label>
+              <div className="relative flex items-center">
+                <input
+                  type={showSitePassword ? 'text' : 'password'}
+                  placeholder="اكتب كلمة سر الموقع هنا..."
+                  value={config.sitePassword || 'love'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    updateConfig({ sitePassword: val });
+                    if (tenantCtx?.currentTenant) {
+                      TenantStore.updateTenant(tenantCtx.currentTenant.slug, { sitePassword: val });
+                      tenantCtx.refreshTenants();
+                    }
+                  }}
+                  className="w-full p-4 pl-24 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-amber-300 font-mono font-black text-base focus:border-amber-300 transition-all shadow-inner"
+                />
+                <div className="absolute left-2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowSitePassword(!showSitePassword)}
+                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-pink-200 transition cursor-pointer"
+                    title={showSitePassword ? 'إخفاء كلمة السر' : 'إظهار كلمة السر'}
+                  >
+                    {showSitePassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyText(config.sitePassword || 'love', 'كلمة سر الموقع')}
+                    className="p-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/40 text-amber-300 transition cursor-pointer"
+                    title="نسخ كلمة السر"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <span className="text-[11px] text-pink-200/60 block">تكتبها حبيبتك في بداية الصفحة لدخول الموقع.</span>
             </div>
 
-            <div>
-              <label className="block text-rose-300 text-sm mb-1.5 font-extrabold">🔒 كلمة سر لوحة التحكم (لك أنت):</label>
-              <input
-                type="password"
-                placeholder="اكتب كلمة سر لوحة التحكم..."
-                value={tenantCtx?.currentTenant?.adminPassword || ''}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  if (tenantCtx?.currentTenant) {
-                    TenantStore.updateTenant(tenantCtx.currentTenant.slug, { adminPassword: val });
-                    tenantCtx.refreshTenants();
-                  }
-                }}
-                className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-rose-300 font-mono font-black text-base focus:border-rose-300 transition-all shadow-inner"
-              />
-              <span className="text-[11px] text-pink-200/60 mt-1 block">تستخدمها أنت فقط للدخول والتعديل في هذه اللوحة.</span>
-            </div>
-
-            <div>
-              <label className="block text-pink-200 text-sm mb-1.5 font-extrabold">👑 اسم حبيبتك / أميرتك الغالية:</label>
-              <input
-                type="text"
-                placeholder="مثال: روضة / حبيبتي"
-                value={config.herName}
-                onChange={(e) => updateConfig({ herName: e.target.value })}
-                className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white font-black text-base focus:border-pink-300 transition-all shadow-inner"
-              />
-              <span className="text-[11px] text-pink-200/60 mt-1 block">يظهر في الشاشات الأولى والترحيب بالكامل.</span>
-            </div>
-
-            <div>
-              <label className="block text-pink-200 text-sm mb-1.5 font-extrabold">✨ الشارة العلوية (Badge):</label>
-              <input
-                type="text"
-                value={config.landingBadge}
-                onChange={(e) => updateConfig({ landingBadge: e.target.value })}
-                className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white font-black text-base"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-pink-200 text-sm mb-1.5 font-extrabold">💖 العنوان الرئيسي الكبير في البداية:</label>
-              <input
-                type="text"
-                value={config.landingTitle}
-                onChange={(e) => updateConfig({ landingTitle: e.target.value })}
-                className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white font-black text-base"
-              />
-            </div>
-
-            <div className="md:col-span-2">
-              <label className="block text-pink-200 text-sm mb-1.5 font-extrabold">💌 الوصف والرسالة الشاعرية تحت العنوان:</label>
-              <textarea
-                rows={2}
-                value={config.landingSubtitle}
-                onChange={(e) => updateConfig({ landingSubtitle: e.target.value })}
-                className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white leading-relaxed text-sm font-medium"
-              />
-            </div>
-
-            <div>
-              <label className="block text-pink-200/80 mb-1.5">نص خانة كتابة كلمة السر (Placeholder):</label>
-              <input
-                type="text"
-                value={config.passwordPlaceholder}
-                onChange={(e) => updateConfig({ passwordPlaceholder: e.target.value })}
-                className="w-full p-3 rounded-xl bg-black/40 border border-pink-400/30 text-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-pink-200/80 mb-1.5">نص زر الدخول والانتقال للمسرح:</label>
-              <input
-                type="text"
-                value={config.enterButtonText}
-                onChange={(e) => updateConfig({ enterButtonText: e.target.value })}
-                className="w-full p-3 rounded-xl bg-black/40 border border-pink-400/30 text-white font-bold text-amber-200"
-              />
+            {/* ADMIN PASSWORD FOR YOU */}
+            <div className="space-y-2">
+              <label className="block text-rose-300 text-sm font-extrabold">🔒 كلمة سر لوحة التحكم (لك أنت):</label>
+              <div className="relative flex items-center">
+                <input
+                  type={showAdminPassword ? 'text' : 'password'}
+                  placeholder="اكتب كلمة سر لوحة التحكم..."
+                  value={tenantCtx?.currentTenant?.adminPassword || config.adminPassword || 'love'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (tenantCtx?.currentTenant) {
+                      TenantStore.updateTenant(tenantCtx.currentTenant.slug, { adminPassword: val });
+                      tenantCtx.refreshTenants();
+                    }
+                  }}
+                  className="w-full p-4 pl-24 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-rose-300 font-mono font-black text-base focus:border-rose-300 transition-all shadow-inner"
+                />
+                <div className="absolute left-2 flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAdminPassword(!showAdminPassword)}
+                    className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-pink-200 transition cursor-pointer"
+                    title={showAdminPassword ? 'إخفاء كلمة السر' : 'إظهار كلمة السر'}
+                  >
+                    {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleCopyText(tenantCtx?.currentTenant?.adminPassword || config.adminPassword || 'love', 'كلمة سر لوحة التحكم')}
+                    className="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/40 border border-rose-400/40 text-rose-300 transition cursor-pointer"
+                    title="نسخ كلمة السر"
+                  >
+                    <Copy className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+              <span className="text-[11px] text-pink-200/60 block">تستخدمها أنت فقط للدخول والتعديل في هذه اللوحة.</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* STEP 2: 3D THEATER ENTRANCE */}
+      {/* STEP 2: STAR CONSTELLATION NAME */}
       {activeStep === 2 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              <Crown className="w-5 h-5 text-pink-400" />
-              <span>🎭 2. مسرح الرقص والشخصيات الرومانسية</span>
-            </h3>
-            <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              💡 اختار شكل شخصيات أبطال المسرح الرومانسي الذين يعزفون ويرقصون بحركات ساحرة في الشاشة الأولى!
-            </p>
-          </div>
-
-          <div className="space-y-4 text-xs font-bold pb-4 border-b border-white/10">
-            <div>
-              <label className="block text-pink-200 text-sm mb-1.5 font-extrabold">💌 رسالة المسرح الكبيرة عند وصول الأبطال:</label>
-              <textarea
-                rows={3}
-                value={config.theaterWalkMessage}
-                onChange={(e) => updateConfig({ theaterWalkMessage: e.target.value })}
-                className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white leading-relaxed text-sm font-medium"
-              />
-              <span className="text-[11px] text-pink-200/60 mt-1 block">تُكتب كلمة بكلمة بحركة جميلة عند وصول الشخصية على المسرح.</span>
-            </div>
-
-            <div>
-              <label className="block text-amber-300 text-sm mb-1.5 font-extrabold">✨ نص زر الانتقال للشاشة التالية:</label>
-              <input
-                type="text"
-                value={config.theaterButtonText}
-                onChange={(e) => updateConfig({ theaterButtonText: e.target.value })}
-                className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white font-black text-base"
-              />
-            </div>
-          </div>
-
-          {/* ROMANTIC SONG UPLOAD — Plays automatically after theater, loops through all steps */}
-          <div className="rounded-2xl bg-gradient-to-br from-purple-950/60 via-rose-950/40 to-black/60 border border-purple-400/30 p-5 space-y-4">
-            <h4 className="text-xs font-black text-purple-200 flex items-center gap-2">
-              <Music className="w-4 h-4 text-purple-400" />
-              <span>🎵 أغنية الرحلة الرومانسية (تبدأ تلقائياً بعد انتهاء المسرح)</span>
-            </h4>
-            <p className="text-[11px] text-pink-200/60 leading-relaxed" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              الأغنية تبدأ تلقائياً في اللحظة التي يختفي فيها الشخصية ويظهر الكلام المكتوب على الشاشة، وتستمر تلقائياً طوال الرحلة.
-            </p>
-
-            {/* CURRENT SONG STATUS */}
-            {config.storySongUrl ? (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-green-950/60 border border-green-400/30">
-                <Music className="w-5 h-5 text-green-400 shrink-0 animate-pulse" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-black text-green-300">✅ أغنية محملة وجاهزة للتشغيل!</p>
-                  <audio controls src={getPlayableAudioUrl(config.storySongUrl)} className="w-full mt-2 h-8" style={{ filter: 'invert(0.8) hue-rotate(270deg)' }} />
-                </div>
-                <button
-                  onClick={() => updateConfig({ storySongUrl: '' })}
-                  className="shrink-0 p-2 rounded-xl bg-red-950/60 border border-red-400/30 text-red-300 hover:bg-red-900/60 transition"
-                  title="حذف الأغنية"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-black/30 border border-dashed border-purple-400/40">
-                <Music className="w-5 h-5 text-purple-400/50" />
-                <p className="text-[11px] text-purple-200/50">لا توجد أغنية محملة بعد.. ارفع أغنية من جهازك أدناه 👇</p>
-              </div>
-            )}
-
-            {/* UPLOAD BUTTON / STATUS */}
-            {isUploadingAudio ? (
-              <div className="flex flex-col items-center justify-center gap-3 p-4 rounded-2xl bg-purple-950/40 border border-purple-500/30">
-                <div className="w-8 h-8 border-3 border-purple-400 border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs font-black text-purple-300">جاري رفع الأغنية للسيرفر السحابي الآمن... يرجى الانتظار ⏳</p>
-              </div>
-            ) : (
-              <label className="cursor-pointer flex items-center justify-center gap-2.5 p-4 rounded-2xl bg-gradient-to-r from-purple-800/60 via-rose-800/50 to-pink-800/60 border border-purple-300/30 hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(168,85,247,0.3)] text-white font-black text-xs">
-                <Upload className="w-5 h-5 text-purple-200" />
-                <span>📂 اختار أغنية من جهازك (MP3، MP4، OGG، WAV)</span>
-                <input
-                  type="file"
-                  accept="audio/*,video/mp4"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const file = e.target.files?.[0];
-                    if (!file) return;
-                    try {
-                      const songUrl = await uploadAudioToCloud(file);
-                      if (songUrl) {
-                        updateConfig({ storySongUrl: songUrl, music_src: songUrl, storySongPart2: '', storySongPart3: '' });
-                      }
-                    } catch (err: any) {
-                      setUploadError(err.message || 'حدث خطأ أثناء رفع الأغنية!');
-                    }
-                    e.target.value = '';
-                  }}
-                />
-              </label>
-            )}
-
-            {uploadError && (
-              <div className="p-3 rounded-xl bg-red-950/80 border border-red-500/30 text-red-300 text-xs font-bold text-center">
-                {uploadError}
-              </div>
-            )}
-          </div>
-
-          {/* CUSTOM THEATER STAGE AUDIO UPLOAD / SELECTOR */}
-          <div className="rounded-2xl bg-gradient-to-br from-amber-950/60 via-rose-950/40 to-black/60 border border-amber-400/30 p-5 space-y-4">
-            <h4 className="text-xs font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              <Music className="w-4 h-4 text-amber-400 animate-pulse" />
-              <span>🎭 صوت/موسيقى المسرح الملكي (أثناء عرض وتدفق الشخصية)</span>
-            </h4>
-            <p className="text-[11px] text-amber-200/70 leading-relaxed" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              النسخة الافتراضية تشغّل الموسيقى المدمجة الافتراضية للمسرح. يمكنك اختيار وتخصيص صوت أو أغنية مخصصة من جهازك ليتم تشغيلها بدلاً من الصوت الافتراضي للمسرح.
-            </p>
-
-            {/* CURRENT THEATER AUDIO STATUS */}
-            {config.theaterAudioUrl ? (
-              <div className="flex flex-col sm:flex-row items-center gap-3 p-3 rounded-xl bg-amber-950/60 border border-amber-400/40">
-                <Music className="w-5 h-5 text-amber-400 shrink-0 animate-bounce" />
-                <div className="flex-1 min-w-0 w-full">
-                  <p className="text-[11px] font-black text-amber-300">✅ تم تخصيص صوت مخصص للمسرح!</p>
-                  <audio controls src={getPlayableAudioUrl(config.theaterAudioUrl)} className="w-full mt-1.5 h-8" style={{ filter: 'invert(0.8) hue-rotate(30deg)' }} />
-                </div>
-                <button
-                  onClick={() => updateConfig({ theaterAudioUrl: '' })}
-                  className="shrink-0 px-3 py-2 rounded-xl bg-rose-950/80 border border-rose-400/40 text-rose-200 text-xs font-bold hover:bg-rose-900/80 transition flex items-center gap-1"
-                  title="إعادة الصوت الافتراضي للمسرح"
-                >
-                  <X className="w-4 h-4" />
-                  <span>إعادة الصوت الافتراضي</span>
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-black/30 border border-dashed border-amber-400/40">
-                <Music className="w-5 h-5 text-amber-400/50" />
-                <p className="text-[11px] text-amber-200/60">
-                  ℹ️ يتم تشغيل الصوت الافتراضي المدمج للمسرح حالياً. إذا أردت تغيير الصوت، ارفع صوت من جهازك أدناه 👇
-                </p>
-              </div>
-            )}
-
-            {/* UPLOAD CUSTOM THEATER AUDIO BUTTON */}
-            {isUploadingAudio ? (
-              <div className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-amber-950/40 border border-amber-500/30">
-                <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-                <p className="text-xs font-black text-amber-300">جاري رفع صوت المسرح... يرجى الانتظار ⏳</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <label className="cursor-pointer flex items-center justify-center gap-2 p-3.5 rounded-2xl bg-gradient-to-r from-amber-800/60 via-rose-800/50 to-pink-800/60 border border-amber-300/40 hover:scale-[1.01] active:scale-95 transition-all shadow-[0_0_15px_rgba(245,158,11,0.25)] text-white font-black text-xs">
-                  <Upload className="w-4 h-4 text-amber-200" />
-                  <span>📂 اختار صوت مخصص للمسرح من جهازك (MP3، WAV، OGG، MP4)</span>
-                  <input
-                    type="file"
-                    accept="audio/*,video/mp4"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const audioUrl = await uploadAudioToCloud(file);
-                        if (audioUrl) {
-                          updateConfig({ theaterAudioUrl: audioUrl });
-                        }
-                      } catch (err: any) {
-                        setUploadError(err.message || 'حدث خطأ أثناء رفع صوت المسرح!');
-                      }
-                      e.target.value = '';
-                    }}
-                  />
-                </label>
-
-                <div className="flex items-center gap-2 pt-1">
-                  <span className="text-[11px] text-amber-200/60 font-bold shrink-0">أو ضع رابط صوت مباشر:</span>
-                  <input
-                    type="text"
-                    placeholder="https://..."
-                    value={config.theaterAudioUrl || ''}
-                    onChange={(e) => updateConfig({ theaterAudioUrl: e.target.value })}
-                    className="flex-1 p-2 rounded-xl bg-black/40 border border-amber-400/30 text-xs text-white dir-ltr font-mono"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          <Live3DModelPicker />
-        </div>
-      )}
-
-      {/* STEP 3: STAR CONSTELLATION NAME */}
-      {activeStep === 3 && (
-        <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
-          <div className="border-b border-pink-500/20 pb-3 space-y-1">
-            <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <Sparkles className="w-5 h-5 text-pink-400" />
-              <span>🌌 3. اسم نجمة السماء والبرج الخاص بها</span>
+              <span>🌌 2. اسم نجمة السماء والبرج الخاص بها</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
               💡 شاشة سماء النجوم الرائعة! تُظهر اسم حبيبتك منقوشاً بالنجوم اللامعة في السماء.
@@ -748,7 +556,7 @@ export default function AdminPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-bold">
             <div>
-              <label className="block text-amber-300 text-sm mb-1.5 font-extrabold">🌟 اسم النجمة المضيء (بالإنجليزي):</label>
+              <label className="block text-amber-300 text-sm mb-1.5 font-extrabold">🌟 اسم النجمة المضيء:</label>
               <input
                 type="text"
                 value={config.constellationName}
@@ -792,8 +600,8 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* STEP 4: LOVE COUNTER WITH ULTRA MODERN INTERACTIVE CALENDAR */}
-      {activeStep === 4 && (
+      {/* STEP 3: LOVE COUNTER WITH ULTRA MODERN INTERACTIVE CALENDAR */}
+      {activeStep === 3 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
@@ -933,8 +741,8 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* STEP 5: OPEN WHEN LETTERS */}
-      {activeStep === 5 && (
+      {/* STEP 4: OPEN WHEN LETTERS */}
+      {activeStep === 4 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
@@ -1057,8 +865,8 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* STEP 6: PHOTO GALLERY WITH DIRECT LOCAL FILE PICKER */}
-      {activeStep === 6 && (
+      {/* STEP 5: PHOTO GALLERY WITH DIRECT LOCAL FILE PICKER */}
+      {activeStep === 5 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
@@ -1206,8 +1014,8 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* STEP 7: LIVE MICROPHONE VOICE RECORDING */}
-      {activeStep === 7 && (
+      {/* STEP 6: LIVE MICROPHONE VOICE RECORDING */}
+      {activeStep === 6 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
@@ -1302,8 +1110,8 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* STEP 8: BUCKET LIST (INDIVIDUAL WISH BOXES & CHECKMARKS) */}
-      {activeStep === 8 && (
+      {/* STEP 7: BUCKET LIST (INDIVIDUAL WISH BOXES & CHECKMARKS) */}
+      {activeStep === 7 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
@@ -1414,8 +1222,8 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* STEP 9: FINAL HEARTFELT LETTER */}
-      {activeStep === 9 && (
+      {/* STEP 8: FINAL HEARTFELT LETTER */}
+      {activeStep === 8 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>

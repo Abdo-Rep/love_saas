@@ -188,22 +188,27 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
       {/* CONSTELLATION NAME CONTAINER */}
       <div className="relative z-10 max-w-3xl w-full my-auto py-8 flex flex-col items-center gap-8">
         
-        {/* REVEALING LETTERS IN GLOWING STAR CARDS */}
-        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 dir-ltr">
+        {/* REVEALING LETTERS IN GLOWING STAR CARDS WITH COLLISION SNAP EFFECT */}
+        <div className={`flex flex-wrap items-center justify-center transition-all duration-500 dir-ltr ${
+          revealedCount >= nameLetters.length ? 'gap-1.5 sm:gap-2 scale-105' : 'gap-3 sm:gap-4'
+        }`}>
           {nameLetters.map((letter, index) => {
             const isRevealed = index < revealedCount;
+            const isFullyAssembled = revealedCount >= nameLetters.length;
             return (
               <div
                 key={index}
-                className={`relative w-12 h-16 sm:w-16 sm:h-20 rounded-2xl flex items-center justify-center font-black text-2xl sm:text-4xl transition-all duration-700 ${
+                className={`relative w-12 h-16 sm:w-16 sm:h-20 rounded-2xl flex items-center justify-center font-black text-2xl sm:text-4xl transition-all duration-500 transform ${
                   isRevealed
-                    ? 'bg-gradient-to-b from-rose-500 via-pink-600 to-rose-700 text-white border-2 border-amber-300/80 shadow-[0_0_35px_rgba(244,63,94,0.8)] scale-100 rotate-0'
+                    ? isFullyAssembled
+                      ? 'bg-gradient-to-b from-amber-400 via-rose-500 to-pink-600 text-white border-2 border-amber-200 shadow-[0_0_40px_rgba(251,191,36,0.9)] scale-105 translate-y-0 animate-pulse'
+                      : 'bg-gradient-to-b from-rose-500 via-pink-600 to-rose-700 text-white border-2 border-amber-300/80 shadow-[0_0_35px_rgba(244,63,94,0.8)] scale-110 -translate-y-1'
                     : 'bg-white/5 border border-white/10 text-white/20 scale-90 rotate-3'
                 }`}
                 style={{ fontFamily: "'Cairo', sans-serif" }}
               >
                 {isRevealed ? letter : '★'}
-                {isRevealed && (
+                {isRevealed && !isFullyAssembled && (
                   <div className="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-amber-300 shadow-[0_0_10px_#ffd700] animate-ping" />
                 )}
               </div>
