@@ -645,97 +645,31 @@ export default function AdminPage() {
             </div>
           </div>
 
-          {/* ULTRA MODERN INTERACTIVE CALENDAR */}
-          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-b from-[#25051b]/80 to-[#0c010c] border border-pink-500/30 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-black text-amber-300">
-                📅 اختاري تاريخ بداية علاقتكم (يحسب الثواني والأيام فوراً):
-              </span>
-              <span className="text-xs font-mono font-extrabold text-pink-200 px-3 py-1 rounded-full bg-rose-500/20 border border-pink-400/30">
-                التاريخ المختار: {config.relationshipStartDate}
-              </span>
-            </div>
-
-            {/* Calendar Month/Year Switcher */}
-            <div className="flex items-center justify-between bg-black/40 p-2.5 rounded-xl border border-pink-400/20">
-              <button
-                type="button"
-                onClick={() => {
-                  if (calMonth === 0) {
-                    setCalMonth(11);
-                    setCalYear((y) => y - 1);
-                  } else {
-                    setCalMonth((m) => m - 1);
-                  }
-                }}
-                className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-rose-500/40"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-
-              <div className="flex items-center gap-2 text-xs font-black text-pink-100">
-                <span>{monthsArabic[calMonth]}</span>
-                <select
-                  value={calYear}
-                  onChange={(e) => setCalYear(Number(e.target.value))}
-                  className="bg-black/60 border border-pink-400/40 text-center rounded-xl text-amber-200 py-1 px-3 font-mono font-black text-xs cursor-pointer hover:border-pink-300 transition"
-                >
-                  {Array.from({ length: 35 }, (_, i) => 2000 + i).map((yr) => (
-                    <option key={yr} value={yr} className="bg-[#1c0617] text-amber-200 font-mono font-bold">
-                      {yr}
-                    </option>
-                  ))}
-                </select>
+          {/* COMPACT CLEAN DATE PICKER */}
+          <div className="p-4 rounded-2xl bg-gradient-to-b from-[#25051b]/80 to-[#0c010c] border border-pink-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5 text-amber-300 shrink-0" />
+              <div>
+                <label className="block text-xs font-black text-amber-300">
+                  📅 تاريخ بداية العلاقة:
+                </label>
+                <p className="text-[11px] text-pink-200/60 font-medium">
+                  يحسب العداد الأيام والساعات في الوقت الفعلي من هذا التاريخ
+                </p>
               </div>
-
-              <button
-                type="button"
-                onClick={() => {
-                  if (calMonth === 11) {
-                    setCalMonth(0);
-                    setCalYear((y) => y + 1);
-                  } else {
-                    setCalMonth((m) => m + 1);
-                  }
-                }}
-                className="p-1.5 rounded-lg bg-white/10 text-white hover:bg-rose-500/40"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
             </div>
 
-            {/* Calendar Days Grid */}
-            <div className="grid grid-cols-7 gap-1.5 text-center text-xs">
-              {['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'].map((d, i) => (
-                <span key={i} className="text-[10px] font-bold text-pink-300/60 py-1">{d}</span>
-              ))}
-
-              {Array.from({ length: firstDayIndex }).map((_, i) => (
-                <div key={`empty-${i}`} className="h-8" />
-              ))}
-
-              {Array.from({ length: daysInMonth }).map((_, i) => {
-                const dayNum = i + 1;
-                const mStr = String(calMonth + 1).padStart(2, '0');
-                const dStr = String(dayNum).padStart(2, '0');
-                const thisDateStr = `${calYear}-${mStr}-${dStr}`;
-                const isSelected = config.relationshipStartDate === thisDateStr;
-
-                return (
-                  <button
-                    key={dayNum}
-                    type="button"
-                    onClick={() => handleSelectDay(dayNum)}
-                    className={`h-8 sm:h-9 rounded-xl font-mono text-xs font-bold transition-all flex items-center justify-center ${
-                      isSelected
-                        ? 'bg-gradient-to-r from-rose-500 to-amber-400 text-white shadow-[0_0_15px_#f472b6] scale-110 border border-white'
-                        : 'bg-black/30 text-pink-100 hover:bg-rose-500/20 border border-pink-400/10'
-                    }`}
-                  >
-                    {dayNum}
-                  </button>
-                );
-              })}
+            <div className="flex items-center gap-3 w-full sm:w-auto">
+              <input
+                type="date"
+                value={config.relationshipStartDate}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    updateConfig({ relationshipStartDate: e.target.value });
+                  }
+                }}
+                className="w-full sm:w-auto p-3 rounded-xl bg-black/70 border-2 border-pink-400/40 text-amber-300 font-mono font-bold text-sm focus:border-pink-300 focus:outline-none cursor-pointer hover:border-pink-300/80 transition-all shadow-md"
+              />
             </div>
           </div>
         </div>
