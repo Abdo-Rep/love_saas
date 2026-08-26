@@ -162,7 +162,18 @@ export const TenantStore = {
       const deleted = TenantStore.getDeletedSlugs();
       const saved = localStorage.getItem(TENANTS_STORAGE_KEY);
       if (!saved) {
-        return [];
+        const seedTenant: Tenant = {
+          id: 't-default-rawda',
+          slug: 'rawda',
+          name: 'موقع روضة الرومانسي 🌸',
+          adminPassword: 'love',
+          sitePassword: 'love',
+          createdAt: new Date().toISOString(),
+          status: 'active',
+          config: createDefaultConfigForTenant('روضة', 'love')
+        };
+        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify([seedTenant]));
+        return [seedTenant];
       }
       const parsed: Tenant[] = JSON.parse(saved);
       const cleanList = parsed.filter((t) => !deleted.includes(t.slug.toLowerCase().trim()));
@@ -185,7 +196,11 @@ export const TenantStore = {
     if (deleted.includes(cleanSlug)) return null;
 
     const tenants = TenantStore.getAllTenants();
-    return tenants.find((t) => t.slug.toLowerCase() === cleanSlug) || null;
+    const found = tenants.find((t) => t.slug.toLowerCase() === cleanSlug);
+    if (found) return found;
+
+    // Auto-create tenant on demand for any requested slug
+    return TenantStore.createTenant(cleanSlug, `موقع ${cleanSlug}`, 'love', 'love', cleanSlug);
   },
 
   // Create new tenant
