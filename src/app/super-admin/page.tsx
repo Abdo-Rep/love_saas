@@ -48,39 +48,13 @@ export default function SuperAdminPage() {
   }, [isAuthenticated]);
 
   const refreshData = async () => {
-    const deleted = TenantStore.getDeletedSlugs();
-    const localTenants = TenantStore.getAllTenants().filter(
-      (t) => !deleted.includes(t.slug.toLowerCase().trim())
-    );
-    setTenants(localTenants);
+    // Show current local tenants immediately
+    setTenants(TenantStore.getAllTenants());
 
-    try {
-      const res = await fetch('/api/tenants');
-      const json = await res.json();
-      if (json && json.success && Array.isArray(json.tenants)) {
-        const serverFiltered = json.tenants.filter(
-          (st: any) => !deleted.includes((st.slug || '').toLowerCase().trim())
-        );
-
-        const merged = [...serverFiltered];
-        localTenants.forEach((lt) => {
-          if (!merged.some((st) => st.slug.toLowerCase().trim() === lt.slug.toLowerCase().trim())) {
-            merged.push(lt);
-          }
-        });
-        merged.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-        setTenants(merged);
-        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(merged));
-      }
-    } catch (_) {}
-
-    if (isSupabaseConfigured) {
-      TenantStore.syncFromSupabase().then((data) => {
-        if (data && data.length > 0) {
-          const clean = data.filter((t) => !deleted.includes(t.slug.toLowerCase().trim()));
-          setTenants(clean);
-        }
-      });
+    // Sync with API safely without losing any local tenant
+    const data = await TenantStore.syncFromSupabase();
+    if (data) {
+      setTenants(data);
     }
   };
 

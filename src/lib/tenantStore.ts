@@ -346,22 +346,45 @@ export const TenantStore = {
     return true;
   },
 
-  // Sync all tenants via API (Never throws 401 in browser console!)
+  // Sync all tenants via API (Safely merges server tenants with local tenants!)
   syncFromSupabase: async (): Promise<Tenant[]> => {
     try {
+      const deleted = TenantStore.getDeletedSlugs();
+      const localTenants = TenantStore.getAllTenants();
+      const mergedMap = new Map<string, Tenant>();
+
+      // 1. Load local tenants into map
+      localTenants.forEach((t) => {
+        const key = t.slug.toLowerCase().trim();
+        if (!deleted.includes(key)) {
+          mergedMap.set(key, t);
+        }
+      });
+
+      // 2. Fetch server tenants and add missing ones
       const res = await fetch('/api/tenants');
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.tenants)) {
-          const deleted = TenantStore.getDeletedSlugs();
-          const cleanList = json.tenants.filter((t: Tenant) => !deleted.includes(t.slug.toLowerCase().trim()));
-          if (typeof window !== 'undefined') {
-            localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
-          }
-          return cleanList;
+          json.tenants.forEach((st: Tenant) => {
+            const key = st.slug.toLowerCase().trim();
+            if (!deleted.includes(key)) {
+              if (!mergedMap.has(key)) {
+                mergedMap.set(key, st);
+              }
+            }
+          });
         }
       }
-    } catch (_) {}
+
+      const cleanList = Array.from(mergedMap.values()).filter((t: Tenant) => !deleted.includes(t.slug.toLowerCase().trim()));
+      cleanList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
+      }
+      return cleanList;
+    } catch (_) { }
     return TenantStore.getAllTenants();
   },
 
