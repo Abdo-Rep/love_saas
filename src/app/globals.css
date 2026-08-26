@@ -1,0 +1,111 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Tajawal:wght@300;400;500;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-dark: #0a0a1a;
+  --bg-deep: #0d0d2b;
+  --gold: #FFD700;
+  --rosegold: #b76e79;
+  --white: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: #f8f9fa;
+  font-family: 'Cairo', 'Tajawal', sans-serif;
+  overflow-x: hidden;
+  direction: rtl;
+  min-height: 100vh;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #0a0a1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #b76e79;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #FFD700;
+}
+
+/* Glassmorphism utility */
+.glass-panel {
+  background: rgba(13, 13, 43, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(183, 110, 121, 0.25);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel-gold {
+  background: rgba(20, 15, 40, 0.8);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(255, 215, 0, 0.15);
+}
+
+/* Star background animation canvas wrapper */
+.star-canvas-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Typewriter glow */
+.typewriter-glow {
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6), 0 0 20px rgba(183, 110, 121, 0.4);
+}
+
+.title-glow {
+  text-shadow: 0 0 15px rgba(255, 215, 0, 0.8), 0 0 30px rgba(230, 57, 70, 0.5);
+}
+
+/* RTL Leaflet popup tweaks */
+.leaflet-popup-content-wrapper {
+  background: rgba(13, 13, 43, 0.95) !important;
+  color: #fff !important;
+  border: 1px solid #b76e79 !important;
+  border-radius: 12px !important;
+  direction: rtl;
+}
+
+.leaflet-popup-tip {
+  background: rgba(13, 13, 43, 0.95) !important;
+}
+
+/* 3D Flip Card Container */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
