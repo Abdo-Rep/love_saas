@@ -1,12 +1,11 @@
 import { Tenant } from '@/types/tenant';
 import { AppConfig } from '@/types/config';
-import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 export const TENANTS_STORAGE_KEY = 'cosmic_love_saas_tenants_v3';
 export const MASTER_PASSWORD_KEY = 'cosmic_love_master_pass_v3';
 export const DELETED_SLUGS_KEY = 'cosmic_love_deleted_slugs_v3';
 
-// DEFAULT ROMANTIC CONFIG TEMPLATE FOR NEW TENANTS (GENERIC & UNIVERSAL - NO HARDCODED NAMES)
+// DEFAULT ROMANTIC CONFIG TEMPLATE FOR NEW TENANTS
 export const createDefaultConfigForTenant = (herName: string = 'أميرتي', sitePassword: string = 'love'): AppConfig => ({
   sitePassword,
   passwordGreeting: 'أهلاً بكِ في عالمنا الخاص.. أدخلي كلمة السر لتبدأ الرحلة ✨',
@@ -17,21 +16,17 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
   passwordPlaceholder: 'اكتب كلمة السر هنا ✨',
   enterButtonText: 'دخول عالمنا الخاص 🚀',
 
-  selectedCharacterModel: '/models/passive_marker_man.fbx',
-  theaterWalkMessage: 'كل خطوة خطيتها في الطريق ده.. كانت عشان أوصل لقلبكِ يا روحي 🌸 أنتي مش مجرد شخص في حياتي، أنتي القصة والروح اللي اتمنيت أعيش معاها طول عمري ✨💖',
-  theaterButtonText: 'كلمة حلوة.. تعالي نخش جوه قصة حياتنا 💖✨',
-  theaterAudioUrl: '',
   storySongUrl: '',
 
   constellationName: 'LOVE',
   constellationTitle: 'نجمتي وأميرتي الغالية... 💫',
   constellationMessage: '"كتبتُ اسمكِ بين النجوم لأنكِ القمر الوحيد الذي ينور سمائي، والسر الجميل الذي يسعد قلبي في كل ثانية." ❤️✨',
-  constellationButtonText: 'انتقلي لرحلة عشقنا 💖✨',
+  constellationButtonText: 'عداد الحب',
 
   relationshipStartDate: '2024-03-14',
   counterTitle: 'معكِ في كل ثانية ودقيقة من العمر 🌸',
   counterQuote: '"كل ثانية مرت وأنا معاك، كانت تساوي عمر كامل من السعادة والراحة.. ووقفت قلبي يزيد معك في كل دقيقة تمضي" ❤️✨',
-  counterButtonText: 'التالي: المظاريف السرية ✉️💖',
+  counterButtonText: 'المظاريف والرسائل',
 
   openWhenLettersTitle: 'مظاريف الحب السرية 💌',
   openWhenLetters: [
@@ -81,7 +76,7 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
       enabled: true
     }
   ],
-  openWhenLettersButtonText: 'التالي: ألبوم الذكريات 📸💖',
+  openWhenLettersButtonText: 'ألبوم الصور',
 
   galleryTitle: 'ذكريات منقوشة في أعماق القلب',
   memoryPhotos: [
@@ -107,16 +102,16 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
       tag: 'سعادة 🌟'
     }
   ],
-  galleryButtonText: 'التالي: رسالة بصوتي 🎙️❤️',
+  galleryButtonText: 'الرسائل الصوتية',
 
   voiceMessageTitle: 'كلمات بصوتي طالعة من قلبي لأجلكِ',
   voiceMessageSubtitle: 'رسالة حب بصوتي 🎙️❤️',
   voicePhotoUrl: '/images/peasant_girl.jpg',
   voiceAudioUrl: '',
-  voiceButtonText: 'التالي: قائمة أمنياتنا 🗺️✨',
+  voiceButtonText: 'أمنيات المستقبل',
 
   spinWheelOutcomeText: 'عليكِ بوسة رقيقة يا أميرتي 💋😘',
-  spinWheelButtonText: 'التالي: قائمة أمنياتنا 🗺️✨',
+  spinWheelButtonText: 'أمنيات المستقبل',
 
   bucketListTitle: 'أحلام سنحققها معاً خطوة بخطوة 🌸',
   bucketListItems: [
@@ -127,7 +122,7 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
     { id: 5, text: 'نبني بيتنا الدافئ الصغير المليان حب وراحة 🏡💖', completed: false },
     { id: 6, text: 'نفضل سوا لآخر العمر ونحكي حكايتنا لأولادنا 👵👴', completed: false }
   ],
-  bucketListButtonText: 'التالي: الرسالة الأخيرة 💌👑',
+  bucketListButtonText: 'الرسالة الختامية',
 
   finalLetterTitle: 'كلمات نُقشت بماء الذهب',
   finalLetterSubtitle: 'إلى من ملكت روحي واستقرت في أعماق قلبي 👑',
@@ -160,7 +155,7 @@ export const TenantStore = {
     } catch { }
   },
 
-  // Get all tenants (Strictly filtered from any deleted slugs, sorted newest first!)
+  // Get all tenants (Filtered from deleted slugs, sorted newest first)
   getAllTenants: (): Tenant[] => {
     if (typeof window === 'undefined') return [];
     try {
@@ -171,7 +166,6 @@ export const TenantStore = {
       }
       const parsed: Tenant[] = JSON.parse(saved);
       const cleanList = parsed.filter((t) => !deleted.includes(t.slug.toLowerCase().trim()));
-      // Sort newest first
       cleanList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
       if (cleanList.length !== parsed.length) {
         localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
@@ -205,7 +199,6 @@ export const TenantStore = {
     const tenants = TenantStore.getAllTenants();
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
 
-    // Remove from deleted list if re-creating
     if (typeof window !== 'undefined') {
       const deleted = TenantStore.getDeletedSlugs().filter((s) => s !== cleanSlug);
       localStorage.setItem(DELETED_SLUGS_KEY, JSON.stringify(deleted));
@@ -226,7 +219,7 @@ export const TenantStore = {
     if (existingIdx !== -1) {
       tenants[existingIdx] = newTenant;
     } else {
-      tenants.unshift(newTenant); // Newest first!
+      tenants.unshift(newTenant);
     }
 
     try {
@@ -235,28 +228,12 @@ export const TenantStore = {
       console.error('Failed to save tenant:', e);
     }
 
-    // Auto-sync to API and Supabase
     if (typeof window !== 'undefined') {
       fetch('/api/tenants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tenant: newTenant })
       }).catch(() => { });
-
-      if (isSupabaseConfigured && supabase) {
-        Promise.resolve(
-          supabase.from('tenants').upsert({
-            id: newTenant.id,
-            slug: newTenant.slug,
-            name: newTenant.name,
-            admin_password: newTenant.adminPassword,
-            site_password: newTenant.sitePassword,
-            created_at: newTenant.createdAt,
-            status: newTenant.status,
-            config: newTenant.config
-          })
-        ).catch(() => { });
-      }
     }
 
     return newTenant;
@@ -292,21 +269,6 @@ export const TenantStore = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tenant: updatedTenant })
       }).catch(() => { });
-
-      if (isSupabaseConfigured && supabase) {
-        Promise.resolve(
-          supabase.from('tenants').upsert({
-            id: updatedTenant.id,
-            slug: updatedTenant.slug,
-            name: updatedTenant.name,
-            admin_password: updatedTenant.adminPassword,
-            site_password: updatedTenant.sitePassword,
-            created_at: updatedTenant.createdAt,
-            status: updatedTenant.status,
-            config: updatedTenant.config
-          })
-        ).catch(() => { });
-      }
     }
 
     return updatedTenant;
@@ -339,21 +301,6 @@ export const TenantStore = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tenant: updatedTenant })
       }).catch(() => { });
-
-      if (isSupabaseConfigured && supabase) {
-        Promise.resolve(
-          supabase.from('tenants').upsert({
-            id: updatedTenant.id,
-            slug: updatedTenant.slug,
-            name: updatedTenant.name,
-            admin_password: updatedTenant.adminPassword,
-            site_password: updatedTenant.sitePassword,
-            created_at: updatedTenant.createdAt,
-            status: updatedTenant.status,
-            config: updatedTenant.config
-          })
-        ).catch(() => { });
-      }
     }
 
     return updatedTenant;
@@ -373,51 +320,33 @@ export const TenantStore = {
       console.error('Failed to delete tenant:', e);
     }
 
-    // Sync to Cloud KV API and Supabase
     if (typeof window !== 'undefined') {
       fetch('/api/tenants', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ slug: cleanSlug })
       }).catch(() => { });
-
-      if (isSupabaseConfigured && supabase) {
-        Promise.resolve(
-          supabase.from('tenants').delete().eq('slug', cleanSlug)
-        ).catch(() => { });
-      }
     }
 
     return true;
   },
 
-  // Fetch and sync all tenants directly from Supabase
+  // Sync all tenants via API (Never throws 401 in browser console!)
   syncFromSupabase: async (): Promise<Tenant[]> => {
-    if (!isSupabaseConfigured || !supabase) return TenantStore.getAllTenants();
     try {
-      const { data, error } = await supabase.from('tenants').select('*');
-      if (data && !error) {
-        const deleted = TenantStore.getDeletedSlugs();
-        const mapped: Tenant[] = data
-          .filter((row: any) => !deleted.includes(row.slug.toLowerCase()))
-          .map((row: any) => ({
-            id: row.id,
-            slug: row.slug,
-            name: row.name,
-            adminPassword: row.admin_password || row.adminPassword || 'love',
-            sitePassword: row.site_password || row.sitePassword || 'love',
-            createdAt: row.created_at || new Date().toISOString(),
-            status: row.status || 'active',
-            config: row.config || createDefaultConfigForTenant('أميرتي', row.site_password || 'love')
-          }));
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(mapped));
+      const res = await fetch('/api/tenants');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.tenants)) {
+          const deleted = TenantStore.getDeletedSlugs();
+          const cleanList = json.tenants.filter((t: Tenant) => !deleted.includes(t.slug.toLowerCase().trim()));
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
+          }
+          return cleanList;
         }
-        return mapped;
       }
-    } catch (e) {
-      console.error('Supabase fetch error:', e);
-    }
+    } catch (_) {}
     return TenantStore.getAllTenants();
   },
 

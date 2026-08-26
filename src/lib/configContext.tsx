@@ -23,24 +23,19 @@ const defaultConfig: AppConfig = {
   passwordPlaceholder: 'اكتب كلمة السر هنا ✨',
   enterButtonText: 'دخول عالمنا الخاص 🚀',
 
-  // Step 2: 3D Entrance Stage
-  selectedCharacterModel: '/models/passive_marker_man.fbx',
-  theaterWalkMessage: 'كل خطوة خطيتها في الطريق ده.. كانت عشان أوصل لقلبكِ يا روضة 🌸 أنتي مش مجرد شخص في حياتي، أنتي القصة والروح اللي اتمنيت أعيش معاها طول عمري ✨💖',
-  theaterButtonText: 'كلمة حلوة.. تعالي نخش جوه قصة حياتنا 💖✨',
-  theaterAudioUrl: '', // Custom theater audio - empty means default synthesized/built-in audio clip
-  storySongUrl: '', // Romantic song that auto-plays continuously after the theater entrance
+  storySongUrl: '',
 
-  // Step 3: Star Constellation Name
+  // Step 2: Star Constellation Name
   constellationName: 'RAWDA',
-  constellationTitle: 'نجمتي الأميرة RAWDA... 💫',
+  constellationTitle: 'نجمتي وأميرتي الغالية... 💫',
   constellationMessage: '"كتبتُ اسمكِ بين النجوم لأنكِ القمر الوحيد الذي ينور سمائي، والسر الجميل الذي يسعد قلبي في كل ثانية." ❤️✨',
-  constellationButtonText: 'انتقلي لرحلة عشقنا 💖✨',
+  constellationButtonText: 'عداد الحب',
 
-  // Step 4: Love Counter
+  // Step 3: Love Counter
   relationshipStartDate: '2024-03-14',
   counterTitle: 'معكِ في كل ثانية ودقيقة من العمر 🌸',
   counterQuote: '"كل ثانية مرت وأنا معاك، كانت تساوي عمر كامل من السعادة والراحة.. ووقفت قلبي يزيد معك في كل دقيقة تمضي" ❤️✨',
-  counterButtonText: 'التالي: المظاريف السرية ✉️💖',
+  counterButtonText: 'المظاريف والرسائل',
 
   // Step 5: Open When Letters
   openWhenLettersTitle: 'مظاريف الحب السرية 💌',
