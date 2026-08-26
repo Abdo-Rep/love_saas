@@ -440,7 +440,7 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
           className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-slate-950 font-black text-xs sm:text-sm shadow-[0_0_30px_rgba(244,63,94,0.5)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
           style={{ fontFamily: "'Cairo', sans-serif" }}
         >
-          <span>الانتقال لأمنيات المستقبل 🌟</span>
+          <span>أمنيات المستقبل</span>
           <ArrowRight className="w-4 h-4 rotate-180" />
         </button>
       </div>

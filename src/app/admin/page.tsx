@@ -36,14 +36,14 @@ import {
 import { TenantQRCodeModal } from '@/components/admin/TenantQRCodeModal';
 
 const TABS_CONFIG = [
-  { id: 1, name: '1. كلمة السر والترحيب', icon: KeyRound, note: 'تحديد كلمة السر واسم حبيبتك' },
-  { id: 2, name: '2. اسم نجمة السماء والبرج', icon: Sparkles, note: 'تعديل اسم النجمة والبرج بالكلية' },
-  { id: 3, name: '3. عداد الأيام وتاريخ الحب', icon: Calendar, note: 'تعديل تاريخ بداية حبكم وارتباطكم' },
-  { id: 4, name: '4. كروت المظاريف والرسائل', icon: Mail, note: 'تعديل رسائل المظاريف السرية الـ 5' },
-  { id: 5, name: '5. ألبوم الصور والذكريات', icon: Camera, note: 'رفع صوركم وتعديل التعليقات' },
-  { id: 6, name: '6. تسجيل الصوت والأغنية', icon: Mic, note: 'تسجيل بصوتك بالمايك ورفع الأغنية' },
-  { id: 7, name: '7. قائمة الأحلام والأمنيات', icon: Compass, note: 'تعديل قائمة أهدافكم المستقبلي معاً' },
-  { id: 8, name: '8. الرسالة والوعد الختامي', icon: FileText, note: 'نص رسالة العشق الختامية الكبيرة' },
+  { id: 1, name: 'عام', icon: KeyRound },
+  { id: 2, name: 'النجوم', icon: Sparkles },
+  { id: 3, name: 'العداد', icon: Calendar },
+  { id: 4, name: 'المظاريف', icon: Mail },
+  { id: 5, name: 'الألبوم', icon: Camera },
+  { id: 6, name: 'الأغنية', icon: Music },
+  { id: 7, name: 'الأمنيات', icon: Compass },
+  { id: 8, name: 'الرسالة', icon: FileText },
 ];
 
 export default function AdminPage() {

@@ -182,7 +182,7 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
           className="w-full py-4 px-8 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-extrabold text-xs md:text-sm border border-rose-300/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_35px_rgba(244,114,182,0.5)] flex items-center justify-center gap-2 cursor-pointer"
           style={{ fontFamily: "'Cairo', sans-serif" }}
         >
-          <span>{config.galleryButtonText || 'التالي: رسالة بصوتي 🎙️❤️'}</span>
+          <span>{config.galleryButtonText || 'الرسائل الصوتية'}</span>
           <ArrowRight className="w-4 h-4 rotate-180" />
         </button>
       </div>

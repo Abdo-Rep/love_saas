@@ -67,7 +67,7 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
         <div className="inline-flex items-center gap-2 px-5 py-1.5 rounded-full bg-white/5 border border-pink-400/30 text-amber-300 text-xs font-bold shadow-[0_0_20px_rgba(245,158,11,0.3)] backdrop-blur-md">
           <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-spin" />
           <span style={{ fontFamily: "'Cairo', sans-serif" }}>
-            {config.landingBadge || 'رحلة العشق الملكية 👑'}
+            رحلة العشق الملكية ✨
           </span>
         </div>
       </div>
@@ -94,7 +94,7 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
               className="text-2xl sm:text-3xl md:text-4xl font-black text-amber-200 leading-snug py-1"
               style={{ fontFamily: "'Cairo', sans-serif" }}
             >
-              {config.landingTitle || 'إلى أميرتي وسر سعادتي'}
+              إلى أميرتي وسر سعادتي
             </h1>
             <div className="flex items-center justify-center gap-2 text-xl pt-1">
               <span>💛</span>
