@@ -21,16 +21,14 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
   const voiceUrl = config.voiceAudioUrl || '/sound/WhatsApp Video 2026-08-11 at 3.56.53 AM.mp4';
   const playableVoiceUrl = getPlayableAudioUrl(voiceUrl);
 
-  // Auto-pause background music on mount and handle cleanup
+  // Handle cleanup on unmount
   useEffect(() => {
-    bgMusic.pause(false);
-
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
       }
       if (config.storySongUrl) {
-        bgMusic.play(config.storySongUrl, false);
+        bgMusic.play(config.storySongUrl, true);
       }
     };
   }, [config.storySongUrl]);
@@ -41,11 +39,20 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
+      if (config.storySongUrl) {
+        bgMusic.play(config.storySongUrl, true);
+      }
     } else {
+      // Pause background music forcefully before playing voice
+      bgMusic.pause(true);
+
       audioRef.current.play().then(() => {
         setIsPlaying(true);
       }).catch(() => {
         setIsPlaying(false);
+        if (config.storySongUrl) {
+          bgMusic.play(config.storySongUrl, true);
+        }
       });
     }
   };
@@ -77,7 +84,7 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
       audioRef.current.pause();
     }
     if (config.storySongUrl) {
-      bgMusic.play(config.storySongUrl, false);
+      bgMusic.play(config.storySongUrl, true);
     }
     onNext();
   };
@@ -92,7 +99,16 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
         src={playableVoiceUrl}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleTimeUpdate}
-        onEnded={() => setIsPlaying(false)}
+        onPlay={() => {
+          bgMusic.pause(true);
+          setIsPlaying(true);
+        }}
+        onEnded={() => {
+          setIsPlaying(false);
+          if (config.storySongUrl) {
+            bgMusic.play(config.storySongUrl, true);
+          }
+        }}
       />
 
       {/* TOP BADGE & TITLE */}
