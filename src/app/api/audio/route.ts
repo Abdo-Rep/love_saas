@@ -15,18 +15,31 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Missing path' }, { status: 400 });
     }
 
-    const fileUrl = `${SUPABASE_STORAGE_URL}/object/public/site-media/${path}`;
-    const res = await fetch(fileUrl, { cache: 'no-store' });
+    const candidateUrls = [
+      `${SUPABASE_STORAGE_URL}/storage/v1/object/public/site-media/${path}`,
+      `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/${path}`,
+      `${SUPABASE_STORAGE_URL}/object/public/site-media/${path}`,
+    ];
 
-    if (res.ok) {
-      const buffer = await res.arrayBuffer();
-      const contentType = res.headers.get('content-type') || 'audio/mpeg';
-      return new NextResponse(buffer, {
-        headers: {
-          'Content-Type': contentType,
-          'Cache-Control': 'public, max-age=31536000, immutable',
-        },
-      });
+    for (const fileUrl of candidateUrls) {
+      try {
+        const res = await fetch(fileUrl, {
+          cache: 'no-store',
+          headers: SERVICE_ROLE_KEY ? { 'Authorization': `Bearer ${SERVICE_ROLE_KEY}` } : {},
+        });
+
+        if (res.ok) {
+          const buffer = await res.arrayBuffer();
+          const contentType = res.headers.get('content-type') || 'audio/mpeg';
+          return new NextResponse(buffer, {
+            headers: {
+              'Content-Type': contentType,
+              'Accept-Ranges': 'bytes',
+              'Cache-Control': 'public, max-age=31536000, immutable',
+            },
+          });
+        }
+      } catch (_) {}
     }
 
     return NextResponse.json({ error: 'File not found on storage' }, { status: 404 });

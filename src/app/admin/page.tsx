@@ -475,13 +475,12 @@ export default function AdminPage() {
                 <input
                   type={showSitePassword ? 'text' : 'password'}
                   placeholder="اكتب كلمة سر الموقع هنا..."
-                  value={config.sitePassword || 'love'}
+                  value={config.sitePassword ?? ''}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
+                    const val = e.target.value;
                     updateConfig({ sitePassword: val });
                     if (tenantCtx?.currentTenant) {
                       TenantStore.updateTenant(tenantCtx.currentTenant.slug, { sitePassword: val });
-                      tenantCtx.refreshTenants();
                     }
                   }}
                   className="w-full p-4 pl-24 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-amber-300 font-mono font-black text-base focus:border-amber-300 transition-all shadow-inner"
@@ -505,7 +504,7 @@ export default function AdminPage() {
                   </button>
                 </div>
               </div>
-              <span className="text-[11px] text-pink-200/60 block">تكتبها حبيبتك في بداية الصفحة لدخول الموقع.</span>
+              <span className="text-[11px] text-pink-200/60 block">تكتبها حبيبتك في بداية الصفحة لدخول الموقع. (يُفضل الحروف الإنجليزية والترقيم).</span>
             </div>
 
             {/* ADMIN PASSWORD FOR YOU */}
@@ -515,12 +514,12 @@ export default function AdminPage() {
                 <input
                   type={showAdminPassword ? 'text' : 'password'}
                   placeholder="اكتب كلمة سر لوحة التحكم..."
-                  value={tenantCtx?.currentTenant?.adminPassword || config.adminPassword || 'love'}
+                  value={config.adminPassword ?? tenantCtx?.currentTenant?.adminPassword ?? ''}
                   onChange={(e) => {
-                    const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
+                    const val = e.target.value;
+                    updateConfig({ adminPassword: val });
                     if (tenantCtx?.currentTenant) {
                       TenantStore.updateTenant(tenantCtx.currentTenant.slug, { adminPassword: val });
-                      tenantCtx.refreshTenants();
                     }
                   }}
                   className="w-full p-4 pl-24 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-rose-300 font-mono font-black text-base focus:border-rose-300 transition-all shadow-inner"
