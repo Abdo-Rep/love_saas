@@ -451,14 +451,17 @@ export default function AdminPage() {
       {/* STEP 1: DUAL PASSWORDS GATE */}
       {activeStep === 1 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
-          <div className="border-b border-pink-500/20 pb-3 space-y-1">
+          <div className="border-b border-pink-500/20 pb-3 space-y-2">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <KeyRound className="w-5 h-5 text-pink-400" />
               <span>كلمات السر</span>
             </h3>
-            <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              كلمات السر (يجب عدم استخدام الحروف العربية أو المسافات).
-            </p>
+
+            {/* ALERT WARNING BADGE */}
+            <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-400/50 text-amber-200 text-xs font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+              <span className="text-base shrink-0">⚠️</span>
+              <span>تنبيه: يجب عدم استخدام الحروف العربية أو المسافات في كلمات السر.</span>
+            </div>
           </div>
 
           {copyToast && (
@@ -477,7 +480,7 @@ export default function AdminPage() {
                   placeholder="اكتب كلمة سر الموقع هنا..."
                   value={config.sitePassword ?? ''}
                   onChange={(e) => {
-                    const val = e.target.value;
+                    const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
                     updateConfig({ sitePassword: val });
                     if (tenantCtx?.currentTenant) {
                       TenantStore.updateTenant(tenantCtx.currentTenant.slug, { sitePassword: val });
@@ -504,7 +507,7 @@ export default function AdminPage() {
                   </button>
                 </div>
               </div>
-              <span className="text-[11px] text-pink-200/60 block">تكتبها حبيبتك في بداية الصفحة لدخول الموقع. (يُفضل الحروف الإنجليزية والترقيم).</span>
+              <span className="text-[11px] text-pink-200/60 block">تكتبها حبيبتك في بداية الصفحة لدخول الموقع.</span>
             </div>
 
             {/* ADMIN PASSWORD FOR YOU */}
@@ -516,7 +519,7 @@ export default function AdminPage() {
                   placeholder="اكتب كلمة سر لوحة التحكم..."
                   value={config.adminPassword ?? tenantCtx?.currentTenant?.adminPassword ?? ''}
                   onChange={(e) => {
-                    const val = e.target.value;
+                    const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
                     updateConfig({ adminPassword: val });
                     if (tenantCtx?.currentTenant) {
                       TenantStore.updateTenant(tenantCtx.currentTenant.slug, { adminPassword: val });

@@ -40,10 +40,10 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
           const nextVal = prev + 1;
           if (nextVal === nameLetters.length) {
             clearInterval(letterTimer);
-            // Give 2 full seconds after last letter is shown before unifying into card!
+            // Speed up time between last letter and unification into card to 600ms!
             unifyTimer = setTimeout(() => {
               setIsCardUnified(true);
-            }, 2000);
+            }, 600);
           }
           return nextVal;
         } else {
@@ -51,7 +51,7 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
           return prev;
         }
       });
-    }, 700);
+    }, 500);
 
     const canvas = canvasRef.current;
     if (!canvas) return () => {
