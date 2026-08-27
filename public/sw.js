@@ -1,5 +1,4 @@
 // PWA Service Worker for Cosmic Love SaaS
-const CACHE_NAME = 'cosmic-love-saas-v1';
 
 self.addEventListener('install', () => {
   self.skipWaiting();
@@ -10,10 +9,12 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Allow network requests to pass through seamlessly for real-time SaaS dynamic content
+  if (event.request.method !== 'GET') return;
   event.respondWith(
-    fetch(event.request).catch(() => {
-      return caches.match(event.request);
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      if (cached) return cached;
+      return new Response('Network offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
     })
   );
 });

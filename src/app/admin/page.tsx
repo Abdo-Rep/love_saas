@@ -464,7 +464,7 @@ export default function AdminPage() {
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <Sparkles className="w-5 h-5 text-pink-400" />
-              <span>🌌 2. اسم نجمة السماء والبرج الخاص بها</span>
+              <span>2. اسم نجمة السماء والبرج الخاص بها</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
               💡 شاشة سماء النجوم الرائعة! تُظهر اسم حبيبتك منقوشاً بالنجوم اللامعة في السماء.
@@ -523,7 +523,7 @@ export default function AdminPage() {
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <Calendar className="w-5 h-5 text-pink-400" />
-              <span>💖 4. عداد الحب والتقويم التفاعلي البصري</span>
+              <span>3. عداد الحب والتقويم التفاعلي البصري</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
               💡 يحسب الموقع تلقائياً وفي الوقت الفعلي عدد الأيام، الساعات، والدقائق التي مرت على حبكم من تاريخ ارتباطكم!
@@ -598,7 +598,7 @@ export default function AdminPage() {
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <Mail className="w-5 h-5 text-pink-400" />
-              <span>💌 4. رسايل الحب السرية</span>
+              <span>4. رسايل الحب السرية</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
               💡 رسايل رومانسية سرية تفتحها حبيبتك عندما تشعر بـ (الشوق، الفرح، الحزن...). يمكن إظهار أو إخفاء أي رسالة!
@@ -722,7 +722,7 @@ export default function AdminPage() {
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <Camera className="w-5 h-5 text-pink-400" />
-              <span>📸 6. ألبوم الصور والذكريات الساحرة</span>
+              <span>5. ألبوم الصور والذكريات الساحرة</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
               💡 رفع اختيار صوركم الخاصة بضغطة زر وتعديل التعليق المكتوب تحت كل صورة الذكرى!
@@ -769,7 +769,7 @@ export default function AdminPage() {
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-500 to-amber-400 text-white text-xs font-black shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>إضافة صورة جديدة للألبوم ➕</span>
+              <span>إضافة صورة جديدة للألبوم</span>
             </button>
           </div>
 
@@ -871,7 +871,7 @@ export default function AdminPage() {
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <Music className="w-5 h-5 text-pink-400" />
-              <span>🎵 6. الأغنية الرومانسية للموقع</span>
+              <span>6. الأغنية الرومانسية للموقع</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
               💡 ارفع ملف الأغنية الرومانسية (MP3/Audio) لتعمل كخلفية موسيقية ساحرة للموقع من خلال أيقونة الموسيقى المضيئة أعلى الصفحة!
@@ -948,7 +948,7 @@ export default function AdminPage() {
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <Compass className="w-5 h-5 text-pink-400" />
-              <span>🗺️ 8. قائمة الأحلام والأمنيات المستقبلية</span>
+              <span>7. قائمة الأحلام والأمنيات المستقبلية</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
               💡 قائمة بالأمنيات الشاعرية التي تخططان لتحقيقها معاً خطوة بخطوة، مع إمكانية تعليم ما تم إنجازه!
@@ -1060,7 +1060,7 @@ export default function AdminPage() {
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <FileText className="w-5 h-5 text-pink-400" />
-              <span>👑 9. الرسالة الكبيرة والوعد الختامي</span>
+              <span>8. الرسالة الكبيرة والوعد الختامي</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
               💡 رسالة العشق المؤثرة التي تُكتب تلقائياً بحركات آلة الكاتبة في الشاشة الأخيرة للموقع!
