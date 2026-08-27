@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Heart, Sparkles, Calendar, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useConfig } from '@/lib/configContext';
 
 interface Props {

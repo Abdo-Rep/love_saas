@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Heart, Sparkles, RefreshCw, Crown } from 'lucide-react';
+import { Heart, RefreshCw } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
 
@@ -24,7 +24,7 @@ export const FinalHeartfeltLetter: React.FC<Props> = ({ onRestart }) => {
         origin: { y: 0.5 },
         colors: ['#ff4d6d', '#ffd700', '#ec4899', '#ffffff']
       });
-    } catch (_) {}
+    } catch {}
 
     // LIVE TYPEWRITER EFFECT (30ms PER CHARACTER)
     let index = 0;

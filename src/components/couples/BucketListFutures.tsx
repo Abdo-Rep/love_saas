@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Heart, Sparkles, Compass, ArrowRight, CheckCircle2, Circle, Check } from 'lucide-react';
+import { Heart, ArrowRight, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
 import { BucketListItem } from '@/types/config';
@@ -34,7 +34,7 @@ export const BucketListFutures: React.FC<Props> = ({ onNext }) => {
           origin: { y: 0.5 },
           colors: ['#ff4d6d', '#ffd700', '#ec4899', '#ffffff']
         });
-      } catch (_) {}
+      } catch {}
     }
 
     updateConfig({ bucketListItems: newItems });

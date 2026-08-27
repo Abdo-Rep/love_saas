@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Sparkles, Heart, ArrowRight } from 'lucide-react';
+import { Sparkles, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
 
@@ -28,7 +28,7 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
         origin: { y: 0.4 },
         colors: ['#ff4d6d', '#ffd700', '#ec4899', '#ffffff']
       });
-    } catch (_) {}
+    } catch {}
 
     setRevealedCount(0);
     setIsCardUnified(false);

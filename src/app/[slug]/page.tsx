@@ -66,12 +66,13 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
 
         if (found) {
           const { TenantStore: ts, createDefaultConfigForTenant: cdf, TENANTS_STORAGE_KEY } = await import('@/lib/tenantStore');
+          const mergedConfig = {
+            ...cdf(found.name || 'أميرتي', found.sitePassword || 'love'),
+            ...found.config
+          };
           const withConfig = {
             ...found,
-            config: {
-              ...cdf(found.name || 'أميرتي', found.sitePassword || 'love'),
-              ...(found.config || {})
-            }
+            config: mergedConfig
           };
           const all = ts.getAllTenants();
           const existingIdx = all.findIndex((t) => t.slug.toLowerCase() === slug.toLowerCase());

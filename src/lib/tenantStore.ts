@@ -266,7 +266,7 @@ export const TenantStore = {
       ...updates,
       config: {
         ...currentTenant.config,
-        ...(updates.config || {}),
+        ...updates.config,
         sitePassword: updates.sitePassword || updates.config?.sitePassword || currentTenant.config.sitePassword
       }
     };
@@ -384,7 +384,7 @@ export const TenantStore = {
         localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
       }
       return cleanList;
-    } catch (_) { }
+    } catch {}
     return TenantStore.getAllTenants();
   },
 

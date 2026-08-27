@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Tenant } from '@/types/tenant';
 import { AppConfig } from '@/types/config';
-import { TenantStore, createDefaultConfigForTenant } from './tenantStore';
+import { TenantStore } from './tenantStore';
 
 interface TenantContextType {
   currentTenant: Tenant | null;

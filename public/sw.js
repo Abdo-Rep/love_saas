@@ -1,7 +1,7 @@
 // PWA Service Worker for Cosmic Love SaaS
 const CACHE_NAME = 'cosmic-love-saas-v1';
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 

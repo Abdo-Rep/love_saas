@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Heart, Sparkles, X, ArrowRight, ChevronLeft, Crown, Coffee, Shield, Mail } from 'lucide-react';
+import { X, ArrowRight, ChevronLeft } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
 
@@ -26,7 +26,7 @@ export const OpenWhenLetters: React.FC<Props> = ({ onNext }) => {
         origin: { y: 0.6 },
         colors: ['#ff4d6d', '#ffd700', '#ec4899', '#ffffff']
       });
-    } catch (_) {}
+    } catch {}
 
     setTimeout(() => {
       setActiveCategory(idx);

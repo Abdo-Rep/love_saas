@@ -39,7 +39,7 @@ export async function GET(req: Request) {
             },
           });
         }
-      } catch (_) {}
+      } catch {}
     }
 
     return NextResponse.json({ error: 'File not found on storage' }, { status: 404 });

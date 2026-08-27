@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import { Heart, Lock, Key, ArrowLeft, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
-import { bgMusic } from '@/lib/bgMusic';
-import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
 
 interface Props {
   onStart: () => void;
@@ -28,7 +26,7 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
         origin: { y: 0.5 },
         colors: ['#ff4d6d', '#ffd700', '#ec4899', '#ffffff']
       });
-    } catch (_) {}
+    } catch {}
 
     setTimeout(() => {
       onStart();

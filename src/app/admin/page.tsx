@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useConfig } from '@/lib/configContext';
 import { useTenant } from '@/lib/tenantContext';
 import { TenantStore } from '@/lib/tenantStore';
@@ -13,23 +13,13 @@ import {
   Calendar,
   Mail,
   Camera,
-  Mic,
-  Gift,
   Compass,
-  Crown,
   FileText,
   Upload,
-  Image as ImageIcon,
-  Square,
-  Play,
   Check,
-  ChevronLeft,
-  ChevronRight,
   Plus,
   Trash2,
   Music,
-  X,
-  Heart,
   Eye,
   EyeOff,
   Copy
@@ -53,9 +43,8 @@ export default function AdminPage() {
   let tenantCtx: any = null;
   try {
     tenantCtx = useTenant();
-  } catch (_) {}
+  } catch {}
 
-  const [viewMode, setViewMode] = useState<string>('advanced');
   const [activeStep, setActiveStep] = useState<number>(1);
   const [saveMessage, setSaveMessage] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
@@ -81,10 +70,6 @@ export default function AdminPage() {
   const currentSlug = tenantCtx?.currentTenant?.slug || 'rawda';
   const expectedAdminPass = tenantCtx?.currentTenant?.adminPassword || config.adminPassword || 'love';
 
-
-
-  const [isAuthenticating, setIsAuthenticating] = useState<boolean>(false);
-
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = adminPassInput.trim();
@@ -93,7 +78,6 @@ export default function AdminPage() {
       return;
     }
 
-    setIsAuthenticating(true);
     setAdminAuthError('');
 
     try {
@@ -115,44 +99,31 @@ export default function AdminPage() {
         setIsAdminAuthenticated(true);
         try {
           sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
-        } catch (_) {}
+        } catch {}
         setAdminAuthError('');
       } else {
         setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌ غير مسموح بالدخول!');
       }
-    } catch (_) {
+    } catch {
       // Fallback check against tenant context
       if (cleanInput === expectedAdminPass) {
         setIsAdminAuthenticated(true);
         try {
           sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
-        } catch (_) {}
+        } catch {}
         setAdminAuthError('');
       } else {
         setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌');
       }
-    } finally {
-      setIsAuthenticating(false);
     }
   };
 
   const handleAdminLogout = () => {
     try {
       sessionStorage.removeItem(`admin_authenticated_${currentSlug}`);
-    } catch (_) {}
+    } catch {}
     setIsAdminAuthenticated(false);
   };
-
-  // Voice recording state
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordedAudioUrl, setRecordedAudioUrl] = useState<string>('');
-  const mediaRecorderRef = useRef<any>(null);
-  const audioChunksRef = useRef<any[]>([]);
-
-  // Modern Date Picker states
-  const selectedDate = config.relationshipStartDate ? new Date(`${config.relationshipStartDate}T00:00:00`) : new Date(2024, 2, 14);
-  const [calYear, setCalYear] = useState<number>(selectedDate.getFullYear());
-  const [calMonth, setCalMonth] = useState<number>(selectedDate.getMonth()); // 0-11
 
   const handleSave = () => {
     setSaveMessage('تم حفظ وتطبيق جميع التغييرات بنجاح على الموقع بالكامل ✨💖');
@@ -160,15 +131,8 @@ export default function AdminPage() {
   };
 
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
-  const [uploadError, setUploadError] = useState('');
-
-  // Read file as base64, split into chunks, save each chunk separately
-  // This bypasses Vercel's 4.5MB body limit by sending each chunk in its own request
-  // Soulove Music Flow: Upload audio to /api/upload?category=music&slug=SLUG
-  // Seamlessly handles files of any size (slices into 2.5MB chunks to bypass Vercel 4.5MB limit)
   const uploadAudioToCloud = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
-    setUploadError('');
 
     const readFileAsDataUrl = (fileToRead: File): Promise<string> => {
       return new Promise((resolve) => {
@@ -262,64 +226,6 @@ export default function AdminPage() {
       newPhotos[index].image = webp;
       updateConfig({ memoryPhotos: newPhotos });
     }
-  };
-
-  // Disc photo upload handler (Compressed to WebP)
-  const handleDiscPhotoUpload = async (file: File) => {
-    const webp = await compressToWebP(file, 0.85);
-    updateConfig({ voicePhotoUrl: webp });
-  };
-
-  // Voice recording handlers
-  const startRecording = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      audioChunksRef.current = [];
-      const recorder = new MediaRecorder(stream);
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          audioChunksRef.current.push(e.data);
-        }
-      };
-      recorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        const reader = new FileReader();
-        reader.onload = () => {
-          if (reader.result) {
-            const dataUrl = reader.result as string;
-            setRecordedAudioUrl(dataUrl);
-            updateConfig({ voiceAudioUrl: dataUrl });
-          }
-        };
-        reader.readAsDataURL(audioBlob);
-        stream.getTracks().forEach((track) => track.stop());
-      };
-      recorder.start();
-      mediaRecorderRef.current = recorder;
-      setIsRecording(true);
-    } catch (err) {
-      alert('يرجى إعطاء صلاحية الميكروفون للتسجيل المباشر 🎙️');
-      console.error(err);
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-    }
-  };
-
-  // Modern Calendar Days Generator
-  const monthsArabic = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
-  const firstDayIndex = new Date(calYear, calMonth, 1).getDay(); // 0 is Sunday
-
-  const handleSelectDay = (day: number) => {
-    const mStr = String(calMonth + 1).padStart(2, '0');
-    const dStr = String(day).padStart(2, '0');
-    const dateStr = `${calYear}-${mStr}-${dStr}`;
-    updateConfig({ relationshipStartDate: dateStr });
   };
 
   if (!isAdminAuthenticated) {

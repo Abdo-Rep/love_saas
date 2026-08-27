@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Heart, Sparkles, Mic, Play, Pause, ArrowRight, Square, Trash2, Plus, Check } from 'lucide-react';
+import { Sparkles, Mic, Play, Pause, ArrowRight, Square, Trash2 } from 'lucide-react';
 import { useConfig } from '@/lib/configContext';
 import { useTenant } from '@/lib/tenantContext';
 import { bgMusic } from '@/lib/bgMusic';
@@ -149,7 +149,7 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
           setActiveTapeId(newTape.id);
           try {
             localStorage.setItem(storageKey, JSON.stringify(updated));
-          } catch (_) {}
+          } catch {}
 
           setShowRecorderModal(false);
           setSenderNameInput('');
@@ -166,7 +166,7 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
 
-    } catch (err) {
+    } catch {
       alert('لم نتمكن من الوصول للميكروفون! يرجى السماح للمتصفح بالوصول للميكروفون.');
     }
   };
@@ -185,7 +185,7 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
     setTapes(updated);
     try {
       localStorage.setItem(storageKey, JSON.stringify(updated));
-    } catch (_) {}
+    } catch {}
     if (activeTapeId === id) {
       setActiveTapeId(updated[0]?.id || null);
       setIsPlaying(false);

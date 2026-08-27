@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TenantStore, TENANTS_STORAGE_KEY } from '@/lib/tenantStore';
-import { isSupabaseConfigured } from '@/lib/supabaseClient';
+import { TenantStore } from '@/lib/tenantStore';
 import { Tenant } from '@/types/tenant';
 import { TenantQRCodeModal } from '@/components/admin/TenantQRCodeModal';
 import { Search } from 'lucide-react';
@@ -37,7 +36,7 @@ export default function SuperAdminPage() {
           setIsAuthenticated(true);
         }
       }
-    } catch (_) {}
+    } catch {}
     setIsCheckingAuth(false);
   }, []);
 
@@ -78,18 +77,18 @@ export default function SuperAdminPage() {
       if (res.ok && json.success) {
         try {
           localStorage.setItem('solaf_super_admin_session', 'true');
-        } catch (_) {}
+        } catch {}
         setIsAuthenticated(true);
         setLoginError('');
       } else {
         setLoginError(json.error || 'البريد الإلكتروني أو كلمة السر غير صحيحة');
       }
-    } catch (_) {
+    } catch {
       const master = TenantStore.getMasterPassword();
       if (master && cleanPassword === master) {
         try {
           localStorage.setItem('solaf_super_admin_session', 'true');
-        } catch (_) {}
+        } catch {}
         setIsAuthenticated(true);
         setLoginError('');
       } else {
@@ -101,7 +100,7 @@ export default function SuperAdminPage() {
   const handleLogout = () => {
     try {
       localStorage.removeItem('solaf_super_admin_session');
-    } catch (_) {}
+    } catch {}
     setIsAuthenticated(false);
   };
 
@@ -156,7 +155,7 @@ export default function SuperAdminPage() {
     refreshData();
   };
 
-  const handleDeleteClient = (slug: string, name: string) => {
+  const handleDeleteClient = (slug: string, _name?: string) => {
     TenantStore.deleteTenant(slug);
     fetch('/api/tenants', {
       method: 'DELETE',

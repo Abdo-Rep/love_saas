@@ -9,7 +9,7 @@ interface Props {
   onClose: () => void;
 }
 
-export const TenantQRCodeModal: React.FC<Props> = ({ slug, tenantName, isOpen, onClose }) => {
+export const TenantQRCodeModal: React.FC<Props> = ({ slug, tenantName: _tenantName, isOpen, onClose }) => {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
@@ -37,7 +37,7 @@ export const TenantQRCodeModal: React.FC<Props> = ({ slug, tenantName, isOpen, o
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
-    } catch (e) {
+    } catch {
       window.open(qrImageUrl, '_blank');
     }
   };

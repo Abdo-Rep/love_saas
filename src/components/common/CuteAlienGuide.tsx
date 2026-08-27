@@ -7,7 +7,7 @@ interface Props {
   currentStep?: number;
 }
 
-export const CuteAlienGuide: React.FC<Props> = ({ currentStep = 1 }) => {
+export const CuteAlienGuide: React.FC<Props> = ({ currentStep: _currentStep = 1 }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFinale, setIsFinale] = useState(false);
