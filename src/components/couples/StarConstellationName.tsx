@@ -16,6 +16,7 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
   const currentConstellationName = (config.constellationName || config.herName || 'RAWDA').trim().toUpperCase();
   const nameLetters = currentConstellationName.split('');
   const [revealedCount, setRevealedCount] = useState(0);
+  const [isCardUnified, setIsCardUnified] = useState(false);
 
   const fullMessage = config.constellationMessage || '"كتبتُ اسمكِ بين النجوم لأنكِ القمر الوحيد الذي ينور سمائي، والسر الجميل الذي يسعد قلبي في كل ثانية." ❤️✨';
 
@@ -30,19 +31,33 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
     } catch (_) {}
 
     setRevealedCount(0);
+    setIsCardUnified(false);
+
+    let unifyTimer: any = null;
     const letterTimer = setInterval(() => {
       setRevealedCount((prev) => {
         if (prev < nameLetters.length) {
-          return prev + 1;
+          const nextVal = prev + 1;
+          if (nextVal === nameLetters.length) {
+            clearInterval(letterTimer);
+            // Give 2 full seconds after last letter is shown before unifying into card!
+            unifyTimer = setTimeout(() => {
+              setIsCardUnified(true);
+            }, 2000);
+          }
+          return nextVal;
         } else {
           clearInterval(letterTimer);
           return prev;
         }
       });
-    }, 350);
+    }, 700);
 
     const canvas = canvasRef.current;
-    if (!canvas) return () => clearInterval(letterTimer);
+    if (!canvas) return () => {
+      clearInterval(letterTimer);
+      if (unifyTimer) clearTimeout(unifyTimer);
+    };
     const ctx = canvas.getContext('2d');
     if (!ctx) return () => clearInterval(letterTimer);
 
@@ -186,7 +201,7 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
       <div className="relative z-10 max-w-3xl w-full my-auto py-8 flex flex-col items-center gap-8">
         
         {/* REVEALING LETTERS OR SINGLE UNIFIED GLOWING WORD CARD */}
-        {revealedCount >= nameLetters.length ? (
+        {isCardUnified ? (
           <div className="relative px-8 py-5 sm:px-14 sm:py-7 rounded-[32px] bg-gradient-to-r from-amber-400 via-rose-500 to-pink-600 border-2 border-amber-200 shadow-[0_0_60px_rgba(251,191,36,0.95)] animate-pulse transition-all duration-700">
             <span
               className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-normal font-sans drop-shadow-[0_0_20px_rgba(255,255,255,1)]"

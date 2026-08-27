@@ -147,8 +147,8 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
                   </span>
                 </div>
 
-                {/* PROGRESS BAR SLIDER */}
-                <div className="flex items-center gap-2 w-full">
+                {/* PROGRESS BAR SLIDER (RTL PROGRESS FILL) */}
+                <div className="flex items-center gap-2 w-full" dir="rtl">
                   <span className="text-[10px] font-mono text-pink-200/70 shrink-0">
                     {formatTime(currentTime)}
                   </span>
@@ -161,9 +161,10 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
                       step="0.1"
                       value={currentTime}
                       onChange={handleSeek}
+                      dir="rtl"
                       className="w-full h-1 bg-white/15 rounded-full appearance-none cursor-pointer accent-amber-300 focus:outline-none"
                       style={{
-                        background: `linear-gradient(to right, #f43f5e 0%, #fb7185 ${progressPercent}%, rgba(255,255,255,0.15) ${progressPercent}%, rgba(255,255,255,0.15) 100%)`
+                        background: `linear-gradient(to left, #f43f5e 0%, #fb7185 ${progressPercent}%, rgba(255,255,255,0.15) ${progressPercent}%, rgba(255,255,255,0.15) 100%)`
                       }}
                     />
                   </div>
