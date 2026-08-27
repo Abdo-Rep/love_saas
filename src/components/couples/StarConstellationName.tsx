@@ -167,10 +167,7 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
   }, [nameLetters.length]);
 
   return (
-    <div className="relative w-full min-h-[100dvh] bg-gradient-to-b from-[#090108] via-[#120313] to-[#1a051c] text-white flex flex-col items-center justify-between p-4 sm:p-8 select-none overflow-hidden text-center dir-rtl">
-      
-      {/* CANVAS BACKDROP WITH FALLING METEORS (نيازك) */}
-      <canvas ref={canvasRef} className="absolute inset-0 z-0 pointer-events-none" />
+    <div className="relative w-full min-h-[100dvh] bg-transparent text-white flex flex-col items-center justify-between p-4 sm:p-8 select-none overflow-hidden text-center dir-rtl">
 
       {/* AMBIENT RADIAL GLOW */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(244,63,94,0.2)_0%,_transparent_70%)] pointer-events-none z-0" />

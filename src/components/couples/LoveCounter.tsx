@@ -49,7 +49,7 @@ export const LoveCounter: React.FC<Props> = ({ onNext }) => {
   }, [config.relationshipStartDate]);
 
   return (
-    <div className="relative w-full min-h-[100dvh] bg-gradient-to-b from-[#1c0617] via-[#10030e] to-[#090108] text-white flex flex-col justify-between p-3 sm:p-6 select-none overflow-x-hidden text-center">
+    <div className="relative w-full min-h-[100dvh] bg-transparent text-white flex flex-col justify-between p-3 sm:p-6 select-none overflow-x-hidden text-center">
       
       {/* Soft Rose Glow */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(244,114,182,0.2)_0%,_transparent_75%)] pointer-events-none" />

@@ -199,7 +199,7 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
   };
 
   return (
-    <div className="relative w-full min-h-[100dvh] bg-gradient-to-b from-[#1c0617] via-[#10030e] to-[#090108] text-white flex flex-col justify-between p-4 sm:p-6 select-none overflow-x-hidden text-center dir-rtl">
+    <div className="relative w-full min-h-[100dvh] bg-transparent text-white flex flex-col justify-between p-4 sm:p-6 select-none overflow-x-hidden text-center dir-rtl">
       
       {/* AMBIENT GLOW */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(244,114,182,0.2)_0%,_transparent_70%)] pointer-events-none z-0" />

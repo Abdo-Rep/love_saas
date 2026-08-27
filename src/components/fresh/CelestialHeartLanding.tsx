@@ -49,7 +49,7 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
 
   return (
     <div
-      className={`relative w-full min-h-[100dvh] overflow-y-auto bg-gradient-to-b from-[#1c0617] via-[#10030e] to-[#090108] flex flex-col items-center justify-between p-4 sm:p-8 text-center select-none transition-all duration-700 ${
+      className={`relative w-full min-h-[100dvh] overflow-y-auto bg-transparent flex flex-col items-center justify-between p-4 sm:p-8 text-center select-none transition-all duration-700 ${
         isUnlocking ? 'scale-110 opacity-0 blur-sm' : 'scale-100 opacity-100'
       }`}
     >
