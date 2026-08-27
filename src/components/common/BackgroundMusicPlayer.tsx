@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useConfig } from '@/lib/configContext';
-import { Play, Pause, Music, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, Music, X } from 'lucide-react';
 import { bgMusic } from '@/lib/bgMusic';
 import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
 
@@ -17,10 +17,11 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  // Reconstruct full url or convert to HTTPS proxy URL
+  // Reconstruct full url or convert to HTTPS proxy URL (Strictly ONLY for uploaded songs!)
   const getFullSongUrl = () => {
     if (!config.storySongUrl && !config.music_src) return '';
     const rawUrl = config.storySongUrl || config.music_src || '';
+    if (!rawUrl) return '';
     if (config.storySongPart2) {
       return getPlayableAudioUrl(rawUrl + (config.storySongPart2 || '') + (config.storySongPart3 || ''));
     }
@@ -29,7 +30,12 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
 
   useEffect(() => {
     const songUrl = getFullSongUrl();
-    if (!songUrl) return;
+
+    // If NO song is uploaded, stop any playback and do nothing!
+    if (!songUrl) {
+      bgMusic.pause(false);
+      return;
+    }
 
     bgMusic.setTrack(songUrl);
 
@@ -42,7 +48,7 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
       setDuration(dur);
     });
 
-    // Auto-play when Step 2 or later is reached (except Step 6 live voice recording step)
+    // Auto-play ONLY when a custom uploaded song exists and step >= 2 (except voice cassette step 6)
     if (currentStep >= 2 && currentStep !== 6) {
       bgMusic.play(songUrl);
     } else {
@@ -53,10 +59,10 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
       unsubState();
       unsubTime();
     };
-  }, [config.storySongUrl, config.storySongPart2, config.storySongPart3, currentStep]);
+  }, [config.storySongUrl, config.music_src, config.storySongPart2, config.storySongPart3, currentStep]);
 
-  // Only render UI starting from Step 2 onwards if a song exists!
   const songUrl = getFullSongUrl();
+  // DO NOT RENDER ANYTHING IF NO CUSTOM SONG IS UPLOADED!
   if (!songUrl || currentStep < 2 || currentStep === 6) return null;
 
   const formatTime = (seconds: number) => {
@@ -64,6 +70,15 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const toggleMusicControl = () => {
+    if (!showFullPlayer) {
+      setShowFullPlayer(true);
+      if (!isPlaying) bgMusic.play(undefined, true);
+    } else {
+      setShowFullPlayer(false);
+    }
   };
 
   const togglePlay = () => {
@@ -80,26 +95,22 @@ export const BackgroundMusicPlayer: React.FC<Props> = ({ currentStep }) => {
 
   return (
     <>
-      {/* FLOATING TOP-LEFT MUSIC BUTTON (EXACTLY OPPOSITE TO GLOBAL BACK BUTTON) */}
-      <div className="fixed top-3 left-3 sm:top-4 sm:left-4 z-50 pointer-events-auto flex items-center gap-2">
+      {/* FLOATING TOP-LEFT MUSIC ICON (DIRECTLY OPPOSITE TO GLOBAL BACK BUTTON) */}
+      <div className="fixed top-3 left-3 sm:top-4 sm:left-4 z-50 pointer-events-auto">
         <button
-          onClick={togglePlay}
+          onClick={toggleMusicControl}
           className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-lg ${
             isPlaying
               ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white shadow-[0_0_25px_rgba(244,63,94,0.8)] border border-white/60 animate-pulse'
               : 'bg-black/75 border border-pink-400/50 text-pink-300 backdrop-blur-xl hover:scale-110 active:scale-90 hover:text-white'
           }`}
-          title={isPlaying ? 'إيقاف الأغنية الرومانسية' : 'تشغيل الأغنية الرومانسية'}
+          title={showFullPlayer ? 'إخفاء شريط التحكم' : 'التحكم في الأغنية الرومانسية'}
         >
-          <Music className={`w-4 h-4 sm:w-5 sm:h-5 ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '6s' }} />
-        </button>
-
-        {/* SMALL TOGGLE TO SHOW DETAILED PLAYER BAR */}
-        <button
-          onClick={() => setShowFullPlayer(!showFullPlayer)}
-          className="p-1.5 rounded-full bg-black/60 border border-pink-400/30 text-pink-200/80 hover:text-white backdrop-blur-md text-[10px] font-bold px-2.5 transition-all"
-        >
-          {showFullPlayer ? 'إخفاء ✕' : 'التحكم 🎵'}
+          {showFullPlayer ? (
+            <X className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+          ) : (
+            <Music className={`w-4 h-4 sm:w-5 sm:h-5 ${isPlaying ? 'animate-spin' : ''}`} style={{ animationDuration: '6s' }} />
+          )}
         </button>
       </div>
 

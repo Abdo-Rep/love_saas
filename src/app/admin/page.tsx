@@ -995,30 +995,30 @@ export default function AdminPage() {
 
             {/* CURRENT SONG PREVIEW AND DELETE BUTTON */}
             {config.storySongUrl ? (
-              <div className="w-full p-4 rounded-2xl bg-black/60 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
+              <div className="w-full p-4 sm:p-5 rounded-2xl bg-black/70 border border-emerald-500/40 flex flex-col gap-3 text-right">
                 <div className="flex items-center gap-2.5">
                   <Check className="w-5 h-5 text-emerald-400 shrink-0" />
                   <div className="text-xs">
-                    <span className="font-black text-emerald-300 block">تم رفع وتفعيل الأغنية الرومانسية بنجاح! ✨</span>
-                    <span className="text-pink-200/60 text-[11px]">تظهر في أعلى موقع الزائر بأيقونة الموسيقى المضيئة</span>
+                    <span className="font-black text-emerald-300 block text-sm">تم رفع وتفعيل الأغنية الرومانسية بنجاح! ✨</span>
+                    <span className="text-pink-200/70 text-xs">تعمل خلفية موسيقية ساحرة وتظهر بأيقونة الموسيقى المضيئة بـ أعلى الموقع</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <audio controls src={config.storySongUrl} className="h-9 max-w-xs" />
+                <div className="flex items-center justify-between gap-3 w-full pt-2 border-t border-white/10">
+                  <audio controls src={getPlayableAudioUrl(config.storySongUrl)} className="w-full h-11 rounded-xl" />
                   <button
                     type="button"
                     onClick={() => updateConfig({ storySongUrl: '' })}
-                    className="p-2 rounded-xl bg-red-950/60 text-red-300 border border-red-500/40 hover:bg-red-900 transition-colors cursor-pointer"
+                    className="p-3 rounded-xl bg-red-950/70 text-red-300 border border-red-500/40 hover:bg-red-900 transition-colors cursor-pointer shrink-0"
                     title="حذف الأغنية"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5" />
                   </button>
                 </div>
               </div>
             ) : (
-              <p className="text-xs text-pink-200/60 font-semibold">
-                لم يتم رفع أغنية مخصصة بعد (سيتم تشغيل الأغنية الهادئة المدمجة)
+              <p className="text-xs text-pink-200/70 font-semibold">
+                لم يتم رفع أغنية مخصصة بعد
               </p>
             )}
           </div>
