@@ -37,8 +37,8 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanInput = (password || '').trim().toLowerCase();
-    const cleanExpected = (config.sitePassword || 'love').trim().toLowerCase();
+    const cleanInput = (password || '').trim();
+    const cleanExpected = (config.sitePassword || 'love').trim();
 
     if (!cleanExpected || cleanInput === cleanExpected) {
       handleTriggerUnlock();

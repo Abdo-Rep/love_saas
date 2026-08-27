@@ -82,7 +82,7 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
   memoryPhotos: [
     {
       id: 1,
-      image: '/images/the_boss.jpg',
+      image: '/images/peasant_girl.jpg',
       date: '١٤ فبراير ٢٠٢٤',
       caption: 'أول ليلة حسينا فيها إن قلوبنا اتلاقت وعمر جديد بدأ سوا ✨',
       tag: 'بدايتنا 🌸'

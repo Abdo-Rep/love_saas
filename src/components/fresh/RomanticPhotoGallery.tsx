@@ -10,7 +10,7 @@ interface Props {
 const PHOTOS = [
   {
     id: 1,
-    url: '/images/the_boss.jpg',
+    url: '/images/peasant_girl.jpg',
     tag: 'سر السعادة 💖',
     date: 'أول نظرة ولقاء',
     caption: 'من أول دقيقة شفتك فيها، عرفت إن قلبي مش هيعرف يدق ولا يعشق حد تاني غيرك.'
@@ -24,7 +24,7 @@ const PHOTOS = [
   },
   {
     id: 3,
-    url: '/images/the_boss.jpg',
+    url: '/images/peasant_girl.jpg',
     tag: 'عهد العشق 💍',
     date: 'إلى الأبد',
     caption: 'بنات العالم كلهم في كفة، وأنتي لوحدك في كفة تانية كأنك ملكة جيتي من عالم تاني خالص.'

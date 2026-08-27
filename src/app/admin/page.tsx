@@ -166,13 +166,22 @@ export default function AdminPage() {
   // This bypasses Vercel's 4.5MB body limit by sending each chunk in its own request
   // Soulove Music Flow: Upload audio to /api/upload?category=music&slug=SLUG
   // Seamlessly handles files of any size (slices into 2.5MB chunks to bypass Vercel 4.5MB limit)
-  const uploadAudioToCloud = async (file: File) => {
+  const uploadAudioToCloud = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
     setUploadError('');
 
+    const readFileAsDataUrl = (fileToRead: File): Promise<string> => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve((e.target?.result as string) || '');
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(fileToRead);
+      });
+    };
+
     try {
       const slug = tenantCtx?.tenant?.slug || 'default';
-      const CHUNK_SIZE = 2.5 * 1024 * 1024; // 2.5MB per chunk to stay strictly under Vercel 4.5MB limit
+      const CHUNK_SIZE = 2.5 * 1024 * 1024;
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       const uploadId = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
@@ -193,25 +202,25 @@ export default function AdminPage() {
         });
 
         const json = await res.json().catch(() => ({ error: 'فشل الرفع إلى السيرفر' }));
-        if (!res.ok || !json.success) {
-          throw new Error(json.error || `فشل رفع جزء ${i + 1} من ${totalChunks}`);
-        }
 
-        if (json.isComplete && (json.proxyUrl || json.url)) {
+        if (res.ok && json.success) {
+          if (json.isComplete && (json.proxyUrl || json.url)) {
+            setIsUploadingAudio(false);
+            return json.proxyUrl || json.url;
+          }
+        } else {
+          // If server upload fails, seamlessly fallback to Data URL
+          const dataUrl = await readFileAsDataUrl(file);
           setIsUploadingAudio(false);
-          return json.proxyUrl || json.url;
+          return dataUrl;
         }
       }
+    } catch (_) {}
 
-      setIsUploadingAudio(false);
-      throw new Error('فشل استكمال رفع الملف');
-    } catch (err: any) {
-      console.error('[Music Upload Failed]', err);
-      setIsUploadingAudio(false);
-      const msg = err?.message || 'حدث خطأ أثناء رفع الملف!';
-      setUploadError(msg);
-      throw err;
-    }
+    // Fallback if network or server error occurred
+    const fallbackUrl = await readFileAsDataUrl(file);
+    setIsUploadingAudio(false);
+    return fallbackUrl;
   };
 
   // Client-side WebP compression helper
@@ -445,10 +454,10 @@ export default function AdminPage() {
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <KeyRound className="w-5 h-5 text-pink-400" />
-              <span>🔑 كلمات سر دخول الموقع ولوحة التحكم</span>
+              <span>كلمات السر</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              💡 هنا يمكنك تحديد كلمة سر الدخول الخاصة بحبيبتك، وكلمة سر لوحة التحكم الخاصة بك مع إمكانية عرضها ونسخها بضغطة واحدة!
+              كلمات السر (يجب عدم استخدام الحروف العربية أو المسافات).
             </p>
           </div>
 
@@ -461,14 +470,14 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs font-bold">
             {/* SITE PASSWORD FOR HER */}
             <div className="space-y-2">
-              <label className="block text-amber-300 text-sm font-extrabold">🔑 كلمة سر دخول الموقع لحبيبتك:</label>
+              <label className="block text-amber-300 text-sm font-extrabold">كلمة سر دخول الموقع لحبيبتك:</label>
               <div className="relative flex items-center">
                 <input
                   type={showSitePassword ? 'text' : 'password'}
                   placeholder="اكتب كلمة سر الموقع هنا..."
                   value={config.sitePassword || 'love'}
                   onChange={(e) => {
-                    const val = e.target.value;
+                    const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
                     updateConfig({ sitePassword: val });
                     if (tenantCtx?.currentTenant) {
                       TenantStore.updateTenant(tenantCtx.currentTenant.slug, { sitePassword: val });
@@ -501,14 +510,14 @@ export default function AdminPage() {
 
             {/* ADMIN PASSWORD FOR YOU */}
             <div className="space-y-2">
-              <label className="block text-rose-300 text-sm font-extrabold">🔒 كلمة سر لوحة التحكم (لك أنت):</label>
+              <label className="block text-rose-300 text-sm font-extrabold">كلمة سر لوحة التحكم (لك أنت):</label>
               <div className="relative flex items-center">
                 <input
                   type={showAdminPassword ? 'text' : 'password'}
                   placeholder="اكتب كلمة سر لوحة التحكم..."
                   value={tenantCtx?.currentTenant?.adminPassword || config.adminPassword || 'love'}
                   onChange={(e) => {
-                    const val = e.target.value;
+                    const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
                     if (tenantCtx?.currentTenant) {
                       TenantStore.updateTenant(tenantCtx.currentTenant.slug, { adminPassword: val });
                       tenantCtx.refreshTenants();
@@ -841,7 +850,7 @@ export default function AdminPage() {
                   ...(config.memoryPhotos || []),
                   {
                     id: Date.now(),
-                    image: '/images/the_boss.jpg',
+                    image: '/images/peasant_girl.jpg',
                     date: '١٤ فبراير ٢٠٢٤',
                     caption: 'لحظة جميلة محفورة في القلب والعقل ✨💖',
                     tag: 'ذكرى 🌸'

@@ -17,7 +17,7 @@ export const RomanticTimeline: React.FC<Props> = ({ onNext }) => {
       title: "عندما التقت أعيننا لأول مرة",
       date: "لحظة غيرت مجرى حياتي",
       description: "من أول دقيقة شفتك فيها، عرفت إن الدنيا ابتسمتلي وإن قلبي مش هيعرف يدق لغيرك.",
-      image: "/images/the_boss.jpg",
+      image: "/images/peasant_girl.jpg",
       color: "from-pink-600 to-rose-900"
     },
     {
@@ -35,7 +35,7 @@ export const RomanticTimeline: React.FC<Props> = ({ onNext }) => {
       title: "مكانك في القلب محفور للأبد",
       date: "إلى ما بعد النهاية",
       description: "بنات العالم كلهم في كفة، وأنتي لوحدك في كفة تانية كأنك ملكة جيتي من عالم تاني خالص.",
-      image: "/images/the_boss.jpg",
+      image: "/images/peasant_girl.jpg",
       color: "from-purple-600 to-pink-900"
     }
   ];
