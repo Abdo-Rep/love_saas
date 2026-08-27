@@ -993,7 +993,7 @@ export default function AdminPage() {
                 className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white font-black text-xs flex items-center gap-1.5 hover:scale-105 active:scale-95 transition-all shadow-md cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
-                <span>إضافة أمنية جديدة ➕</span>
+                <span>إضافة أمنية جديدة</span>
               </button>
             </div>
 
