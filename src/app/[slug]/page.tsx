@@ -15,6 +15,7 @@ import { AntiScreenshot } from '@/components/common/AntiScreenshot';
 import { SubtleWatermark } from '@/components/common/SubtleWatermark';
 import { GlobalBackButton } from '@/components/common/GlobalBackButton';
 import { BackgroundMusicPlayer } from '@/components/common/BackgroundMusicPlayer';
+import { CosmicMeteorsBackground } from '@/components/common/CosmicMeteorsBackground';
 
 interface SiteClientContentProps {
   slug: string;
@@ -158,6 +159,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     <main className="min-h-screen w-full bg-[#1c0617] text-white relative selection:bg-rose-500 selection:text-white overflow-x-hidden font-sans">
       <AntiScreenshot />
       <SubtleWatermark />
+      <CosmicMeteorsBackground />
       <BackgroundMusicPlayer currentStep={currentStep} />
 
       {currentStep > 1 && <GlobalBackButton onBack={handleBack} />}

@@ -238,7 +238,7 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
       <div className="relative z-10 pb-6 w-full max-w-sm">
         <button
           onClick={onNext}
-          className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-slate-950 font-black text-sm sm:text-base shadow-[0_0_30px_rgba(244,63,94,0.6)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-sm sm:text-base shadow-[0_0_30px_rgba(244,63,94,0.6)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
           style={{ fontFamily: "'Cairo', sans-serif" }}
         >
           <span>عداد الحب</span>
