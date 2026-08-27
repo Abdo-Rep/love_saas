@@ -22,7 +22,8 @@ import {
   Music,
   Eye,
   EyeOff,
-  Copy
+  Copy,
+  Mic
 } from 'lucide-react';
 
 import { TenantQRCodeModal } from '@/components/admin/TenantQRCodeModal';
@@ -131,6 +132,7 @@ export default function AdminPage() {
   };
 
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
+  const [isUploadingVoice, setIsUploadingVoice] = useState(false);
   const uploadAudioToCloud = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
 
@@ -865,29 +867,26 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* STEP 6: ROMANTIC SONG FILE UPLOADER */}
+      {/* STEP 6: ROMANTIC SONG & SINGLE VOICE NOTE UPLOADER */}
       {activeStep === 6 && (
-        <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
+        <div className="space-y-6 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <Music className="w-5 h-5 text-pink-400" />
-              <span>6. الأغنية الرومانسية للموقع</span>
+              <span>6. الأغنية والفويس الصوتي</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              💡 ارفع ملف الأغنية الرومانسية (MP3/Audio) لتعمل كخلفية موسيقية ساحرة للموقع من خلال أيقونة الموسيقى المضيئة أعلى الصفحة!
+              💡 هنا يمكنك رفع خلفية الأغنية الرومانسية للموقع، وكذلك إعداد التسجيل الصوتي الخاص (فويس واحد) مع النص المكتوب له!
             </p>
           </div>
 
-          <div className="p-6 rounded-2xl bg-gradient-to-b from-[#2a041c] to-[#0a010b] border border-pink-500/30 flex flex-col items-center gap-5 text-center">
-            <div className="w-16 h-16 rounded-full bg-pink-500/20 border border-pink-400/40 flex items-center justify-center text-pink-300 shadow-[0_0_25px_rgba(244,114,182,0.4)] animate-pulse">
-              <Music className="w-8 h-8" />
+          {/* SECTION 1: BACKGROUND MUSIC */}
+          <div className="p-6 rounded-2xl bg-gradient-to-b from-[#2a041c] to-[#0a010b] border border-pink-500/30 flex flex-col items-center gap-4 text-center">
+            <div className="flex items-center gap-2 text-amber-300 font-extrabold text-sm border-b border-white/10 pb-2 w-full justify-center">
+              <Music className="w-4 h-4 text-pink-400" />
+              <span>🎵 الأغنية الرومانسية (خلفية الموقع الموسيقية)</span>
             </div>
 
-            <span className="text-xs font-black text-amber-300">
-              📁 رفع أغنيتكم المفضلة من الجهاز (MP3 / Audio):
-            </span>
-
-            {/* SONG FILE PICKER BUTTON */}
             <label className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,114,182,0.5)] flex items-center gap-2 cursor-pointer">
               <Upload className="w-4 h-4" />
               <span>{isUploadingAudio ? 'جاري رفع الأغنية...' : 'إضافة / تغيير الأغنية الرومانسية 🎵📁'}</span>
@@ -904,20 +903,19 @@ export default function AdminPage() {
                       if (url) {
                         updateConfig({ storySongUrl: url });
                       }
-                    } catch (_) {}
+                    } catch {}
                   }
                 }}
               />
             </label>
 
-            {/* CURRENT SONG PREVIEW AND DELETE BUTTON */}
             {config.storySongUrl ? (
               <div className="w-full p-4 sm:p-5 rounded-2xl bg-black/70 border border-emerald-500/40 flex flex-col gap-3 text-right">
                 <div className="flex items-center gap-2.5">
                   <Check className="w-5 h-5 text-emerald-400 shrink-0" />
                   <div className="text-xs">
                     <span className="font-black text-emerald-300 block text-sm">تم رفع وتفعيل الأغنية الرومانسية بنجاح! ✨</span>
-                    <span className="text-pink-200/70 text-xs">تعمل خلفية موسيقية ساحرة وتظهر بأيقونة الموسيقى المضيئة بـ أعلى الموقع</span>
+                    <span className="text-pink-200/70 text-xs">تعمل كخلفية موسيقية للموقع وتظهر بأيقونة الموسيقى المضيئة بـ أعلى الصفحة</span>
                   </div>
                 </div>
 
@@ -938,6 +936,97 @@ export default function AdminPage() {
                 لم يتم رفع أغنية مخصصة بعد
               </p>
             )}
+          </div>
+
+          {/* SECTION 2: SINGLE VOICE NOTE WITH TEXT */}
+          <div className="p-6 rounded-2xl bg-gradient-to-b from-[#2a041c] to-[#0a010b] border border-pink-500/30 space-y-4 text-xs font-bold">
+            <div className="flex items-center gap-2 text-amber-300 font-extrabold text-sm border-b border-white/10 pb-2">
+              <Mic className="w-4 h-4 text-pink-400" />
+              <span>🎙️ الرسالة الصوتية المخصصة (الفويس الصوتي مع النص)</span>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <label className="block text-pink-200 text-sm mb-1.5 font-extrabold">💖 عنوان الرسالة الصوتية الرئيسي:</label>
+                <input
+                  type="text"
+                  value={config.voiceMessageTitle}
+                  onChange={(e) => updateConfig({ voiceMessageTitle: e.target.value })}
+                  placeholder="مثال: كلمات بصوتي طالعة من قلبي لأجلكِ"
+                  className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white font-black text-base"
+                />
+              </div>
+
+              <div>
+                <label className="block text-amber-300 text-sm mb-1.5 font-extrabold">💌 النص المكتوب المصاحب للفويس:</label>
+                <textarea
+                  rows={3}
+                  value={config.voiceMessageSubtitle}
+                  onChange={(e) => updateConfig({ voiceMessageSubtitle: e.target.value })}
+                  placeholder="اكتب رسالتك العاطفية المكتوبة التي تظهر بجانب الفويس..."
+                  className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white leading-relaxed text-sm font-medium"
+                />
+              </div>
+
+              <div className="flex flex-col items-center gap-4 pt-2 border-t border-white/10 text-center">
+                <span className="text-xs font-black text-amber-300">
+                  📁 رفع أو تغيير الفويس الصوتي من جهازك (Audio / MP3):
+                </span>
+
+                <label className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,114,182,0.5)] flex items-center gap-2 cursor-pointer">
+                  <Upload className="w-4 h-4" />
+                  <span>{isUploadingVoice ? 'جاري رفع الفويس...' : 'اختيار الفويس الصوتي 🎙️📁'}</span>
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    disabled={isUploadingVoice}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        try {
+                          setIsUploadingVoice(true);
+                          const url = await uploadAudioToCloud(file);
+                          if (url) {
+                            updateConfig({ voiceAudioUrl: url });
+                          }
+                        } catch {} finally {
+                          setIsUploadingVoice(false);
+                        }
+                      }
+                    }}
+                  />
+                </label>
+
+                {config.voiceAudioUrl ? (
+                  <div className="w-full p-4 sm:p-5 rounded-2xl bg-black/70 border border-emerald-500/40 flex flex-col gap-3 text-right">
+                    <div className="flex items-center gap-2.5">
+                      <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+                      <div className="text-xs">
+                        <span className="font-black text-emerald-300 block text-sm">تم رفع وتحديد الفويس الصوتي بنجاح! ✨</span>
+                        <span className="text-pink-200/70 text-xs">سيعرض لحبيبتك في شاشة الرسالة الصوتية مع النص المكتوب</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between gap-3 w-full pt-2 border-t border-white/10">
+                      <audio controls src={getPlayableAudioUrl(config.voiceAudioUrl)} className="w-full h-11 rounded-xl" />
+                      <button
+                        type="button"
+                        onClick={() => updateConfig({ voiceAudioUrl: '' })}
+                        className="p-3 rounded-xl bg-red-950/70 text-red-300 border border-red-500/40 hover:bg-red-900 transition-colors cursor-pointer shrink-0"
+                        title="حذف الفويس"
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-xs text-pink-200/70 font-semibold">
+                    لم يتم رفع فويس مخصص بعد (يستخدم تسجيل افتراضي رومانسي).
+                  </p>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       )}
