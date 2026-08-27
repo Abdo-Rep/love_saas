@@ -18,7 +18,7 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
 
   storySongUrl: '',
 
-  constellationName: 'LOVE',
+  constellationName: 'بحبك',
   constellationTitle: 'نجمتي وأميرتي الغالية... 💫',
   constellationMessage: '"كتبتُ اسمكِ بين النجوم لأنكِ القمر الوحيد الذي ينور سمائي، والسر الجميل الذي يسعد قلبي في كل ثانية." ❤️✨',
   constellationButtonText: 'عداد الحب',

@@ -26,7 +26,7 @@ const defaultConfig: AppConfig = {
   storySongUrl: '',
 
   // Step 2: Star Constellation Name
-  constellationName: 'RAWDA',
+  constellationName: 'بحبك',
   constellationTitle: 'نجمتي وأميرتي الغالية... 💫',
   constellationMessage: '"كتبتُ اسمكِ بين النجوم لأنكِ القمر الوحيد الذي ينور سمائي، والسر الجميل الذي يسعد قلبي في كل ثانية." ❤️✨',
   constellationButtonText: 'عداد الحب',

@@ -13,7 +13,7 @@ export const StarConstellationName: React.FC<Props> = ({ onNext }) => {
   const { config } = useConfig();
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const currentConstellationName = (config.constellationName || config.herName || 'RAWDA').trim().toUpperCase();
+  const currentConstellationName = (config.constellationName || config.herName || 'بحبك').trim();
   const nameLetters = currentConstellationName.split('');
   const [revealedCount, setRevealedCount] = useState(0);
   const [isCardUnified, setIsCardUnified] = useState(false);

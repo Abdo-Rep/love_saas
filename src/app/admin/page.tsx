@@ -460,7 +460,7 @@ export default function AdminPage() {
             {/* ALERT WARNING BADGE */}
             <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-400/50 text-amber-200 text-xs font-bold flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
               <span className="text-base shrink-0">⚠️</span>
-              <span>تنبيه: يجب عدم استخدام الحروف العربية أو المسافات في كلمات السر.</span>
+              <span>تنبيه: لا يسمح بأستخدام الحروف العربية أو المسافات في كلمات السر، تأكد من نسخ كلمة السر قبل الخروج.</span>
             </div>
           </div>
 
