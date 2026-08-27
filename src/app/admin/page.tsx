@@ -996,11 +996,11 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* SECTION 2: SINGLE VOICE NOTE WITH TEXT */}
+          {/* SECTION 2: SINGLE VOICE NOTE */}
           <div className="p-6 rounded-2xl bg-gradient-to-b from-[#2a041c] to-[#0a010b] border border-pink-500/30 space-y-4 text-xs font-bold">
             <div className="flex items-center gap-2 text-amber-300 font-extrabold text-sm border-b border-white/10 pb-2">
               <Mic className="w-4 h-4 text-pink-400" />
-              <span>🎙️ الرسالة الصوتية المخصصة (الفويس الصوتي مع النص)</span>
+              <span>🎙️ الرسالة الصوتية المخصصة (الفويس الصوتي)</span>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
@@ -1010,19 +1010,8 @@ export default function AdminPage() {
                   type="text"
                   value={config.voiceMessageTitle}
                   onChange={(e) => updateConfig({ voiceMessageTitle: e.target.value })}
-                  placeholder="مثال: كلمات بصوتي طالعة من قلبي لأجلكِ"
+                  placeholder="مثال: فويس بصوتي من قلبي ليكي يروحي"
                   className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white font-black text-base"
-                />
-              </div>
-
-              <div>
-                <label className="block text-amber-300 text-sm mb-1.5 font-extrabold">💌 النص المكتوب المصاحب للفويس:</label>
-                <textarea
-                  rows={3}
-                  value={config.voiceMessageSubtitle}
-                  onChange={(e) => updateConfig({ voiceMessageSubtitle: e.target.value })}
-                  placeholder="اكتب رسالتك العاطفية المكتوبة التي تظهر بجانب الفويس..."
-                  className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-white leading-relaxed text-sm font-medium"
                 />
               </div>
 

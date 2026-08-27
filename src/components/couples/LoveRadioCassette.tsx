@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Play, Pause, ArrowRight, Heart, Sparkles } from 'lucide-react';
+import { Mic, Play, Pause, ArrowRight } from 'lucide-react';
 import { useConfig } from '@/lib/configContext';
 import { bgMusic } from '@/lib/bgMusic';
 import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
@@ -82,8 +82,7 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
     onNext();
   };
 
-  const title = config.voiceMessageTitle || 'كلمات بصوتي طالعة من قلبي لأجلكِ';
-  const subtitle = config.voiceMessageSubtitle || 'استمعي للرسالة الصوتية الخاصة بكِ مع أعذب مشاعر الحب 🎙️❤️';
+  const title = config.voiceMessageTitle || 'فويس بصوتي من قلبي ليكي يروحي';
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-between py-10 px-4 relative z-10 text-white dir-rtl">
@@ -100,7 +99,7 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
       <div className="text-center space-y-3 max-w-xl animate-fadeIn pt-4">
         <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-rose-500/20 via-pink-500/30 to-amber-500/20 border border-pink-400/40 text-pink-200 text-xs font-black shadow-[0_0_20px_rgba(244,114,182,0.3)]">
           <Mic className="w-4 h-4 text-pink-400 animate-bounce" />
-          <span>🎙️ رسالة بصوتي خاصة جداً</span>
+          <span>رسالة بصوتي</span>
         </div>
         <h2 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-pink-200 to-rose-300 drop-shadow-[0_0_15px_rgba(251,113,133,0.4)]" style={{ fontFamily: "'Cairo', sans-serif" }}>
           {title}
@@ -108,29 +107,38 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
       </div>
 
       {/* MAIN LUXURY VOICE CARD */}
-      <div className="w-full max-w-lg my-auto p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#2d0723]/95 via-[#1a0416]/95 to-[#0b0109]/95 border-2 border-pink-400/50 backdrop-blur-2xl shadow-[0_0_60px_rgba(244,63,94,0.3)] space-y-6 text-center animate-scaleUp relative overflow-hidden">
+      <div className="w-full max-w-lg my-auto p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#2d0723]/95 via-[#1a0416]/95 to-[#0b0109]/95 border-2 border-pink-400/50 backdrop-blur-2xl shadow-[0_0_60px_rgba(244,63,94,0.3)] space-y-8 text-center animate-scaleUp relative overflow-hidden">
         
         {/* BACKGROUND GLOW ACCENTS */}
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
 
-        {/* VINYL / SOUNDWAVE VISUALIZER */}
-        <div className="relative flex flex-col items-center justify-center gap-3">
-          <div className="relative w-36 h-36 flex items-center justify-center">
+        {/* VINYL / SOUNDWAVE VISUALIZER (INTERACTIVE PLAY BUTTON DISC) */}
+        <div className="relative flex flex-col items-center justify-center gap-4">
+          <button
+            type="button"
+            onClick={togglePlay}
+            className="relative w-36 h-36 flex items-center justify-center cursor-pointer group focus:outline-none"
+            title={isPlaying ? 'إيقاف الفويس' : 'تشغيل الفويس'}
+          >
             {/* Outer Pulsing Aura */}
-            <div className={`absolute inset-0 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 opacity-25 blur-xl transition-all ${isPlaying ? 'scale-125 animate-pulse' : 'scale-100'}`} />
+            <div className={`absolute inset-0 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 opacity-30 blur-xl transition-all group-hover:scale-125 ${isPlaying ? 'scale-125 animate-pulse' : 'scale-100'}`} />
 
             {/* Spinning Disc */}
-            <div className={`w-32 h-32 rounded-full border-4 border-amber-300/60 bg-gradient-to-br from-black via-[#1a0516] to-black flex items-center justify-center shadow-2xl relative overflow-hidden transition-transform duration-700 ${isPlaying ? 'animate-spin-slow shadow-[0_0_30px_rgba(251,113,133,0.5)]' : ''}`}>
+            <div className={`w-32 h-32 rounded-full border-4 border-amber-300/60 bg-gradient-to-br from-black via-[#1a0516] to-black flex items-center justify-center shadow-2xl relative overflow-hidden transition-all duration-700 group-hover:border-amber-300 ${isPlaying ? 'animate-spin-slow shadow-[0_0_35px_rgba(251,113,133,0.6)]' : 'shadow-[0_0_20px_rgba(244,63,94,0.3)]'}`}>
               <div className="w-24 h-24 rounded-full border border-white/15 flex items-center justify-center">
                 <div className="w-16 h-16 rounded-full border border-pink-400/30 flex items-center justify-center">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 border border-amber-200 flex items-center justify-center shadow-inner">
-                    <Heart className="w-5 h-5 text-white fill-current animate-pulse" />
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 border border-amber-200 flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                    {isPlaying ? (
+                      <Pause className="w-5 h-5 text-white fill-current" />
+                    ) : (
+                      <Play className="w-5 h-5 text-white fill-current ml-0.5" />
+                    )}
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </button>
 
           {/* DYNAMIC EQUALIZER WAVEFORM BARS */}
           <div className="flex items-end justify-center gap-1.5 h-8 pt-2">
@@ -147,43 +155,19 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
           </div>
         </div>
 
-        {/* ROMANTIC LETTER TEXT CONTAINER */}
-        <div className="p-5 rounded-2xl bg-gradient-to-br from-black/70 to-[#1f0619]/70 border border-pink-400/30 text-right space-y-2 relative shadow-inner">
-          <div className="flex items-center gap-1.5 text-amber-300 text-xs font-bold mb-1">
-            <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>الرسالة المكتوبة:</span>
-          </div>
-          <p className="text-xs sm:text-sm text-pink-100 leading-relaxed font-semibold whitespace-pre-wrap" style={{ fontFamily: "'Cairo', sans-serif" }}>
-            {subtitle}
-          </p>
-        </div>
-
-        {/* AUDIO CONTROLS & PROGRESS */}
-        <div className="space-y-4 pt-2">
-          {/* PLAY / PAUSE BUTTON */}
-          <div className="flex items-center justify-center gap-4">
-            <button
-              onClick={togglePlay}
-              className={`w-16 h-16 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 text-white flex items-center justify-center shadow-[0_0_30px_rgba(244,63,94,0.6)] hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-white/60 relative ${isPlaying ? 'ring-4 ring-pink-500/40' : ''}`}
-            >
-              {isPlaying ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
-            </button>
-          </div>
-
-          {/* PROGRESS BAR & TIMINGS */}
-          <div className="space-y-1.5 px-2">
-            <input
-              type="range"
-              min={0}
-              max={duration || 100}
-              value={currentTime}
-              onChange={handleSeek}
-              className="w-full h-2 rounded-lg bg-white/15 appearance-none cursor-pointer accent-pink-400 hover:bg-white/25 transition-all"
-            />
-            <div className="flex justify-between text-[11px] font-mono text-pink-200/80 font-bold">
-              <span>{formatTime(currentTime)}</span>
-              <span>{formatTime(duration)}</span>
-            </div>
+        {/* PROGRESS BAR & TIMINGS */}
+        <div className="space-y-2 px-2 pt-2">
+          <input
+            type="range"
+            min={0}
+            max={duration || 100}
+            value={currentTime}
+            onChange={handleSeek}
+            className="w-full h-2 rounded-lg bg-white/15 appearance-none cursor-pointer accent-pink-400 hover:bg-white/25 transition-all"
+          />
+          <div className="flex justify-between text-[11px] font-mono text-pink-200/80 font-bold">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
           </div>
         </div>
       </div>

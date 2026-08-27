@@ -104,7 +104,7 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
   ],
   galleryButtonText: 'الرسائل الصوتية',
 
-  voiceMessageTitle: 'كلمات بصوتي طالعة من قلبي لأجلكِ',
+  voiceMessageTitle: 'فويس بصوتي من قلبي ليكي يروحي',
   voiceMessageSubtitle: 'رسالة حب بصوتي 🎙️❤️',
   voicePhotoUrl: '/images/peasant_girl.jpg',
   voiceAudioUrl: '',
