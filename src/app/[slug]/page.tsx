@@ -101,6 +101,15 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     };
   }, [slug]);
 
+  // Instant top display on step change (no smooth scroll)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+    }
+  }, [currentStep]);
+
   if (!mounted || isLoading) {
     return (
       <div className="min-h-screen w-full bg-[#090108] text-white flex items-center justify-center p-4">

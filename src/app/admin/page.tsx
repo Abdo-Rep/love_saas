@@ -41,7 +41,7 @@ const TABS_CONFIG = [
   { id: 1, name: 'عام', icon: KeyRound },
   { id: 2, name: 'النجوم', icon: Sparkles },
   { id: 3, name: 'العداد', icon: Calendar },
-  { id: 4, name: 'المظاريف', icon: Mail },
+  { id: 4, name: 'الرسايل', icon: Mail },
   { id: 5, name: 'الألبوم', icon: Camera },
   { id: 6, name: 'الأغنية', icon: Music },
   { id: 7, name: 'الأمنيات', icon: Compass },
@@ -681,10 +681,10 @@ export default function AdminPage() {
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
               <Mail className="w-5 h-5 text-pink-400" />
-              <span>💌 5. مظاريف الحب والرسائل السرية الـ 5</span>
+              <span>💌 4. رسايل الحب السرية</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              💡 مظاريف رومانسية سرية تفتحها حبيبتك عندما تشعر بـ (الشوق، الفرح، الحزن...). يمكن إظهار أو إخفاء أي ظرف!
+              💡 رسايل رومانسية سرية تفتحها حبيبتك عندما تشعر بـ (الشوق، الفرح، الحزن...). يمكن إظهار أو إخفاء أي رسالة!
             </p>
           </div>
 
@@ -948,98 +948,79 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* STEP 6: LIVE MICROPHONE VOICE RECORDING */}
+      {/* STEP 6: ROMANTIC SONG FILE UPLOADER */}
       {activeStep === 6 && (
         <div className="space-y-5 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 p-6 backdrop-blur-xl shadow-2xl">
           <div className="border-b border-pink-500/20 pb-3 space-y-1">
             <h3 className="text-lg font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              <Mic className="w-5 h-5 text-pink-400" />
-              <span>🎙️ 7. التسجيل الصوتي المباشر بالمايك والأسطوانة</span>
+              <Music className="w-5 h-5 text-pink-400" />
+              <span>🎵 6. الأغنية الرومانسية للموقع</span>
             </h3>
             <p className="text-xs text-pink-200/70 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              💡 سجل صوتك بالمايك مباشرة، أو اختر الصورة التي توضع في منتصف الأسطوانة الدائرية أثناء التشغيل!
+              💡 ارفع ملف الأغنية الرومانسية (MP3/Audio) لتعمل كخلفية موسيقية ساحرة للموقع من خلال أيقونة الموسيقى المضيئة أعلى الصفحة!
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-bold">
-            <div>
-              <label className="block text-pink-200/80 mb-1.5">عنوان التسجيل الصوتي الرئيسي:</label>
-              <input
-                type="text"
-                value={config.voiceMessageTitle}
-                onChange={(e) => updateConfig({ voiceMessageTitle: e.target.value })}
-                className="w-full p-3 rounded-xl bg-black/40 border border-pink-400/30 text-white"
-              />
+          <div className="p-6 rounded-2xl bg-gradient-to-b from-[#2a041c] to-[#0a010b] border border-pink-500/30 flex flex-col items-center gap-5 text-center">
+            <div className="w-16 h-16 rounded-full bg-pink-500/20 border border-pink-400/40 flex items-center justify-center text-pink-300 shadow-[0_0_25px_rgba(244,114,182,0.4)] animate-pulse">
+              <Music className="w-8 h-8" />
             </div>
 
-            <div>
-              <label className="block text-pink-200/80 mb-1.5">نص زر الانتقال لعجلة الأحكام:</label>
-              <input
-                type="text"
-                value={config.voiceButtonText}
-                onChange={(e) => updateConfig({ voiceButtonText: e.target.value })}
-                className="w-full p-3 rounded-xl bg-black/40 border border-pink-400/30 text-white font-bold text-amber-200"
-              />
-            </div>
-          </div>
-
-          {/* LIVE RECORDING STUDIO PANEL */}
-          <div className="p-5 rounded-2xl bg-gradient-to-b from-[#2a041c] to-[#0a010b] border border-pink-500/30 flex flex-col items-center gap-4 text-center">
             <span className="text-xs font-black text-amber-300">
-              🎙️ استوديو التسجيل الصوتي المباشر:
+              📁 رفع أغنيتكم المفضلة من الجهاز (MP3 / Audio):
             </span>
 
-            <div className="flex items-center gap-3">
-              {!isRecording ? (
-                <button
-                  type="button"
-                  onClick={startRecording}
-                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-rose-600 to-pink-600 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(244,114,182,0.6)] flex items-center gap-2 animate-pulse"
-                  style={{ fontFamily: "'Cairo', sans-serif" }}
-                >
-                  <Mic className="w-4 h-4" />
-                  <span>بدء تسجيل صوتك الآن 🔴</span>
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={stopRecording}
-                  className="px-6 py-3 rounded-2xl bg-red-600 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_red] flex items-center gap-2 animate-bounce"
-                  style={{ fontFamily: "'Cairo', sans-serif" }}
-                >
-                  <Square className="w-4 h-4 fill-white" />
-                  <span>إيقاف وحفظ التسجيل ⏹️</span>
-                </button>
-              )}
-            </div>
+            {/* SONG FILE PICKER BUTTON */}
+            <label className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,114,182,0.5)] flex items-center gap-2 cursor-pointer">
+              <Upload className="w-4 h-4" />
+              <span>{isUploadingAudio ? 'جاري رفع الأغنية...' : 'إضافة / تغيير الأغنية الرومانسية 🎵📁'}</span>
+              <input
+                type="file"
+                accept="audio/*"
+                className="hidden"
+                disabled={isUploadingAudio}
+                onChange={async (e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    try {
+                      const url = await uploadAudioToCloud(file);
+                      if (url) {
+                        updateConfig({ storySongUrl: url });
+                      }
+                    } catch (_) {}
+                  }
+                }}
+              />
+            </label>
 
-            {config.voiceAudioUrl && (
-              <div className="w-full p-3 rounded-xl bg-black/50 border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-2">
-                <span className="text-[11px] font-bold text-emerald-300 flex items-center gap-1">
-                  <Check className="w-4 h-4" />
-                  <span>تم حفظ التسجيل الصوتي بنجاح! سيتم تشغيله على الموقع 🎵</span>
-                </span>
-                <audio controls src={config.voiceAudioUrl} className="h-8 max-w-xs" />
+            {/* CURRENT SONG PREVIEW AND DELETE BUTTON */}
+            {config.storySongUrl ? (
+              <div className="w-full p-4 rounded-2xl bg-black/60 border border-emerald-500/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
+                <div className="flex items-center gap-2.5">
+                  <Check className="w-5 h-5 text-emerald-400 shrink-0" />
+                  <div className="text-xs">
+                    <span className="font-black text-emerald-300 block">تم رفع وتفعيل الأغنية الرومانسية بنجاح! ✨</span>
+                    <span className="text-pink-200/60 text-[11px]">تظهر في أعلى موقع الزائر بأيقونة الموسيقى المضيئة</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <audio controls src={config.storySongUrl} className="h-9 max-w-xs" />
+                  <button
+                    type="button"
+                    onClick={() => updateConfig({ storySongUrl: '' })}
+                    className="p-2 rounded-xl bg-red-950/60 text-red-300 border border-red-500/40 hover:bg-red-900 transition-colors cursor-pointer"
+                    title="حذف الأغنية"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
+            ) : (
+              <p className="text-xs text-pink-200/60 font-semibold">
+                لم يتم رفع أغنية مخصصة بعد (سيتم تشغيل الأغنية الهادئة المدمجة)
+              </p>
             )}
-
-            {/* DISC PHOTO CHANGER */}
-            <div className="w-full pt-3 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-              <span className="text-pink-200/80 font-bold">صورة منتصف الأسطوانة الدائرية:</span>
-              <label className="px-4 py-2 rounded-xl bg-white/10 border border-pink-400/30 text-white text-center cursor-pointer hover:bg-rose-500/30 transition-all flex items-center gap-1.5 font-bold">
-                <ImageIcon className="w-3.5 h-3.5 text-pink-300" />
-                <span>رفع صورة جديدة لوسط الأسطوانة 📁</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) handleDiscPhotoUpload(file);
-                  }}
-                />
-              </label>
-            </div>
           </div>
         </div>
       )}

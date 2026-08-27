@@ -26,9 +26,9 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
   relationshipStartDate: '2024-03-14',
   counterTitle: 'معكِ في كل ثانية ودقيقة من العمر 🌸',
   counterQuote: '"كل ثانية مرت وأنا معاك، كانت تساوي عمر كامل من السعادة والراحة.. ووقفت قلبي يزيد معك في كل دقيقة تمضي" ❤️✨',
-  counterButtonText: 'المظاريف والرسائل',
+  counterButtonText: 'الرسائل',
 
-  openWhenLettersTitle: 'مظاريف الحب السرية 💌',
+  openWhenLettersTitle: 'رسايل الحب السرية 💌',
   openWhenLetters: [
     {
       id: 1,

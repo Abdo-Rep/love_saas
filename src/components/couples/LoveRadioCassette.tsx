@@ -212,12 +212,6 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
             كاسيت الرسائل الصوتية المتبادلة 🎙️💖
           </span>
         </div>
-        <h1
-          className="text-xl sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-300 via-rose-200 to-amber-200"
-          style={{ fontFamily: "'Cairo', sans-serif" }}
-        >
-          أصواتكم ورسائلكم بصوتكم في مكان واحد
-        </h1>
       </div>
 
       {/* MAIN CASSETTE PLAYER */}
