@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useConfig } from '@/lib/configContext';
 import { useTenant } from '@/lib/tenantContext';
 import { TenantStore } from '@/lib/tenantStore';
@@ -23,7 +23,8 @@ import {
   Eye,
   EyeOff,
   Copy,
-  Mic
+  Mic,
+  Square
 } from 'lucide-react';
 
 import { TenantQRCodeModal } from '@/components/admin/TenantQRCodeModal';
@@ -133,6 +134,63 @@ export default function AdminPage() {
 
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
   const [isUploadingVoice, setIsUploadingVoice] = useState(false);
+
+  // LIVE MICROPHONE RECORDER STATES FOR ADMIN
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [voiceRecordingTime, setVoiceRecordingTime] = useState(0);
+  const voiceMediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const voiceAudioChunksRef = useRef<Blob[]>([]);
+  const voiceTimerRef = useRef<any>(null);
+
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      voiceMediaRecorderRef.current = mediaRecorder;
+      voiceAudioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          voiceAudioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(voiceAudioChunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = () => {
+          const base64Audio = reader.result as string;
+          updateConfig({ voiceAudioUrl: base64Audio });
+        };
+        stream.getTracks().forEach((track) => track.stop());
+      };
+
+      mediaRecorder.start();
+      setIsRecordingVoice(true);
+      setVoiceRecordingTime(0);
+
+      voiceTimerRef.current = setInterval(() => {
+        setVoiceRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch {
+      alert('تعذر فتح الميكروفون. يرجى التأكد من السماح بإذن الوصول للميكروفون بمتصفحك.');
+    }
+  };
+
+  const stopVoiceRecording = () => {
+    if (voiceMediaRecorderRef.current && isRecordingVoice) {
+      voiceMediaRecorderRef.current.stop();
+      setIsRecordingVoice(false);
+      if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
+    }
+  };
+
+  const formatVoiceTime = (sec: number) => {
+    const m = Math.floor(sec / 60);
+    const s = Math.floor(sec % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
   const uploadAudioToCloud = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
 
@@ -969,41 +1027,73 @@ export default function AdminPage() {
               </div>
 
               <div className="flex flex-col items-center gap-4 pt-2 border-t border-white/10 text-center">
-                <span className="text-xs font-black text-amber-300">
-                  📁 رفع أو تغيير الفويس الصوتي من جهازك (Audio / MP3):
-                </span>
+                {/* LIVE MICROPHONE RECORDER SECTION */}
+                <div className="w-full p-4 rounded-2xl bg-black/60 border border-pink-400/30 flex flex-col items-center gap-3">
+                  <span className="text-xs font-black text-amber-300">
+                    🎙️ تسجيل فويس بصوتك مباشرة بالمايك من متصفحك:
+                  </span>
 
-                <label className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,114,182,0.5)] flex items-center gap-2 cursor-pointer">
-                  <Upload className="w-4 h-4" />
-                  <span>{isUploadingVoice ? 'جاري رفع الفويس...' : 'اختيار الفويس الصوتي 🎙️📁'}</span>
-                  <input
-                    type="file"
-                    accept="audio/*"
-                    className="hidden"
-                    disabled={isUploadingVoice}
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        try {
-                          setIsUploadingVoice(true);
-                          const url = await uploadAudioToCloud(file);
-                          if (url) {
-                            updateConfig({ voiceAudioUrl: url });
+                  {!isRecordingVoice ? (
+                    <button
+                      type="button"
+                      onClick={startVoiceRecording}
+                      className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-500 to-amber-400 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,63,94,0.5)] flex items-center gap-2 cursor-pointer border border-white/30"
+                    >
+                      <Mic className="w-4 h-4 animate-bounce" />
+                      <span>اضغط لبدء تسجل بصوتك الآن 🎙️</span>
+                    </button>
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <span className="text-rose-400 font-mono text-sm font-extrabold flex items-center gap-2 animate-pulse">
+                        <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
+                        🔴 جاري التسجيل المباشر... ({formatVoiceTime(voiceRecordingTime)})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={stopVoiceRecording}
+                        className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(239,68,68,0.6)] flex items-center gap-2 cursor-pointer border border-white/40"
+                      >
+                        <Square className="w-4 h-4 fill-current" />
+                        <span>إيقاف وحفظ التسجيل الصوتي ⏹️</span>
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-white/10 w-full flex flex-col items-center gap-1.5">
+                    <span className="text-[11px] text-pink-200/60 font-semibold">أو اختيار ملف صوتي جاهز من جهازك:</span>
+                    <label className="px-4 py-2 rounded-xl bg-white/10 border border-pink-400/30 text-pink-200 font-bold text-xs hover:bg-white/20 transition-all flex items-center gap-1.5 cursor-pointer">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>{isUploadingVoice ? 'جاري رفع الملف...' : 'رفع ملف صوتي 📁'}</span>
+                      <input
+                        type="file"
+                        accept="audio/*"
+                        className="hidden"
+                        disabled={isUploadingVoice}
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            try {
+                              setIsUploadingVoice(true);
+                              const url = await uploadAudioToCloud(file);
+                              if (url) {
+                                updateConfig({ voiceAudioUrl: url });
+                              }
+                            } catch {} finally {
+                              setIsUploadingVoice(false);
+                            }
                           }
-                        } catch {} finally {
-                          setIsUploadingVoice(false);
-                        }
-                      }
-                    }}
-                  />
-                </label>
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
 
                 {config.voiceAudioUrl ? (
                   <div className="w-full p-4 sm:p-5 rounded-2xl bg-black/70 border border-emerald-500/40 flex flex-col gap-3 text-right">
                     <div className="flex items-center gap-2.5">
                       <Check className="w-5 h-5 text-emerald-400 shrink-0" />
                       <div className="text-xs">
-                        <span className="font-black text-emerald-300 block text-sm">تم رفع وتحديد الفويس الصوتي بنجاح! ✨</span>
+                        <span className="font-black text-emerald-300 block text-sm">تم تسجيل وتحديد الفويس الصوتي بنجاح! ✨</span>
                         <span className="text-pink-200/70 text-xs">سيعرض لحبيبتك في شاشة الرسالة الصوتية مع النص المكتوب</span>
                       </div>
                     </div>
@@ -1022,7 +1112,7 @@ export default function AdminPage() {
                   </div>
                 ) : (
                   <p className="text-xs text-pink-200/70 font-semibold">
-                    لم يتم رفع فويس مخصص بعد (يستخدم تسجيل افتراضي رومانسي).
+                    لم يتم تسجيل أو رفع فويس مخصص بعد (يستخدم تسجيل افتراضي رومانسي).
                   </p>
                 )}
               </div>

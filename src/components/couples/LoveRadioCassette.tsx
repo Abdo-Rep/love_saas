@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Mic, Play, Pause, ArrowRight } from 'lucide-react';
+import { Mic, Play, Pause, ArrowRight, Heart, Sparkles } from 'lucide-react';
 import { useConfig } from '@/lib/configContext';
 import { bgMusic } from '@/lib/bgMusic';
 import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
@@ -23,15 +23,12 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
 
   // Auto-pause background music on mount and handle cleanup
   useEffect(() => {
-    // 1. Pause background music while on the voice note page
     bgMusic.pause(false);
 
     return () => {
-      // Pause voice audio if playing when leaving the component
       if (audioRef.current) {
         audioRef.current.pause();
       }
-      // 2. Resume background music when leaving the voice note page
       if (config.storySongUrl) {
         bgMusic.play(config.storySongUrl, false);
       }
@@ -89,8 +86,8 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
   const subtitle = config.voiceMessageSubtitle || 'استمعي للرسالة الصوتية الخاصة بكِ مع أعذب مشاعر الحب 🎙️❤️';
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-between py-12 px-4 relative z-10 text-white dir-rtl">
-      {/* Hidden HTML Audio Element */}
+    <div className="min-h-screen w-full flex flex-col items-center justify-between py-10 px-4 relative z-10 text-white dir-rtl">
+      {/* Hidden Audio Player */}
       <audio
         ref={audioRef}
         src={playableVoiceUrl}
@@ -99,39 +96,64 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
         onEnded={() => setIsPlaying(false)}
       />
 
-      {/* TOP TITLE HEADER */}
+      {/* TOP BADGE & TITLE */}
       <div className="text-center space-y-3 max-w-xl animate-fadeIn pt-4">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-400/30 text-pink-300 text-xs font-bold shadow-[0_0_15px_rgba(244,114,182,0.2)]">
-          <Mic className="w-4 h-4 text-pink-400 animate-pulse" />
-          <span>رسالة صوتية مخصصة</span>
+        <div className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gradient-to-r from-rose-500/20 via-pink-500/30 to-amber-500/20 border border-pink-400/40 text-pink-200 text-xs font-black shadow-[0_0_20px_rgba(244,114,182,0.3)]">
+          <Mic className="w-4 h-4 text-pink-400 animate-bounce" />
+          <span>🎙️ رسالة بصوتي خاصة جداً</span>
         </div>
-        <h2 className="text-2xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-pink-200 to-rose-300">
+        <h2 className="text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-pink-200 to-rose-300 drop-shadow-[0_0_15px_rgba(251,113,133,0.4)]" style={{ fontFamily: "'Cairo', sans-serif" }}>
           {title}
         </h2>
       </div>
 
-      {/* MAIN SINGLE VOICE PLAYER CARD */}
-      <div className="w-full max-w-lg my-auto p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#2a0720]/90 to-[#0e020c]/90 border-2 border-pink-400/40 backdrop-blur-xl shadow-[0_0_50px_rgba(244,63,94,0.25)] space-y-6 text-center animate-scaleUp">
+      {/* MAIN LUXURY VOICE CARD */}
+      <div className="w-full max-w-lg my-auto p-6 sm:p-8 rounded-3xl bg-gradient-to-b from-[#2d0723]/95 via-[#1a0416]/95 to-[#0b0109]/95 border-2 border-pink-400/50 backdrop-blur-2xl shadow-[0_0_60px_rgba(244,63,94,0.3)] space-y-6 text-center animate-scaleUp relative overflow-hidden">
         
-        {/* VINYL / CASSETTE DISK ANIMATED GRAPHIC */}
-        <div className="relative w-40 h-40 mx-auto flex items-center justify-center">
-          <div className={`absolute inset-0 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 opacity-20 blur-xl ${isPlaying ? 'animate-pulse' : ''}`} />
-          
-          <div className={`w-36 h-36 rounded-full border-4 border-pink-400/50 bg-black/80 flex items-center justify-center shadow-2xl relative overflow-hidden ${isPlaying ? 'animate-spin-slow' : ''}`}>
-            {/* Inner Vinyl Rings */}
-            <div className="w-28 h-28 rounded-full border border-white/10 flex items-center justify-center">
-              <div className="w-20 h-20 rounded-full border border-white/10 flex items-center justify-center">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-r from-rose-600 to-pink-500 border-2 border-amber-300 flex items-center justify-center">
-                  <Mic className="w-6 h-6 text-white" />
+        {/* BACKGROUND GLOW ACCENTS */}
+        <div className="absolute -top-16 -right-16 w-36 h-36 bg-pink-500/20 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-amber-500/20 rounded-full blur-3xl pointer-events-none" />
+
+        {/* VINYL / SOUNDWAVE VISUALIZER */}
+        <div className="relative flex flex-col items-center justify-center gap-3">
+          <div className="relative w-36 h-36 flex items-center justify-center">
+            {/* Outer Pulsing Aura */}
+            <div className={`absolute inset-0 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 opacity-25 blur-xl transition-all ${isPlaying ? 'scale-125 animate-pulse' : 'scale-100'}`} />
+
+            {/* Spinning Disc */}
+            <div className={`w-32 h-32 rounded-full border-4 border-amber-300/60 bg-gradient-to-br from-black via-[#1a0516] to-black flex items-center justify-center shadow-2xl relative overflow-hidden transition-transform duration-700 ${isPlaying ? 'animate-spin-slow shadow-[0_0_30px_rgba(251,113,133,0.5)]' : ''}`}>
+              <div className="w-24 h-24 rounded-full border border-white/15 flex items-center justify-center">
+                <div className="w-16 h-16 rounded-full border border-pink-400/30 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-600 to-pink-500 border border-amber-200 flex items-center justify-center shadow-inner">
+                    <Heart className="w-5 h-5 text-white fill-current animate-pulse" />
+                  </div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* DYNAMIC EQUALIZER WAVEFORM BARS */}
+          <div className="flex items-end justify-center gap-1.5 h-8 pt-2">
+            {[40, 75, 100, 60, 90, 50, 85, 95, 45, 80, 65, 100, 55, 85, 40].map((h, i) => (
+              <div
+                key={i}
+                className="w-1.5 bg-gradient-to-t from-rose-500 via-pink-400 to-amber-300 rounded-full transition-all duration-300"
+                style={{
+                  height: isPlaying ? `${Math.max(15, (h * (i % 3 + 1)) % 100)}%` : '20%',
+                  opacity: isPlaying ? 0.9 : 0.4
+                }}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* VOICE TEXT CONTENT */}
-        <div className="p-4 rounded-2xl bg-black/50 border border-pink-400/20 text-right space-y-2">
-          <p className="text-xs sm:text-sm text-pink-100/90 leading-relaxed font-medium whitespace-pre-wrap">
+        {/* ROMANTIC LETTER TEXT CONTAINER */}
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-black/70 to-[#1f0619]/70 border border-pink-400/30 text-right space-y-2 relative shadow-inner">
+          <div className="flex items-center gap-1.5 text-amber-300 text-xs font-bold mb-1">
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>الرسالة المكتوبة:</span>
+          </div>
+          <p className="text-xs sm:text-sm text-pink-100 leading-relaxed font-semibold whitespace-pre-wrap" style={{ fontFamily: "'Cairo', sans-serif" }}>
             {subtitle}
           </p>
         </div>
@@ -142,23 +164,23 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={togglePlay}
-              className="w-16 h-16 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 text-white flex items-center justify-center shadow-[0_0_30px_rgba(244,63,94,0.6)] hover:scale-110 active:scale-95 transition-all cursor-pointer border border-white/40"
+              className={`w-16 h-16 rounded-full bg-gradient-to-tr from-rose-500 via-pink-500 to-amber-400 text-white flex items-center justify-center shadow-[0_0_30px_rgba(244,63,94,0.6)] hover:scale-110 active:scale-95 transition-all cursor-pointer border-2 border-white/60 relative ${isPlaying ? 'ring-4 ring-pink-500/40' : ''}`}
             >
               {isPlaying ? <Pause className="w-8 h-8 fill-current" /> : <Play className="w-8 h-8 fill-current ml-1" />}
             </button>
           </div>
 
           {/* PROGRESS BAR & TIMINGS */}
-          <div className="space-y-1">
+          <div className="space-y-1.5 px-2">
             <input
               type="range"
               min={0}
               max={duration || 100}
               value={currentTime}
               onChange={handleSeek}
-              className="w-full h-2 rounded-lg bg-white/10 appearance-none cursor-pointer accent-pink-400"
+              className="w-full h-2 rounded-lg bg-white/15 appearance-none cursor-pointer accent-pink-400 hover:bg-white/25 transition-all"
             />
-            <div className="flex justify-between text-[11px] font-mono text-pink-200/70">
+            <div className="flex justify-between text-[11px] font-mono text-pink-200/80 font-bold">
               <span>{formatTime(currentTime)}</span>
               <span>{formatTime(duration)}</span>
             </div>
@@ -171,6 +193,7 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
         <button
           onClick={handleNextClick}
           className="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-sm border border-white/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,63,94,0.5)] flex items-center justify-center gap-2 cursor-pointer"
+          style={{ fontFamily: "'Cairo', sans-serif" }}
         >
           <span>{config.voiceButtonText || 'التالي: أمنيات المستقبل 🗺️✨'}</span>
           <ArrowRight className="w-4 h-4 rotate-180" />
