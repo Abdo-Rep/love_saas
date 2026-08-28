@@ -61,9 +61,6 @@ export default function SuperAdminPage() {
       const json = await res.json();
       if (json?.success && Array.isArray(json.tenants)) {
         setTenants(json.tenants);
-        if (typeof window !== 'undefined') {
-          localStorage.setItem('solaf_tenants', JSON.stringify(json.tenants));
-        }
       } else {
         setApiError(json?.error || 'عذراً، لا يمكن جلب بيانات المستأجرين من API قاعدة البيانات.');
       }

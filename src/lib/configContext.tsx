@@ -162,36 +162,12 @@ const ConfigContext = createContext<ConfigContextType | undefined>(undefined);
 export const ConfigProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<AppConfig>(defaultConfig);
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('cosmic_love_config_v7');
-      if (saved) {
-        setConfig({ ...defaultConfig, ...JSON.parse(saved) });
-      }
-    } catch (e) {
-      console.error('Error loading config:', e);
-    }
-  }, []);
-
   const updateConfig = (newPartial: Partial<AppConfig>) => {
-    setConfig((prev) => {
-      const updated = { ...prev, ...newPartial };
-      try {
-        localStorage.setItem('cosmic_love_config_v7', JSON.stringify(updated));
-      } catch (e) {
-        console.error('Failed to save to localStorage:', e);
-      }
-      return updated;
-    });
+    setConfig((prev) => ({ ...prev, ...newPartial }));
   };
 
   const resetConfig = () => {
     setConfig(defaultConfig);
-    try {
-      localStorage.removeItem('cosmic_love_config_v7');
-    } catch (e) {
-      console.error(e);
-    }
   };
 
   return (

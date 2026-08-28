@@ -59,7 +59,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
         }
 
         if (found) {
-          const { TenantStore: ts, createDefaultConfigForTenant: cdf, TENANTS_STORAGE_KEY } = await import('@/lib/tenantStore');
+          const { createDefaultConfigForTenant: cdf } = await import('@/lib/tenantStore');
           const mergedConfig = {
             ...cdf(found.name || 'أميرتي', found.sitePassword || 'love'),
             ...found.config
@@ -68,18 +68,9 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
             ...found,
             config: mergedConfig
           };
-          const all = ts.getAllTenants();
-          const existingIdx = all.findIndex((t) => t.slug.toLowerCase() === slug.toLowerCase());
-          if (existingIdx !== -1) {
-            all[existingIdx] = withConfig;
-          } else {
-            all.unshift(withConfig);
-          }
-          localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(all));
           setCloudTenant(withConfig);
           setCurrentTenantDirectly(withConfig);
         } else {
-          // If not in cloud DB, check local or fallback default
           let local = TenantStore.getTenantBySlug(slug);
           if (!local) {
             local = TenantStore.createTenant(slug, `موقع ${slug}`, 'love', 'love', slug);
@@ -94,17 +85,6 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
       setIsLoading(false);
     };
     fetchFromCloud();
-
-    const handleSync = () => {
-      loadTenantBySlug(slug);
-    };
-
-    window.addEventListener('storage', handleSync);
-    window.addEventListener('focus', handleSync);
-    return () => {
-      window.removeEventListener('storage', handleSync);
-      window.removeEventListener('focus', handleSync);
-    };
   }, [slug]);
 
   // Instant top display on step change (no smooth scroll)

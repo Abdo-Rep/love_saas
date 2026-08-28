@@ -1,10 +1,6 @@
 import { Tenant } from '@/types/tenant';
 import { AppConfig } from '@/types/config';
 
-export const TENANTS_STORAGE_KEY = 'cosmic_love_saas_tenants_v3';
-export const MASTER_PASSWORD_KEY = 'cosmic_love_master_pass_v3';
-export const DELETED_SLUGS_KEY = 'cosmic_love_deleted_slugs_v3';
-
 // DEFAULT ROMANTIC CONFIG TEMPLATE FOR NEW TENANTS
 export const createDefaultConfigForTenant = (herName: string = 'أميرتي', sitePassword: string = 'love'): AppConfig => ({
   sitePassword,
@@ -130,79 +126,28 @@ export const createDefaultConfigForTenant = (herName: string = 'أميرتي', s
   finalLetterPromise: 'بحبك أوي أوي... ووعد، عمرنا دايماً لا ينتهي 💕💖'
 });
 
-export const initialSeedTenants: Tenant[] = [];
+// In-Memory Tenants Registry (NO localStorage)
+let inMemoryTenants: Tenant[] = [];
 
 export const TenantStore = {
-  getDeletedSlugs: (): string[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const saved = localStorage.getItem(DELETED_SLUGS_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  },
-
-  addDeletedSlug: (slug: string) => {
-    if (typeof window === 'undefined') return;
-    try {
-      const current = TenantStore.getDeletedSlugs();
-      const clean = slug.toLowerCase().trim();
-      if (!current.includes(clean)) {
-        current.push(clean);
-        localStorage.setItem(DELETED_SLUGS_KEY, JSON.stringify(current));
-      }
-    } catch { }
-  },
-
-  // Get all tenants (Filtered from deleted slugs, sorted newest first)
+  // Get all tenants (sorted newest first)
   getAllTenants: (): Tenant[] => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const deleted = TenantStore.getDeletedSlugs();
-      const saved = localStorage.getItem(TENANTS_STORAGE_KEY);
-      if (!saved) {
-        const seedTenant: Tenant = {
-          id: 't-default',
-          slug: 'default',
-          name: 'حبيبتي 🌸',
-          adminPassword: 'love',
-          sitePassword: 'love',
-          createdAt: new Date().toISOString(),
-          status: 'active',
-          config: createDefaultConfigForTenant('حبيبتي', 'love')
-        };
-        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify([seedTenant]));
-        return [seedTenant];
-      }
-      const parsed: Tenant[] = JSON.parse(saved);
-      const cleanList = parsed.filter((t) => !deleted.includes(t.slug.toLowerCase().trim()));
-      cleanList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-      if (cleanList.length !== parsed.length) {
-        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
-      }
-      return cleanList;
-    } catch (e) {
-      console.error('Error fetching tenants:', e);
-      return [];
-    }
+    return inMemoryTenants;
+  },
+
+  // Set memory tenants directly
+  setTenants: (tenants: Tenant[]): void => {
+    inMemoryTenants = tenants;
   },
 
   // Get single tenant by slug
   getTenantBySlug: (slug: string): Tenant | null => {
     if (!slug) return null;
     const cleanSlug = slug.toLowerCase().trim();
-    const deleted = TenantStore.getDeletedSlugs();
-    if (deleted.includes(cleanSlug)) return null;
-
-    const tenants = TenantStore.getAllTenants();
-    const found = tenants.find((t) => t.slug.toLowerCase() === cleanSlug);
-    if (found) return found;
-
-    return null;
+    return inMemoryTenants.find((t) => t.slug.toLowerCase() === cleanSlug) || null;
   },
 
-  // Create new tenant
+  // Create new tenant in memory
   createTenant: (
     slug: string,
     name: string,
@@ -210,16 +155,10 @@ export const TenantStore = {
     sitePassword: string,
     herName: string = 'أميرتي'
   ): Tenant => {
-    const tenants = TenantStore.getAllTenants();
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
 
-    if (typeof window !== 'undefined') {
-      const deleted = TenantStore.getDeletedSlugs().filter((s) => s !== cleanSlug);
-      localStorage.setItem(DELETED_SLUGS_KEY, JSON.stringify(deleted));
-    }
-
     const newTenant: Tenant = {
-      id: `t-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      id: `tenant-${cleanSlug}`,
       slug: cleanSlug,
       name: name || `موقع ${cleanSlug}`,
       adminPassword: adminPassword || 'love',
@@ -229,17 +168,11 @@ export const TenantStore = {
       config: createDefaultConfigForTenant(herName || 'أميرتي', sitePassword || 'love')
     };
 
-    const existingIdx = tenants.findIndex((t) => t.slug.toLowerCase() === cleanSlug);
+    const existingIdx = inMemoryTenants.findIndex((t) => t.slug.toLowerCase() === cleanSlug);
     if (existingIdx !== -1) {
-      tenants[existingIdx] = newTenant;
+      inMemoryTenants[existingIdx] = newTenant;
     } else {
-      tenants.unshift(newTenant);
-    }
-
-    try {
-      localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(tenants));
-    } catch (e) {
-      console.error('Failed to save tenant:', e);
+      inMemoryTenants.unshift(newTenant);
     }
 
     return newTenant;
@@ -247,11 +180,10 @@ export const TenantStore = {
 
   // Update tenant properties
   updateTenant: (slug: string, updates: Partial<Tenant>): Tenant | null => {
-    const tenants = TenantStore.getAllTenants();
-    const idx = tenants.findIndex((t) => t.slug.toLowerCase() === slug.toLowerCase());
+    const idx = inMemoryTenants.findIndex((t) => t.slug.toLowerCase() === slug.toLowerCase());
     if (idx === -1) return null;
 
-    const currentTenant = tenants[idx];
+    const currentTenant = inMemoryTenants[idx];
     const updatedTenant: Tenant = {
       ...currentTenant,
       ...updates,
@@ -262,23 +194,16 @@ export const TenantStore = {
       }
     };
 
-    tenants[idx] = updatedTenant;
-    try {
-      localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(tenants));
-    } catch (e) {
-      console.error('Failed to update tenant:', e);
-    }
-
+    inMemoryTenants[idx] = updatedTenant;
     return updatedTenant;
   },
 
   // Update specific tenant's config
   updateTenantConfig: (slug: string, newConfig: Partial<AppConfig>): Tenant | null => {
-    const tenants = TenantStore.getAllTenants();
-    const idx = tenants.findIndex((t) => t.slug.toLowerCase() === slug.toLowerCase());
+    const idx = inMemoryTenants.findIndex((t) => t.slug.toLowerCase() === slug.toLowerCase());
     if (idx === -1) return null;
 
-    const currentTenant = tenants[idx];
+    const currentTenant = inMemoryTenants[idx];
     const updatedConfig = { ...currentTenant.config, ...newConfig };
     const updatedTenant = {
       ...currentTenant,
@@ -286,29 +211,14 @@ export const TenantStore = {
       sitePassword: newConfig.sitePassword || currentTenant.sitePassword
     };
 
-    tenants[idx] = updatedTenant;
-    try {
-      localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(tenants));
-    } catch (e) {
-      console.error('Failed to update tenant config:', e);
-    }
-
+    inMemoryTenants[idx] = updatedTenant;
     return updatedTenant;
   },
 
-  // Permanent Delete tenant
+  // Delete tenant from memory and server
   deleteTenant: (slug: string): boolean => {
     const cleanSlug = slug.toLowerCase().trim();
-    TenantStore.addDeletedSlug(cleanSlug);
-
-    const tenants = TenantStore.getAllTenants();
-    const filtered = tenants.filter((t) => t.slug.toLowerCase() !== cleanSlug);
-
-    try {
-      localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(filtered));
-    } catch (e) {
-      console.error('Failed to delete tenant:', e);
-    }
+    inMemoryTenants = inMemoryTenants.filter((t) => t.slug.toLowerCase() !== cleanSlug);
 
     if (typeof window !== 'undefined') {
       fetch('/api/tenants', {
@@ -321,76 +231,23 @@ export const TenantStore = {
     return true;
   },
 
-  // Sync all tenants via API (Safely merges server tenants with local tenants!)
+  // Master password fallback
+  getMasterPassword: (): string => {
+    return 'love_master_pass_2026';
+  },
+
+  // Sync all tenants from Cloud DB
   syncFromSupabase: async (): Promise<Tenant[]> => {
     try {
-      const deleted = TenantStore.getDeletedSlugs();
-      const localTenants = TenantStore.getAllTenants();
-      const mergedMap = new Map<string, Tenant>();
-
-      // 1. Load local tenants into map
-      localTenants.forEach((t) => {
-        const key = t.slug.toLowerCase().trim();
-        if (!deleted.includes(key)) {
-          mergedMap.set(key, t);
-        }
-      });
-
-      // 2. Fetch server tenants and add missing ones
-      const res = await fetch('/api/tenants');
+      const res = await fetch(`/api/tenants?t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.tenants)) {
-          json.tenants.forEach((st: Tenant) => {
-            const key = st.slug.toLowerCase().trim();
-            if (!deleted.includes(key)) {
-              if (!mergedMap.has(key)) {
-                mergedMap.set(key, st);
-              }
-            }
-          });
+          inMemoryTenants = json.tenants;
+          return json.tenants;
         }
       }
-
-      const cleanList = Array.from(mergedMap.values()).filter((t: Tenant) => !deleted.includes(t.slug.toLowerCase().trim()));
-      cleanList.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
-
-      if (typeof window !== 'undefined') {
-        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(cleanList));
-      }
-      return cleanList;
     } catch {}
-    return TenantStore.getAllTenants();
-  },
-
-  // Master password management for super admin
-  getMasterPassword: (): string => {
-    if (typeof window === 'undefined') return '';
-    return localStorage.getItem(MASTER_PASSWORD_KEY) || '';
-  },
-
-  setMasterPassword: (newPassword: string): void => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(MASTER_PASSWORD_KEY, newPassword);
-  },
-
-  // Backup JSON export
-  exportBackupJSON: (): string => {
-    const tenants = TenantStore.getAllTenants();
-    return JSON.stringify(tenants, null, 2);
-  },
-
-  // Restore JSON import
-  importBackupJSON: (jsonStr: string): boolean => {
-    try {
-      const parsed = JSON.parse(jsonStr);
-      if (Array.isArray(parsed)) {
-        localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(parsed));
-        return true;
-      }
-    } catch (e) {
-      console.error('Invalid backup JSON:', e);
-    }
-    return false;
+    return inMemoryTenants;
   }
 };

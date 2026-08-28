@@ -8,7 +8,7 @@ function getHeaders(extra?: Record<string, string>) {
     'apikey': SUPABASE_KEY,
     'Authorization': `Bearer ${SUPABASE_KEY}`,
     'Content-Type': 'application/json',
-    'Prefer': 'return=representation',
+    'Prefer': 'resolution=merge-duplicates,return=representation',
     ...extra,
   };
 }
@@ -16,7 +16,6 @@ function getHeaders(extra?: Record<string, string>) {
 function toApp(row: any) {
   const baseConfig = row.config && typeof row.config === 'object' ? row.config : {};
   
-  // Extract relational fields if present on the tenant table
   const relationalFields: Record<string, any> = {};
   if (row.her_name) relationalFields.herName = row.her_name;
   if (row.relationship_start_date) relationalFields.relationshipStartDate = row.relationship_start_date;
@@ -33,7 +32,7 @@ function toApp(row: any) {
   };
 
   return {
-    id: row.id,
+    id: row.id || `tenant-${row.slug}`,
     slug: row.slug,
     name: row.name,
     adminPassword: row.admin_password ?? row.adminPassword ?? 'love',
@@ -46,24 +45,16 @@ function toApp(row: any) {
 
 function toDb(t: any) {
   const cfg = t.config || {};
+  const cleanSlug = (t.slug || '').toLowerCase().trim();
 
   return {
-    id: t.id,
-    slug: (t.slug || '').toLowerCase().trim(),
-    name: t.name || `موقع ${t.slug}`,
+    id: t.id || `tenant-${cleanSlug}`,
+    slug: cleanSlug,
+    name: t.name || `موقع ${cleanSlug}`,
     admin_password: t.adminPassword ?? t.admin_password ?? 'love',
     site_password: t.sitePassword ?? t.site_password ?? 'love',
     created_at: t.createdAt ?? t.created_at ?? new Date().toISOString(),
     status: t.status ?? 'active',
-    // Top-level relational columns
-    her_name: cfg.herName || t.her_name || 'أميرتي',
-    relationship_start_date: cfg.relationshipStartDate || t.relationship_start_date || '2024-03-14',
-    music_src: cfg.music_src || t.music_src || '',
-    voice_audio_url: cfg.voiceAudioUrl || t.voice_audio_url || '',
-    voice_photo_url: cfg.voicePhotoUrl || t.voice_photo_url || '',
-    voice_message_title: cfg.voiceMessageTitle || t.voice_message_title || 'كلمات بصوتي طالعة من قلبي لأجلكِ',
-    voice_message_subtitle: cfg.voiceMessageSubtitle || t.voice_message_subtitle || 'رسالة حب بصوتي 🎙️❤️',
-    story_song_url: cfg.storySongUrl || t.story_song_url || '',
     config: cfg,
   };
 }
@@ -102,7 +93,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ success: true, tenants: [] });
 }
 
-// POST: upsert tenant(s)
+// POST: upsert tenant(s) to Supabase Cloud DB
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -115,7 +106,7 @@ export async function POST(req: Request) {
     }
 
     if (!toUpsert.length) {
-      return NextResponse.json({ success: false, error: 'No tenant' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'No tenant provided' }, { status: 400 });
     }
 
     if (!SUPABASE_URL || !SUPABASE_KEY) {
@@ -126,7 +117,7 @@ export async function POST(req: Request) {
     const payload = rows.length === 1 ? rows[0] : rows;
 
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/tenants`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/tenants?on_conflict=slug`, {
         method: 'POST',
         headers: getHeaders({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
         body: JSON.stringify(payload),
@@ -136,12 +127,17 @@ export async function POST(req: Request) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : [data];
         return NextResponse.json({ success: true, tenants: list.map(toApp) });
+      } else {
+        const errText = await res.text();
+        console.error('[POST /api/tenants] Supabase error:', res.status, errText);
       }
-    } catch (_) { }
+    } catch (err: any) {
+      console.error('[POST /api/tenants] fetch error:', err?.message);
+    }
 
     return NextResponse.json({ success: true, tenants: toUpsert.map(toApp) });
   } catch (e: any) {
-    return NextResponse.json({ success: true, error: e?.message }, { status: 200 });
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
   }
 }
 
@@ -166,6 +162,6 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json({ success: true });
   } catch (e: any) {
-    return NextResponse.json({ success: true, error: e?.message }, { status: 200 });
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
   }
 }
