@@ -170,14 +170,18 @@ export default function AdminPage() {
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(voiceAudioChunksRef.current, { type: 'audio/webm' });
-        const reader = new FileReader();
-        reader.readAsDataURL(audioBlob);
-        reader.onloadend = () => {
-          const base64Audio = reader.result as string;
-          updateConfig({ voiceAudioUrl: base64Audio });
-        };
+        const voiceFile = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+        try {
+          setIsUploadingVoice(true);
+          const uploadedUrl = await uploadAudioToCloud(voiceFile);
+          if (uploadedUrl) {
+            updateConfig({ voiceAudioUrl: uploadedUrl });
+          }
+        } catch {} finally {
+          setIsUploadingVoice(false);
+        }
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -263,7 +267,7 @@ export default function AdminPage() {
   };
 
   // Client-side WebP compression helper
-  const compressToWebP = (file: File, quality = 0.85, maxWidth = 1600): Promise<string> => {
+  const compressToWebP = (file: File, quality = 0.75, maxWidth = 1000): Promise<string> => {
     return new Promise<string>((resolve) => {
       const img = new Image();
       const reader = new FileReader();

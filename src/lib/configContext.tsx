@@ -16,7 +16,7 @@ const defaultConfig: AppConfig = {
   // Step 1: Password Gate Landing Page
   sitePassword: 'love',
   passwordGreeting: 'أهلاً بكِ في عالمنا الخاص.. أدخلي كلمة السر لتبدأ الرحلة ✨',
-  herName: 'روضة',
+  herName: 'أميرتي',
   landingBadge: 'رحلة العشق الملكية 👑',
   landingTitle: 'إلى أميرتي وسر سعادتي 👑💖',
   landingSubtitle: 'عالمٌ خُصص لأجلكِ وحدكِ.. حيث تبتسم الذكريات وتُحكى أجمل حكايات العشق ✨',

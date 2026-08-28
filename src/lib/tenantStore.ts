@@ -163,14 +163,14 @@ export const TenantStore = {
       const saved = localStorage.getItem(TENANTS_STORAGE_KEY);
       if (!saved) {
         const seedTenant: Tenant = {
-          id: 't-default-rawda',
-          slug: 'rawda',
-          name: 'حبيبتي 🌸',
+          id: 't-default',
+          slug: 'default',
+          name: 'موقعي 🌸',
           adminPassword: 'love',
           sitePassword: 'love',
           createdAt: new Date().toISOString(),
           status: 'active',
-          config: createDefaultConfigForTenant('حبيبتي', 'love')
+          config: createDefaultConfigForTenant('أميرتي', 'love')
         };
         localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify([seedTenant]));
         return [seedTenant];

@@ -39,7 +39,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
 
     const fetchFromCloud = async () => {
       try {
-        const res = await fetch('/api/tenants');
+        const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, { cache: 'no-store' });
         const json = await res.json();
         let found = json?.success && Array.isArray(json.tenants)
           ? json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim())
