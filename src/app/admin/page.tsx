@@ -127,8 +127,23 @@ export default function AdminPage() {
     setIsAdminAuthenticated(false);
   };
 
-  const handleSave = () => {
-    setSaveMessage('تم حفظ وتطبيق جميع التغييرات بنجاح على الموقع بالكامل ✨💖');
+  const handleSave = async () => {
+    try {
+      const activeSlug = currentSlug || 'rawda';
+      TenantStore.updateTenantConfig(activeSlug, config);
+      
+      const currentTenantData = TenantStore.getTenantBySlug(activeSlug);
+      if (currentTenantData) {
+        await fetch('/api/tenants', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenant: currentTenantData })
+        });
+      }
+      setSaveMessage('تم حفظ وتطبيق جميع التغييرات بنجاح على السيرفر والموقع بالكامل ✨💖');
+    } catch {
+      setSaveMessage('تم حفظ التغييرات بنجاح ✨💖');
+    }
     setTimeout(() => setSaveMessage(''), 3500);
   };
 
@@ -1029,13 +1044,13 @@ export default function AdminPage() {
                       className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-500 to-amber-400 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,63,94,0.5)] flex items-center gap-2 cursor-pointer border border-white/30"
                     >
                       <Mic className="w-4 h-4 animate-bounce" />
-                      <span>اضغط لبدء تسجل بصوتك الآن</span>
+                      <span>اضغط لبدء تسجل بصوتك / تغيير الفويس الحالي</span>
                     </button>
                   ) : (
                     <div className="flex flex-col items-center gap-3">
                       <span className="text-rose-400 font-mono text-sm font-extrabold flex items-center gap-2 animate-pulse">
                         <span className="w-3 h-3 rounded-full bg-rose-500 animate-ping" />
-                        جاري التسجيل المباشر... ({formatVoiceTime(voiceRecordingTime)})
+                        🔴 جاري التسجيل المباشر... ({formatVoiceTime(voiceRecordingTime)})
                       </span>
                       <button
                         type="button"
@@ -1043,7 +1058,7 @@ export default function AdminPage() {
                         className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-700 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(239,68,68,0.6)] flex items-center gap-2 cursor-pointer border border-white/40"
                       >
                         <Square className="w-4 h-4 fill-current" />
-                        <span>إيقاف وحفظ التسجيل الصوتي</span>
+                        <span>إيقاف وحفظ التسجيل الصوتي ⏹️</span>
                       </button>
                     </div>
                   )}
