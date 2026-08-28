@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { TenantStore } from '@/lib/tenantStore';
 import { Tenant } from '@/types/tenant';
 import { TenantQRCodeModal } from '@/components/admin/TenantQRCodeModal';
-import { Search } from 'lucide-react';
+import { Search, AlertTriangle } from 'lucide-react';
 
 export default function SuperAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -21,6 +21,8 @@ export default function SuperAdminPage() {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [tenantToDelete, setTenantToDelete] = useState<{ slug: string; name: string } | null>(null);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [isLoadingData, setIsLoadingData] = useState<boolean>(true);
 
   // Form State
   const [singleName, setSingleName] = useState('');
@@ -47,13 +49,28 @@ export default function SuperAdminPage() {
   }, [isAuthenticated]);
 
   const refreshData = async () => {
-    // Show current local tenants immediately
-    setTenants(TenantStore.getAllTenants());
-
-    // Sync with API safely without losing any local tenant
-    const data = await TenantStore.syncFromSupabase();
-    if (data) {
-      setTenants(data);
+    setIsLoadingData(true);
+    setApiError(null);
+    try {
+      const res = await fetch(`/api/tenants?t=${Date.now()}`, { cache: 'no-store' });
+      if (!res.ok) {
+        setApiError(`عذراً، فشل الاتصال بقاعدة البيانات (API Status ${res.status}). يرجى التأكد من إعدادات الربط بالسيرفر.`);
+        setIsLoadingData(false);
+        return;
+      }
+      const json = await res.json();
+      if (json?.success && Array.isArray(json.tenants)) {
+        setTenants(json.tenants);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('solaf_tenants', JSON.stringify(json.tenants));
+        }
+      } else {
+        setApiError(json?.error || 'عذراً، لا يمكن جلب بيانات المستأجرين من API قاعدة البيانات.');
+      }
+    } catch (err: any) {
+      setApiError('عذراً، لا يمكن الاتصال بـ API قاعدة البيانات. يرجى التأكد من تشغيل السيرفر أو الاتصال بالشبكة.');
+    } finally {
+      setIsLoadingData(false);
     }
   };
 
@@ -109,7 +126,7 @@ export default function SuperAdminPage() {
     setSingleName(clean);
   };
 
-  const handleCreateClient = (e: React.FormEvent) => {
+  const handleCreateClient = async (e: React.FormEvent) => {
     e.preventDefault();
     setCreateError('');
 
@@ -128,41 +145,51 @@ export default function SuperAdminPage() {
         cleanSlug
       );
 
-      fetch('/api/tenants', {
+      const res = await fetch('/api/tenants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant: created })
-      }).catch(() => {});
+        body: JSON.stringify({ tenant: created }),
+        cache: 'no-store'
+      });
 
-      refreshData();
+      if (!res.ok) {
+        setCreateError('فشل حفظ النسخة في قاعدة البيانات (Status ' + res.status + ')');
+        return;
+      }
+
+      await refreshData();
       setSingleName('');
       setNewAdminPass('love');
       setNewSitePass('love');
       setShowCreateModal(false);
     } catch (err: any) {
-      setCreateError(err.message || 'حدث خطأ أثناء إنشاء النسخة');
+      setCreateError(err.message || 'حدث خطأ أثناء إنشاء النسخة في قاعدة البيانات');
     }
   };
 
-  const handleToggleStatus = (slug: string, currentStatus: string) => {
+  const handleToggleStatus = async (slug: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
-    TenantStore.updateTenant(slug, { status: nextStatus });
-    fetch('/api/tenants', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tenants: TenantStore.getAllTenants() })
-    }).catch(() => {});
-    refreshData();
+    const updated = TenantStore.updateTenant(slug, { status: nextStatus });
+    if (updated) {
+      await fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant: updated }),
+        cache: 'no-store'
+      }).catch(() => {});
+    }
+    await refreshData();
   };
 
-  const handleDeleteClient = (slug: string, _name?: string) => {
+  const handleDeleteClient = async (slug: string, _name?: string) => {
     TenantStore.deleteTenant(slug);
-    fetch('/api/tenants', {
+    await fetch('/api/tenants', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug })
+      body: JSON.stringify({ slug }),
+      cache: 'no-store'
     }).catch(() => {});
-    refreshData();
+    await refreshData();
   };
 
   const filteredTenants = tenants.filter((t) => {
@@ -242,6 +269,43 @@ export default function SuperAdminPage() {
   // 2. CALM PROFESSIONAL DASHBOARD
   return (
     <main className="min-h-screen w-full bg-[#0b0f17] text-slate-100 p-4 sm:p-6 pb-24 max-w-6xl mx-auto font-sans dir-rtl">
+      
+      {/* API ERROR MODAL DIALOG */}
+      {apiError && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#161b22] border border-red-500/40 rounded-2xl p-6 max-w-md w-full text-center space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="w-14 h-14 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto border border-red-500/30">
+              <AlertTriangle className="w-7 h-7 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-bold text-white" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                خطأ في الاتصال بقاعدة البيانات (API Error)
+              </h3>
+              <p className="text-xs text-red-200/90 leading-relaxed dir-rtl font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                {apiError}
+              </p>
+            </div>
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={refreshData}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(239,68,68,0.4)] cursor-pointer"
+                style={{ fontFamily: "'Cairo', sans-serif" }}
+              >
+                إعادة المحاولة 🔄
+              </button>
+              <button
+                type="button"
+                onClick={() => setApiError(null)}
+                className="px-4 py-3 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 font-bold text-xs hover:bg-slate-700 transition-all cursor-pointer"
+                style={{ fontFamily: "'Cairo', sans-serif" }}
+              >
+                إغلاق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* MINIMAL HEADER BAR WITH MOBILE SEARCH ICON TOGGLE */}
       <header className="sticky top-0 z-40 bg-[#0b0f17]/95 backdrop-blur-md py-4 border-b border-slate-800/80 mb-6 flex flex-col gap-3">
