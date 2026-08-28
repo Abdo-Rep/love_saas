@@ -39,17 +39,26 @@ function toDb(t: any) {
   };
 }
 
-// GET all tenants
-export async function GET() {
+// GET all tenants or specific tenant by slug
+export async function GET(req: Request) {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return NextResponse.json({ success: true, tenants: [] });
   }
 
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/tenants?select=*&order=created_at.desc`,
-      { headers: getHeaders(), cache: 'no-store' }
-    );
+    const { searchParams } = new URL(req.url);
+    const slug = searchParams.get('slug');
+
+    let endpoint = `${SUPABASE_URL}/rest/v1/tenants?select=*&order=created_at.desc`;
+    if (slug) {
+      const cleanSlug = slug.toLowerCase().trim();
+      endpoint = `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}&select=*`;
+    }
+
+    const res = await fetch(endpoint, {
+      headers: getHeaders(),
+      cache: 'no-store'
+    });
 
     if (res.ok) {
       const data = await res.json();

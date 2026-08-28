@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useConfig } from '@/lib/configContext';
 import { useTenant } from '@/lib/tenantContext';
 import { TenantStore } from '@/lib/tenantStore';
@@ -40,7 +41,7 @@ const TABS_CONFIG = [
   { id: 8, name: 'الرسالة', icon: FileText },
 ];
 
-export default function AdminPage() {
+function AdminPageContent() {
   const { config, updateConfig } = useConfig();
   let tenantCtx: any = null;
   try {
@@ -69,7 +70,9 @@ export default function AdminPage() {
   const [adminPassInput, setAdminPassInput] = useState<string>('');
   const [adminAuthError, setAdminAuthError] = useState<string>('');
 
-  const currentSlug = tenantCtx?.currentTenant?.slug || 'rawda';
+  const searchParams = useSearchParams();
+  const urlSlug = searchParams?.get('slug');
+  const currentSlug = (urlSlug || tenantCtx?.currentTenant?.slug || 'default').toLowerCase().trim();
   const expectedAdminPass = tenantCtx?.currentTenant?.adminPassword || config.adminPassword || 'love';
 
   const handleAdminLogin = async (e: React.FormEvent) => {
@@ -129,7 +132,7 @@ export default function AdminPage() {
 
   const handleSave = async () => {
     try {
-      const activeSlug = currentSlug || 'rawda';
+      const activeSlug = currentSlug || 'default';
       TenantStore.updateTenantConfig(activeSlug, config);
       
       const currentTenantData = TenantStore.getTenantBySlug(activeSlug);
@@ -137,7 +140,8 @@ export default function AdminPage() {
         await fetch('/api/tenants', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tenant: currentTenantData })
+          body: JSON.stringify({ tenant: currentTenantData }),
+          cache: 'no-store'
         });
       }
       setSaveMessage('تم حفظ وتطبيق جميع التغييرات بنجاح على السيرفر والموقع بالكامل ✨💖');
@@ -1349,5 +1353,17 @@ export default function AdminPage() {
       )}
 
     </main>
+  );
+}
+
+export default function AdminPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="min-h-screen w-full bg-[#090108] text-white flex items-center justify-center p-4">
+        <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <AdminPageContent />
+    </React.Suspense>
   );
 }

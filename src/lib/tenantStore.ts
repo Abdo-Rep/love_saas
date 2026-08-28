@@ -278,14 +278,6 @@ export const TenantStore = {
       console.error('Failed to update tenant:', e);
     }
 
-    if (typeof window !== 'undefined') {
-      fetch('/api/tenants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant: updatedTenant })
-      }).catch(() => { });
-    }
-
     return updatedTenant;
   },
 
@@ -308,14 +300,6 @@ export const TenantStore = {
       localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(tenants));
     } catch (e) {
       console.error('Failed to update tenant config:', e);
-    }
-
-    if (typeof window !== 'undefined') {
-      fetch('/api/tenants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant: updatedTenant })
-      }).catch(() => { });
     }
 
     return updatedTenant;
