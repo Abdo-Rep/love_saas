@@ -142,51 +142,62 @@ export default function SuperAdminPage() {
         cleanSlug
       );
 
-      const res = await fetch('/api/tenants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant: created }),
-        cache: 'no-store'
-      });
-
-      if (!res.ok) {
-        setCreateError('فشل حفظ النسخة في قاعدة البيانات (Status ' + res.status + ')');
-        return;
-      }
-
-      await refreshData();
+      // Instant optimistic UI update (0ms latency)
+      setTenants((prev) => [created, ...prev.filter((t) => t.slug.toLowerCase() !== cleanSlug)]);
       setSingleName('');
       setNewAdminPass('love');
       setNewSitePass('love');
       setShowCreateModal(false);
+
+      // Background cloud save
+      fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant: created }),
+        cache: 'no-store'
+      }).then((res) => {
+        if (!res.ok) {
+          refreshData();
+        }
+      }).catch(() => {});
     } catch (err: any) {
       setCreateError(err.message || 'حدث خطأ أثناء إنشاء النسخة في قاعدة البيانات');
     }
   };
 
-  const handleToggleStatus = async (slug: string, currentStatus: string) => {
+  const handleToggleStatus = (slug: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    const cleanSlug = slug.toLowerCase().trim();
+
+    // Instant optimistic UI update (0ms latency)
+    setTenants((prev) =>
+      prev.map((t) => (t.slug.toLowerCase().trim() === cleanSlug ? { ...t, status: nextStatus } : t))
+    );
+
     const updated = TenantStore.updateTenant(slug, { status: nextStatus });
     if (updated) {
-      await fetch('/api/tenants', {
+      fetch('/api/tenants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tenant: updated }),
         cache: 'no-store'
       }).catch(() => {});
     }
-    await refreshData();
   };
 
-  const handleDeleteClient = async (slug: string, _name?: string) => {
+  const handleDeleteClient = (slug: string, _name?: string) => {
+    const cleanSlug = slug.toLowerCase().trim();
+
+    // Instant optimistic UI update (0ms latency)
+    setTenants((prev) => prev.filter((t) => t.slug.toLowerCase().trim() !== cleanSlug));
+
     TenantStore.deleteTenant(slug);
-    await fetch('/api/tenants', {
+    fetch('/api/tenants', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug }),
+      body: JSON.stringify({ slug: cleanSlug }),
       cache: 'no-store'
     }).catch(() => {});
-    await refreshData();
   };
 
   const filteredTenants = tenants.filter((t) => {
