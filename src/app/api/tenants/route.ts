@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server';
 const SUPABASE_URL = process.env.DATABASE_URL || '';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
+// High-Performance Server Cache
+const apiCache = new Map<string, { timestamp: number; data: any }>();
+const CACHE_TTL_MS = 15000; // 15 seconds cache TTL for ultra-fast queries
+
 function getHeaders(extra?: Record<string, string>) {
   return {
     'apikey': SUPABASE_KEY,
@@ -59,7 +63,7 @@ function toDb(t: any) {
   };
 }
 
-// GET all tenants or specific tenant by slug
+// GET all tenants or specific tenant by slug (Ultra-fast cached response)
 export async function GET(req: Request) {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return NextResponse.json({ success: true, tenants: [] });
@@ -68,10 +72,17 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const slug = searchParams.get('slug');
+    const cleanSlug = slug ? slug.toLowerCase().trim() : null;
+    const cacheKey = cleanSlug ? `slug_${cleanSlug}` : 'all';
+
+    // 1. Check Server Memory Cache for Instant Response (1ms latency)
+    const cached = apiCache.get(cacheKey);
+    if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
+      return NextResponse.json(cached.data);
+    }
 
     let endpoint = `${SUPABASE_URL}/rest/v1/tenants?select=*&order=created_at.desc`;
-    if (slug) {
-      const cleanSlug = slug.toLowerCase().trim();
+    if (cleanSlug) {
       endpoint = `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}&select=*`;
     }
 
@@ -83,7 +94,9 @@ export async function GET(req: Request) {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
-        return NextResponse.json({ success: true, tenants: data.map(toApp) });
+        const responseData = { success: true, tenants: data.map(toApp) };
+        apiCache.set(cacheKey, { timestamp: Date.now(), data: responseData });
+        return NextResponse.json(responseData);
       }
     }
   } catch (e: any) {
@@ -93,7 +106,7 @@ export async function GET(req: Request) {
   return NextResponse.json({ success: true, tenants: [] });
 }
 
-// POST: upsert tenant(s) to Supabase Cloud DB
+// POST: upsert tenant(s) to Supabase Cloud DB & invalidate cache
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -126,6 +139,8 @@ export async function POST(req: Request) {
       if (res.ok) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : [data];
+        // Invalidate Server Memory Cache on Save
+        apiCache.clear();
         return NextResponse.json({ success: true, tenants: list.map(toApp) });
       } else {
         const errText = await res.text();
@@ -135,13 +150,15 @@ export async function POST(req: Request) {
       console.error('[POST /api/tenants] fetch error:', err?.message);
     }
 
+    // Invalidate Server Memory Cache
+    apiCache.clear();
     return NextResponse.json({ success: true, tenants: toUpsert.map(toApp) });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
   }
 }
 
-// DELETE: remove tenant by slug
+// DELETE: remove tenant by slug & invalidate cache
 export async function DELETE(req: Request) {
   try {
     const body = await req.json();
@@ -160,6 +177,8 @@ export async function DELETE(req: Request) {
       } catch (_) { }
     }
 
+    // Invalidate Server Memory Cache on Delete
+    apiCache.clear();
     return NextResponse.json({ success: true });
   } catch (e: any) {
     return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
