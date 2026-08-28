@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TenantStore } from '@/lib/tenantStore';
 import { TenantProvider, useTenant } from '@/lib/tenantContext';
 import AdminPage from '@/app/admin/page';
 
@@ -10,24 +9,52 @@ interface TenantAdminWrapperProps {
 }
 
 function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
-  const { currentTenant, loadTenantBySlug } = useTenant();
-  const [mounted, setMounted] = useState(false);
+  const { currentTenant, setCurrentTenantDirectly } = useTenant();
+  const [loading, setLoading] = useState(true);
+  const [foundTenant, setFoundTenant] = useState<any>(null);
 
   useEffect(() => {
-    setMounted(true);
-    loadTenantBySlug(slug);
-  }, [slug]);
+    let isMounted = true;
+    const fetchTenant = async () => {
+      try {
+        const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success && Array.isArray(json.tenants)) {
+            const match = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim());
+            if (match && isMounted) {
+              setFoundTenant(match);
+              setCurrentTenantDirectly(match);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Error fetching admin tenant:', e);
+      }
+      if (isMounted) {
+        setLoading(false);
+      }
+    };
 
-  if (!mounted) {
+    fetchTenant();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [slug, setCurrentTenantDirectly]);
+
+  if (loading) {
     return (
-      <div className="min-h-screen w-full bg-[#090108] text-white flex items-center justify-center p-4">
-        <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen w-full bg-[#090108] text-white flex flex-col items-center justify-center p-4 gap-3">
+        <div className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-pink-300 font-medium">جاري التحقق من لوحة التحكم... ✨</p>
       </div>
     );
   }
 
-  const directTenant = TenantStore.getTenantBySlug(slug);
-  const activeTenant = (currentTenant && currentTenant.slug.toLowerCase() === slug.toLowerCase()) ? currentTenant : directTenant;
+  const activeTenant = (currentTenant && currentTenant.slug.toLowerCase() === slug.toLowerCase()) ? currentTenant : foundTenant;
 
   if (!activeTenant || activeTenant.status === 'suspended') {
     return (
@@ -44,6 +71,12 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
           <p className="text-sm text-gray-400">
             الموقع معطل أو غير موجود حالياً.
           </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-6 py-2 rounded-lg bg-pink-600 hover:bg-pink-700 text-white font-bold text-xs transition-colors"
+          >
+            إعادة المحاولة 🔄
+          </button>
         </div>
       </div>
     );

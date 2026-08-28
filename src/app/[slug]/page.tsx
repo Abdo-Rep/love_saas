@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { TenantStore } from '@/lib/tenantStore';
 import { TenantProvider, useTenant } from '@/lib/tenantContext';
 import { CelestialHeartLanding } from '@/components/fresh/CelestialHeartLanding';
 import { StarConstellationName } from '@/components/couples/StarConstellationName';
@@ -22,7 +21,7 @@ interface SiteClientContentProps {
 }
 
 function SiteClientContent({ slug }: SiteClientContentProps) {
-  const { currentTenant, loadTenantBySlug, setCurrentTenantDirectly } = useTenant();
+  const { currentTenant, setCurrentTenantDirectly } = useTenant();
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,61 +30,46 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
   useEffect(() => {
     setMounted(true);
 
+    let isMounted = true;
     const fetchFromCloud = async () => {
       try {
         const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, { cache: 'no-store' });
-        const json = await res.json();
-        let found = json?.success && Array.isArray(json.tenants)
-          ? json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim())
-          : null;
-
-        if (!found) {
-          const { supabase, isSupabaseConfigured } = await import('@/lib/supabaseClient');
-          if (isSupabaseConfigured && supabase) {
-            const { data } = await supabase.from('tenants').select('*').eq('slug', slug.toLowerCase().trim()).single();
-            if (data) {
-              found = {
-                id: data.id,
-                slug: data.slug,
-                name: data.name,
-                adminPassword: data.admin_password || data.adminPassword || 'love',
-                sitePassword: data.site_password || data.sitePassword || 'love',
-                createdAt: data.created_at || new Date().toISOString(),
-                status: data.status || 'active',
-                config: data.config
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success && Array.isArray(json.tenants)) {
+            const found = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim());
+            if (found && isMounted) {
+              const { createDefaultConfigForTenant: cdf } = await import('@/lib/tenantStore');
+              const mergedConfig = {
+                ...cdf(found.name || 'أميرتي', found.sitePassword || 'love'),
+                ...found.config
               };
+              const withConfig = {
+                ...found,
+                config: mergedConfig
+              };
+              setCloudTenant(withConfig);
+              setCurrentTenantDirectly(withConfig);
+              setIsLoading(false);
+              return;
             }
           }
         }
-
-        if (found) {
-          const { createDefaultConfigForTenant: cdf } = await import('@/lib/tenantStore');
-          const mergedConfig = {
-            ...cdf(found.name || 'أميرتي', found.sitePassword || 'love'),
-            ...found.config
-          };
-          const withConfig = {
-            ...found,
-            config: mergedConfig
-          };
-          setCloudTenant(withConfig);
-          setCurrentTenantDirectly(withConfig);
-        } else {
-          let local = TenantStore.getTenantBySlug(slug);
-          if (!local) {
-            local = TenantStore.createTenant(slug, `موقع ${slug}`, 'love', 'love', slug);
-          }
-          if (local) {
-            setCurrentTenantDirectly(local);
-          }
-        }
-      } catch (_) {
-        loadTenantBySlug(slug);
+      } catch (err) {
+        console.error('Error fetching cloud tenant:', err);
       }
-      setIsLoading(false);
+
+      if (isMounted) {
+        setIsLoading(false);
+      }
     };
+
     fetchFromCloud();
-  }, [slug]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [slug, setCurrentTenantDirectly]);
 
   // Instant top display on step change (no smooth scroll)
   useEffect(() => {
@@ -98,14 +82,14 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
 
   if (!mounted || isLoading) {
     return (
-      <div className="min-h-screen w-full bg-[#090108] text-white flex items-center justify-center p-4">
+      <div className="min-h-screen w-full bg-[#090108] text-white flex flex-col items-center justify-center p-4 gap-3">
         <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-pink-300 font-medium">جاري تحميل رحلة العشق... ✨</p>
       </div>
     );
   }
 
-  const directTenant = TenantStore.getTenantBySlug(slug) || cloudTenant;
-  const activeTenant = (currentTenant && currentTenant.slug.toLowerCase() === slug.toLowerCase()) ? currentTenant : directTenant;
+  const activeTenant = (currentTenant && currentTenant.slug.toLowerCase() === slug.toLowerCase()) ? currentTenant : cloudTenant;
 
   if (!activeTenant || activeTenant.status === 'suspended') {
     return (
@@ -120,22 +104,13 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
             لا يمكن الوصول إلى هذا الموقع الإلكتروني
           </h1>
           <p className="text-sm text-gray-400">
-            رفض <span className="font-mono text-gray-300">الموقع</span> الاتصال.
+            الموقع معطل أو غير موجود حالياً.
           </p>
-          <div className="text-xs text-gray-500 space-y-1 pt-2 w-full text-right">
-            <p>يمكنك محاولة:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>التحقق من الاتصال</li>
-              <li>التحقق من الخادر الوكيل والجدار الناري</li>
-            </ul>
-          </div>
-          <p className="text-xs font-mono text-gray-600 pt-4">ERR_CONNECTION_REFUSED</p>
-
           <button
             onClick={() => window.location.reload()}
-            className="mt-6 px-6 py-2.5 rounded-lg bg-[#2b2b2b] text-blue-400 hover:bg-[#383838] font-bold text-xs border border-gray-700 transition-colors cursor-pointer"
+            className="mt-4 px-6 py-2.5 rounded-lg bg-[#2b2b2b] text-blue-400 hover:bg-[#383838] font-bold text-xs border border-gray-700 transition-colors cursor-pointer"
           >
-            إعادة التحميل
+            إعادة المحاولة 🔄
           </button>
         </div>
       </div>
@@ -159,42 +134,28 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
 
       {currentStep > 1 && <GlobalBackButton onBack={handleBack} />}
 
-      {/* STEP 1: PASSWORD GATE LANDING */}
+      {/* Step Navigation Flow */}
       {currentStep === 1 && (
         <CelestialHeartLanding onStart={() => setCurrentStep(2)} />
       )}
-
-      {/* STEP 2: STAR CONSTELLATION NAME */}
       {currentStep === 2 && (
         <StarConstellationName onNext={() => setCurrentStep(3)} />
       )}
-
-      {/* STEP 3: LOVE COUNTER */}
       {currentStep === 3 && (
         <LoveCounter onNext={() => setCurrentStep(4)} />
       )}
-
-      {/* STEP 4: OPEN WHEN LETTERS */}
       {currentStep === 4 && (
         <OpenWhenLetters onNext={() => setCurrentStep(5)} />
       )}
-
-      {/* STEP 5: PHOTO GALLERY CAROUSEL */}
       {currentStep === 5 && (
         <HorizontalLoveGallery onNext={() => setCurrentStep(6)} />
       )}
-
-      {/* STEP 6: LOVE RADIO CASSETTE VOICE */}
       {currentStep === 6 && (
         <LoveRadioCassette onNext={() => setCurrentStep(7)} />
       )}
-
-      {/* STEP 7: BUCKET LIST WISHES */}
       {currentStep === 7 && (
         <BucketListFutures onNext={() => setCurrentStep(8)} />
       )}
-
-      {/* STEP 8: FINAL HEARTFELT LETTER */}
       {currentStep === 8 && (
         <FinalHeartfeltLetter onRestart={handleRestart} />
       )}
@@ -202,7 +163,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
   );
 }
 
-export default function TenantDirectSlugPage({ params }: { params: { slug: string } }) {
+export default function TenantDynamicRoute({ params }: { params: { slug: string } }) {
   const slug = params?.slug || 'rawda';
 
   return (
