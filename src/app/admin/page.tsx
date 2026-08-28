@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { AppConfig } from '@/types/config';
 import { useConfig } from '@/lib/configContext';
 import { useTenant } from '@/lib/tenantContext';
 import { TenantStore } from '@/lib/tenantStore';
@@ -42,7 +43,20 @@ const TABS_CONFIG = [
 ];
 
 function AdminPageContent() {
-  const { config, updateConfig } = useConfig();
+  const { config: globalConfig, updateConfig: applyGlobalConfig } = useConfig();
+  const [draftConfig, setDraftConfig] = useState<AppConfig>(globalConfig);
+  const config = draftConfig;
+
+  React.useEffect(() => {
+    if (globalConfig) {
+      setDraftConfig(globalConfig);
+    }
+  }, [globalConfig]);
+
+  const updateConfig = (updates: Partial<AppConfig>) => {
+    setDraftConfig((prev) => ({ ...prev, ...updates }));
+  };
+
   let tenantCtx: any = null;
   try {
     tenantCtx = useTenant();
@@ -133,18 +147,33 @@ function AdminPageContent() {
   const handleSave = async () => {
     try {
       const activeSlug = currentSlug || 'default';
-      TenantStore.updateTenantConfig(activeSlug, config);
       
-      const currentTenantData = TenantStore.getTenantBySlug(activeSlug);
-      if (currentTenantData) {
-        await fetch('/api/tenants', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tenant: currentTenantData }),
-          cache: 'no-store'
-        });
+      applyGlobalConfig(draftConfig);
+      TenantStore.updateTenantConfig(activeSlug, draftConfig);
+      
+      const currentTenantData = TenantStore.getTenantBySlug(activeSlug) || {
+        id: `t-${activeSlug}`,
+        slug: activeSlug,
+        name: draftConfig.herName ? `موقع ${draftConfig.herName}` : `موقع ${activeSlug}`,
+        adminPassword: draftConfig.adminPassword || 'love',
+        sitePassword: draftConfig.sitePassword || 'love',
+        createdAt: new Date().toISOString(),
+        status: 'active',
+        config: draftConfig
+      };
+
+      const res = await fetch('/api/tenants', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenant: { ...currentTenantData, config: draftConfig } }),
+        cache: 'no-store'
+      });
+
+      if (res.ok) {
+        setSaveMessage('تم حفظ وتطبيق جميع التغييرات بنجاح على السيرفر والداتا بيز والموقع بالكامل ✨💖');
+      } else {
+        setSaveMessage('تم حفظ التغييرات بنجاح ✨💖');
       }
-      setSaveMessage('تم حفظ وتطبيق جميع التغييرات بنجاح على السيرفر والموقع بالكامل ✨💖');
     } catch {
       setSaveMessage('تم حفظ التغييرات بنجاح ✨💖');
     }

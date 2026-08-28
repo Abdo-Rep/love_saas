@@ -30,12 +30,6 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
 
   useEffect(() => {
     setMounted(true);
-    const localTenant = TenantStore.getTenantBySlug(slug);
-    loadTenantBySlug(slug);
-
-    if (localTenant) {
-      setIsLoading(false);
-    }
 
     const fetchFromCloud = async () => {
       try {
@@ -84,8 +78,17 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
           localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(all));
           setCloudTenant(withConfig);
           loadTenantBySlug(slug);
+        } else {
+          // If not in cloud DB, check local or fallback default
+          let local = TenantStore.getTenantBySlug(slug);
+          if (!local) {
+            local = TenantStore.createTenant(slug, `موقع ${slug}`, 'love', 'love', slug);
+          }
+          loadTenantBySlug(slug);
         }
-      } catch (_) {}
+      } catch (_) {
+        loadTenantBySlug(slug);
+      }
       setIsLoading(false);
     };
     fetchFromCloud();

@@ -199,8 +199,7 @@ export const TenantStore = {
     const found = tenants.find((t) => t.slug.toLowerCase() === cleanSlug);
     if (found) return found;
 
-    // Auto-create tenant on demand for any requested slug
-    return TenantStore.createTenant(cleanSlug, `موقع ${cleanSlug}`, 'love', 'love', cleanSlug);
+    return null;
   },
 
   // Create new tenant
@@ -241,14 +240,6 @@ export const TenantStore = {
       localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(tenants));
     } catch (e) {
       console.error('Failed to save tenant:', e);
-    }
-
-    if (typeof window !== 'undefined') {
-      fetch('/api/tenants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant: newTenant })
-      }).catch(() => { });
     }
 
     return newTenant;
