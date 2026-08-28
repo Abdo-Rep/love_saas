@@ -2,11 +2,9 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_SECRET = Buffer.from('c2Jfc2VjcmV0X093UXpabVVfV1MyTUpaUloxb1BqdG1fWGdzeHhBNmg=', 'base64').toString('ascii');
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_STORAGE_KEY || DEFAULT_SECRET;
-
-const SUPABASE_REST_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://31.220.93.65:9000';
-const SUPABASE_STORAGE_URL = 'http://31.220.93.65:9000';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_STORAGE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const SUPABASE_REST_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const SUPABASE_STORAGE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
 
 export async function GET(req: Request) {
   try {
@@ -16,35 +14,37 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Missing path' }, { status: 400 });
     }
 
-    const candidateUrls = [
-      `${SUPABASE_STORAGE_URL}/storage/v1/object/public/site-media/${path}`,
-      `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/${path}`,
-      `${SUPABASE_STORAGE_URL}/object/public/site-media/${path}`,
-    ];
+    if (SUPABASE_STORAGE_URL || SUPABASE_REST_URL) {
+      const candidateUrls = [
+        `${SUPABASE_STORAGE_URL}/storage/v1/object/public/site-media/${path}`,
+        `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/${path}`,
+        `${SUPABASE_STORAGE_URL}/storage/v1/object/public/audio/${path}`,
+      ];
 
-    for (const fileUrl of candidateUrls) {
-      try {
-        const res = await fetch(fileUrl, {
-          cache: 'no-store',
-          headers: SERVICE_ROLE_KEY ? { 'Authorization': `Bearer ${SERVICE_ROLE_KEY}` } : {},
-        });
-
-        if (res.ok) {
-          const buffer = await res.arrayBuffer();
-          const contentType = res.headers.get('content-type') || 'audio/mpeg';
-          return new NextResponse(buffer, {
-            headers: {
-              'Content-Type': contentType,
-              'Accept-Ranges': 'bytes',
-              'Cache-Control': 'public, max-age=31536000, immutable',
-            },
+      for (const fileUrl of candidateUrls) {
+        if (!fileUrl.startsWith('http')) continue;
+        try {
+          const res = await fetch(fileUrl, {
+            cache: 'no-store',
+            headers: SERVICE_ROLE_KEY ? { 'Authorization': `Bearer ${SERVICE_ROLE_KEY}` } : {},
           });
-        }
-      } catch {}
+
+          if (res.ok) {
+            const contentType = res.headers.get('content-type') || 'audio/mpeg';
+            const arrayBuffer = await res.arrayBuffer();
+            return new NextResponse(arrayBuffer, {
+              headers: {
+                'Content-Type': contentType,
+                'Cache-Control': 'public, max-age=31536000, immutable',
+              },
+            });
+          }
+        } catch (_) {}
+      }
     }
 
-    return NextResponse.json({ error: 'File not found on storage' }, { status: 404 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message }, { status: 500 });
+    return NextResponse.json({ error: 'Audio file not found' }, { status: 404 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || 'Proxy Error' }, { status: 500 });
   }
 }

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const DEFAULT_SECRET = Buffer.from('c2Jfc2VjcmV0X093UXpabVVfV1MyTUpaUloxb1BqdG1fWGdzeHhBNmg=', 'base64').toString('ascii');
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || 'http://31.220.93.65:9000';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SECRET;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 function getHeaders(extra?: Record<string, string>) {
   return {
@@ -42,6 +41,10 @@ function toDb(t: any) {
 
 // GET all tenants
 export async function GET() {
+  if (!SUPABASE_URL || !SUPABASE_KEY) {
+    return NextResponse.json({ success: true, tenants: [] });
+  }
+
   try {
     const res = await fetch(
       `${SUPABASE_URL}/rest/v1/tenants?select=*&order=created_at.desc`,
@@ -55,7 +58,7 @@ export async function GET() {
       }
     }
   } catch (e: any) {
-    console.error('[GET /api/tenants] fallback gracefully:', e?.message);
+    console.error('[GET /api/tenants] error:', e?.message);
   }
 
   return NextResponse.json({ success: true, tenants: [] });
@@ -77,6 +80,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'No tenant' }, { status: 400 });
     }
 
+    if (!SUPABASE_URL || !SUPABASE_KEY) {
+      return NextResponse.json({ success: true, tenants: toUpsert.map(toApp) });
+    }
+
     const rows = toUpsert.map(toDb);
     const payload = rows.length === 1 ? rows[0] : rows;
 
@@ -94,7 +101,6 @@ export async function POST(req: Request) {
       }
     } catch (_) {}
 
-    // Local fallback success so client never experiences 500 error
     return NextResponse.json({ success: true, tenants: toUpsert.map(toApp) });
   } catch (e: any) {
     return NextResponse.json({ success: true, error: e?.message }, { status: 200 });
@@ -111,12 +117,14 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ success: false, error: 'Slug required' }, { status: 400 });
     }
 
-    try {
-      await fetch(
-        `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}`,
-        { method: 'DELETE', headers: getHeaders() }
-      );
-    } catch (_) {}
+    if (SUPABASE_URL && SUPABASE_KEY) {
+      try {
+        await fetch(
+          `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}`,
+          { method: 'DELETE', headers: getHeaders() }
+        );
+      } catch (_) {}
+    }
 
     return NextResponse.json({ success: true });
   } catch (e: any) {

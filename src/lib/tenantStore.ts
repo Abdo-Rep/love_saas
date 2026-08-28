@@ -165,12 +165,12 @@ export const TenantStore = {
         const seedTenant: Tenant = {
           id: 't-default',
           slug: 'default',
-          name: 'موقعي 🌸',
+          name: 'حبيبتي 🌸',
           adminPassword: 'love',
           sitePassword: 'love',
           createdAt: new Date().toISOString(),
           status: 'active',
-          config: createDefaultConfigForTenant('أميرتي', 'love')
+          config: createDefaultConfigForTenant('حبيبتي', 'love')
         };
         localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify([seedTenant]));
         return [seedTenant];
