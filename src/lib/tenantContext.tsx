@@ -39,6 +39,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode; initialSlug?:
 
   const setCurrentTenantDirectly = (tenant: Tenant) => {
     setCurrentTenant(tenant);
+    TenantStore.updateTenant(tenant.slug, tenant);
   };
 
   useEffect(() => {
@@ -50,11 +51,15 @@ export const TenantProvider: React.FC<{ children: React.ReactNode; initialSlug?:
 
   const updateCurrentTenantConfig = (newConfig: Partial<AppConfig>) => {
     if (!currentTenant) return;
-    const updated = TenantStore.updateTenantConfig(currentTenant.slug, newConfig);
-    if (updated) {
-      setCurrentTenant(updated);
-      refreshTenants();
-    }
+    const updatedConfig = { ...currentTenant.config, ...newConfig };
+    const updatedTenant: Tenant = {
+      ...currentTenant,
+      config: updatedConfig,
+      sitePassword: newConfig.sitePassword || currentTenant.sitePassword
+    };
+
+    setCurrentTenant(updatedTenant);
+    TenantStore.updateTenantConfig(currentTenant.slug, newConfig);
   };
 
   return (

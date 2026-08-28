@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, ArrowRight, Check } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
@@ -13,7 +13,7 @@ interface Props {
 export const BucketListFutures: React.FC<Props> = ({ onNext }) => {
   const { config, updateConfig } = useConfig();
 
-  const items: BucketListItem[] = config.bucketListItems || [
+  const initialItems: BucketListItem[] = config.bucketListItems || [
     { id: 1, text: '✨ أول لقاء يجمعنا ونظرة العيون التي بدأت بها أجمل قصة حب ❤️', completed: true },
     { id: 2, text: '✈️ سفرية سوا لدولة أو مكان بنحبه ننسى فيها كل العالم ونستمتع بالبحر والنجوم', completed: false },
     { id: 3, text: '🍿 سهرة سينما مخصصة تحت النجوم مع فشار وفلمنا المفضل والهدوء التام', completed: false },
@@ -21,10 +21,20 @@ export const BucketListFutures: React.FC<Props> = ({ onNext }) => {
     { id: 5, text: '🏡 تفاصيل بيت أحلامنا المستقبلي ونختار كل ركن ولون وديكور سوا لمملكتنا', completed: false }
   ];
 
+  const [items, setItems] = useState<BucketListItem[]>(initialItems);
+
+  useEffect(() => {
+    if (config.bucketListItems && config.bucketListItems.length > 0) {
+      setItems(config.bucketListItems);
+    }
+  }, [config.bucketListItems]);
+
   const handleToggleItem = (index: number) => {
     const newItems = [...items];
     const nextState = !newItems[index].completed;
     newItems[index] = { ...newItems[index], completed: nextState };
+
+    setItems(newItems);
 
     if (nextState) {
       try {
