@@ -9,6 +9,7 @@ interface TenantContextType {
   currentTenant: Tenant | null;
   tenants: Tenant[];
   loadTenantBySlug: (slug: string) => Tenant | null;
+  setCurrentTenantDirectly: (tenant: Tenant) => void;
   updateCurrentTenantConfig: (newConfig: Partial<AppConfig>) => void;
   refreshTenants: () => void;
 }
@@ -36,6 +37,10 @@ export const TenantProvider: React.FC<{ children: React.ReactNode; initialSlug?:
     return null;
   };
 
+  const setCurrentTenantDirectly = (tenant: Tenant) => {
+    setCurrentTenant(tenant);
+  };
+
   useEffect(() => {
     refreshTenants();
     if (initialSlug) {
@@ -58,6 +63,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode; initialSlug?:
         currentTenant,
         tenants,
         loadTenantBySlug,
+        setCurrentTenantDirectly,
         updateCurrentTenantConfig,
         refreshTenants
       }}

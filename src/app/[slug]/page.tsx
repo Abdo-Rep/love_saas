@@ -22,7 +22,7 @@ interface SiteClientContentProps {
 }
 
 function SiteClientContent({ slug }: SiteClientContentProps) {
-  const { currentTenant, loadTenantBySlug } = useTenant();
+  const { currentTenant, loadTenantBySlug, setCurrentTenantDirectly } = useTenant();
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,14 +77,16 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
           }
           localStorage.setItem(TENANTS_STORAGE_KEY, JSON.stringify(all));
           setCloudTenant(withConfig);
-          loadTenantBySlug(slug);
+          setCurrentTenantDirectly(withConfig);
         } else {
           // If not in cloud DB, check local or fallback default
           let local = TenantStore.getTenantBySlug(slug);
           if (!local) {
             local = TenantStore.createTenant(slug, `موقع ${slug}`, 'love', 'love', slug);
           }
-          loadTenantBySlug(slug);
+          if (local) {
+            setCurrentTenantDirectly(local);
+          }
         }
       } catch (_) {
         loadTenantBySlug(slug);

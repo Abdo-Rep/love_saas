@@ -14,6 +14,24 @@ function getHeaders(extra?: Record<string, string>) {
 }
 
 function toApp(row: any) {
+  const baseConfig = row.config && typeof row.config === 'object' ? row.config : {};
+  
+  // Extract relational fields if present on the tenant table
+  const relationalFields: Record<string, any> = {};
+  if (row.her_name) relationalFields.herName = row.her_name;
+  if (row.relationship_start_date) relationalFields.relationshipStartDate = row.relationship_start_date;
+  if (row.music_src) relationalFields.music_src = row.music_src;
+  if (row.voice_audio_url !== undefined) relationalFields.voiceAudioUrl = row.voice_audio_url;
+  if (row.voice_photo_url !== undefined) relationalFields.voicePhotoUrl = row.voice_photo_url;
+  if (row.voice_message_title) relationalFields.voiceMessageTitle = row.voice_message_title;
+  if (row.voice_message_subtitle) relationalFields.voiceMessageSubtitle = row.voice_message_subtitle;
+  if (row.story_song_url !== undefined) relationalFields.storySongUrl = row.story_song_url;
+
+  const mergedConfig = {
+    ...baseConfig,
+    ...relationalFields,
+  };
+
   return {
     id: row.id,
     slug: row.slug,
@@ -22,11 +40,13 @@ function toApp(row: any) {
     sitePassword: row.site_password ?? row.sitePassword ?? 'love',
     createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
     status: row.status ?? 'active',
-    config: row.config ?? {},
+    config: mergedConfig,
   };
 }
 
 function toDb(t: any) {
+  const cfg = t.config || {};
+
   return {
     id: t.id,
     slug: (t.slug || '').toLowerCase().trim(),
@@ -35,7 +55,16 @@ function toDb(t: any) {
     site_password: t.sitePassword ?? t.site_password ?? 'love',
     created_at: t.createdAt ?? t.created_at ?? new Date().toISOString(),
     status: t.status ?? 'active',
-    config: t.config ?? {},
+    // Top-level relational columns
+    her_name: cfg.herName || t.her_name || 'أميرتي',
+    relationship_start_date: cfg.relationshipStartDate || t.relationship_start_date || '2024-03-14',
+    music_src: cfg.music_src || t.music_src || '',
+    voice_audio_url: cfg.voiceAudioUrl || t.voice_audio_url || '',
+    voice_photo_url: cfg.voicePhotoUrl || t.voice_photo_url || '',
+    voice_message_title: cfg.voiceMessageTitle || t.voice_message_title || 'كلمات بصوتي طالعة من قلبي لأجلكِ',
+    voice_message_subtitle: cfg.voiceMessageSubtitle || t.voice_message_subtitle || 'رسالة حب بصوتي 🎙️❤️',
+    story_song_url: cfg.storySongUrl || t.story_song_url || '',
+    config: cfg,
   };
 }
 
