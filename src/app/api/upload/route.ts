@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
-const SUPABASE_REST_URL = process.env.DATABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const SUPABASE_REST_URL = process.env.DATABASE_URL || '';
+const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SUPABASE_STORAGE_URL = SUPABASE_REST_URL;
 const BUCKET = 'site-media';
 
