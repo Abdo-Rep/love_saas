@@ -14,7 +14,7 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
   const [dragOffset, setDragOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('carousel');
-  const [selectedPhoto, setSelectedPhoto] = useState<any | null>(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
   const startXRef = useRef<number | null>(null);
 
   const photos = config.memoryPhotos || [];
@@ -27,6 +27,18 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
   const handlePrev = () => {
     if (photos.length === 0) return;
     setActiveIndex((prev) => (prev > 0 ? prev - 1 : photos.length - 1));
+  };
+
+  const handleModalNext = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (photos.length === 0) return;
+    setSelectedPhotoIndex((prev) => (prev !== null && prev < photos.length - 1 ? prev + 1 : 0));
+  };
+
+  const handleModalPrev = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (photos.length === 0) return;
+    setSelectedPhotoIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : photos.length - 1));
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -54,6 +66,8 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
     setDragOffset(0);
     startXRef.current = null;
   };
+
+  const currentModalPhoto = selectedPhotoIndex !== null && photos[selectedPhotoIndex] ? photos[selectedPhotoIndex] : null;
 
   return (
     <div className="relative w-full min-h-[100dvh] bg-transparent text-white flex flex-col justify-between p-3 sm:p-6 select-none overflow-x-hidden text-center">
@@ -198,16 +212,16 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
 
         </div>
       ) : (
-        /* 2. GRID PHOTO GALLERY VIEW */
-        <div className="relative z-20 w-full max-w-4xl mx-auto my-6 px-2 sm:px-4 dir-rtl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        /* 2. GRID PHOTO GALLERY VIEW (EXACTLY 2 PER ROW) */
+        <div className="relative z-20 w-full max-w-4xl mx-auto my-6 px-1.5 sm:px-4 dir-rtl">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5">
             {photos.map((photo, idx) => (
               <div
                 key={photo.id || idx}
-                onClick={() => setSelectedPhoto(photo)}
+                onClick={() => setSelectedPhotoIndex(idx)}
                 className="group relative rounded-2xl bg-black/70 border border-pink-400/30 backdrop-blur-xl overflow-hidden cursor-pointer shadow-[0_0_20px_rgba(244,114,182,0.15)] hover:border-pink-400/60 hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between"
               >
-                <div className="relative h-56 sm:h-60 w-full overflow-hidden">
+                <div className="relative h-44 sm:h-56 md:h-64 w-full overflow-hidden">
                   <img
                     src={photo.image}
                     alt={photo.caption}
@@ -217,22 +231,22 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
 
                   {photo.tag && (
                     <span
-                      className="absolute top-2.5 right-2.5 px-2.5 py-0.5 rounded-full bg-black/70 border border-pink-400/30 backdrop-blur-md text-[10px] font-bold text-pink-200"
+                      className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-black/70 border border-pink-400/30 backdrop-blur-md text-[9px] sm:text-[10px] font-bold text-pink-200"
                       style={{ fontFamily: "'Cairo', sans-serif" }}
                     >
                       {photo.tag}
                     </span>
                   )}
 
-                  <div className="absolute bottom-2.5 left-2.5 p-1.5 rounded-full bg-black/60 border border-pink-400/30 text-pink-200 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute bottom-2 left-2 p-1.5 rounded-full bg-black/60 border border-pink-400/30 text-pink-200 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Maximize2 className="w-3.5 h-3.5" />
                   </div>
                 </div>
 
-                <div className="p-3.5 flex flex-col gap-1.5 text-center items-center">
+                <div className="p-2.5 sm:p-3.5 flex flex-col gap-1.5 text-center items-center">
                   {photo.date && (
                     <div
-                      className="px-2 py-0.5 rounded-full bg-rose-500/20 border border-pink-400/30 text-[10px] font-bold text-amber-200 flex items-center gap-1"
+                      className="px-2 py-0.5 rounded-full bg-rose-500/20 border border-pink-400/30 text-[9px] sm:text-[10px] font-bold text-amber-200 flex items-center gap-1"
                       style={{ fontFamily: "'Cairo', sans-serif" }}
                     >
                       <Calendar className="w-3 h-3 text-pink-300" />
@@ -240,7 +254,7 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
                     </div>
                   )}
                   <p
-                    className="text-xs font-bold text-pink-100/95 leading-relaxed line-clamp-2"
+                    className="text-[11px] sm:text-xs font-bold text-pink-100/95 leading-relaxed line-clamp-2"
                     style={{ fontFamily: "'Cairo', sans-serif" }}
                   >
                     {photo.caption}
@@ -252,43 +266,73 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
         </div>
       )}
 
-      {/* FULL PHOTO LIGHTBOX MODAL */}
-      {selectedPhoto && (
+      {/* FULL PHOTO LIGHTBOX MODAL WITH PHOTO NAVIGATION */}
+      {currentModalPhoto && selectedPhotoIndex !== null && (
         <div
-          onClick={() => setSelectedPhoto(null)}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 dir-rtl animate-in fade-in duration-200 cursor-pointer"
+          onClick={() => setSelectedPhotoIndex(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 dir-rtl animate-in fade-in duration-200 cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
             className="max-w-lg w-full rounded-3xl bg-[#1c0617] border border-pink-400/40 p-4 relative shadow-[0_0_50px_rgba(244,114,182,0.4)] text-center space-y-4"
           >
+            {/* Close Button */}
             <button
-              onClick={() => setSelectedPhoto(null)}
-              className="absolute top-3 left-3 p-2 rounded-full bg-black/60 border border-pink-400/40 text-pink-200 hover:text-white transition-colors cursor-pointer z-10"
+              onClick={() => setSelectedPhotoIndex(null)}
+              className="absolute top-3 left-3 p-2 rounded-full bg-black/60 border border-pink-400/40 text-pink-200 hover:text-white transition-colors cursor-pointer z-20"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <div className="relative rounded-2xl overflow-hidden max-h-[60vh] border border-pink-400/20">
-              <img
-                src={selectedPhoto.image}
-                alt={selectedPhoto.caption}
-                className="w-full h-full object-contain max-h-[60vh] mx-auto"
-              />
+            {/* Photo counter badge */}
+            <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 border border-pink-400/30 text-[10px] font-bold text-amber-200 z-20" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              {selectedPhotoIndex + 1} / {photos.length}
             </div>
 
+            {/* Image Area with Left/Right Navigation Arrows */}
+            <div className="relative rounded-2xl overflow-hidden max-h-[60vh] border border-pink-400/20 flex items-center justify-center bg-black/40">
+              {/* Prev Button */}
+              {photos.length > 1 && (
+                <button
+                  type="button"
+                  onClick={handleModalPrev}
+                  className="absolute left-2 z-20 p-2.5 rounded-full bg-black/70 border border-pink-400/40 text-pink-200 hover:text-white hover:scale-110 active:scale-95 transition-all shadow-md"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+              )}
+
+              <img
+                src={currentModalPhoto.image}
+                alt={currentModalPhoto.caption}
+                className="w-full h-full object-contain max-h-[60vh] mx-auto select-none"
+              />
+
+              {/* Next Button */}
+              {photos.length > 1 && (
+                <button
+                  type="button"
+                  onClick={handleModalNext}
+                  className="absolute right-2 z-20 p-2.5 rounded-full bg-black/70 border border-pink-400/40 text-pink-200 hover:text-white hover:scale-110 active:scale-95 transition-all shadow-md"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+
+            {/* Caption & Date */}
             <div className="flex flex-col items-center gap-2 px-2">
-              {selectedPhoto.date && (
+              {currentModalPhoto.date && (
                 <div
                   className="px-3 py-1 rounded-full bg-rose-500/20 border border-pink-400/30 text-xs font-bold text-amber-200 flex items-center gap-1"
                   style={{ fontFamily: "'Cairo', sans-serif" }}
                 >
                   <Calendar className="w-3.5 h-3.5 text-pink-300" />
-                  <span>{selectedPhoto.date}</span>
+                  <span>{currentModalPhoto.date}</span>
                 </div>
               )}
               <p className="text-sm font-black text-pink-100 leading-relaxed" style={{ fontFamily: "'Cairo', sans-serif" }}>
-                {selectedPhoto.caption}
+                {currentModalPhoto.caption}
               </p>
             </div>
           </div>
