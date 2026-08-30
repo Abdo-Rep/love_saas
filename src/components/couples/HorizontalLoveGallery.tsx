@@ -15,7 +15,12 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [viewMode, setViewMode] = useState<'carousel' | 'grid'>('carousel');
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null);
+  
+  // Carousel swipe ref
   const startXRef = useRef<number | null>(null);
+  // Modal touch swipe ref & state
+  const modalStartXRef = useRef<number | null>(null);
+  const [modalDragOffset, setModalDragOffset] = useState(0);
 
   const photos = config.memoryPhotos || [];
 
@@ -39,6 +44,31 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
     if (e) e.stopPropagation();
     if (photos.length === 0) return;
     setSelectedPhotoIndex((prev) => (prev !== null && prev > 0 ? prev - 1 : photos.length - 1));
+  };
+
+  // Lightbox Touch/Swipe Handlers
+  const handleModalTouchStart = (e: React.TouchEvent | React.PointerEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.PointerEvent).clientX;
+    modalStartXRef.current = clientX;
+    setModalDragOffset(0);
+  };
+
+  const handleModalTouchMove = (e: React.TouchEvent | React.PointerEvent) => {
+    if (modalStartXRef.current === null) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.PointerEvent).clientX;
+    const diff = clientX - modalStartXRef.current;
+    setModalDragOffset(diff);
+  };
+
+  const handleModalTouchEnd = () => {
+    if (modalStartXRef.current === null) return;
+    if (modalDragOffset > 40) {
+      handleModalPrev();
+    } else if (modalDragOffset < -40) {
+      handleModalNext();
+    }
+    modalStartXRef.current = null;
+    setModalDragOffset(0);
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -212,22 +242,22 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
 
         </div>
       ) : (
-        /* 2. GRID PHOTO GALLERY VIEW (EXACTLY 2 PER ROW) */
+        /* 2. GRID PHOTO GALLERY VIEW (EXACTLY 2 PER ROW WITH FRAMED BORDER SPACING) */
         <div className="relative z-20 w-full max-w-4xl mx-auto my-6 px-1.5 sm:px-4 dir-rtl">
           <div className="grid grid-cols-2 gap-3 sm:gap-5">
             {photos.map((photo, idx) => (
               <div
                 key={photo.id || idx}
                 onClick={() => setSelectedPhotoIndex(idx)}
-                className="group relative rounded-2xl bg-black/70 border border-pink-400/30 backdrop-blur-xl overflow-hidden cursor-pointer shadow-[0_0_20px_rgba(244,114,182,0.15)] hover:border-pink-400/60 hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between"
+                className="group relative rounded-2xl bg-black/70 border border-pink-400/30 backdrop-blur-xl overflow-hidden cursor-pointer shadow-[0_0_20px_rgba(244,114,182,0.15)] hover:border-pink-400/60 hover:scale-[1.02] transition-all duration-300 flex flex-col justify-between p-1.5 sm:p-2.5"
               >
-                <div className="relative h-44 sm:h-56 md:h-64 w-full overflow-hidden">
+                <div className="relative h-44 sm:h-56 md:h-64 w-full overflow-hidden rounded-xl">
                   <img
                     src={photo.image}
                     alt={photo.caption}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 rounded-xl"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity rounded-xl" />
 
                   {photo.tag && (
                     <span
@@ -243,7 +273,7 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
                   </div>
                 </div>
 
-                <div className="p-2.5 sm:p-3.5 flex flex-col gap-1.5 text-center items-center">
+                <div className="p-2 sm:p-3 flex flex-col gap-1.5 text-center items-center">
                   {photo.date && (
                     <div
                       className="px-2 py-0.5 rounded-full bg-rose-500/20 border border-pink-400/30 text-[9px] sm:text-[10px] font-bold text-amber-200 flex items-center gap-1"
@@ -266,11 +296,11 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
         </div>
       )}
 
-      {/* FULL PHOTO LIGHTBOX MODAL WITH PHOTO NAVIGATION */}
+      {/* FULL PHOTO LIGHTBOX MODAL WITH TOUCH SWIPE & NAVIGATION ARROWS */}
       {currentModalPhoto && selectedPhotoIndex !== null && (
         <div
           onClick={() => setSelectedPhotoIndex(null)}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 dir-rtl animate-in fade-in duration-200 cursor-pointer"
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 dir-rtl animate-in fade-in duration-200 cursor-pointer select-none"
         >
           <div
             onClick={(e) => e.stopPropagation()}
@@ -289,8 +319,16 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
               {selectedPhotoIndex + 1} / {photos.length}
             </div>
 
-            {/* Image Area with Left/Right Navigation Arrows */}
-            <div className="relative rounded-2xl overflow-hidden max-h-[60vh] border border-pink-400/20 flex items-center justify-center bg-black/40">
+            {/* Image Area with Touch Swipe & Left/Right Navigation Arrows */}
+            <div
+              onTouchStart={handleModalTouchStart}
+              onTouchMove={handleModalTouchMove}
+              onTouchEnd={handleModalTouchEnd}
+              onPointerDown={handleModalTouchStart}
+              onPointerMove={handleModalTouchMove}
+              onPointerUp={handleModalTouchEnd}
+              className="relative rounded-2xl overflow-hidden max-h-[60vh] border border-pink-400/20 flex items-center justify-center bg-black/40 touch-pan-y cursor-grab active:cursor-grabbing"
+            >
               {/* Prev Button */}
               {photos.length > 1 && (
                 <button
@@ -305,7 +343,9 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
               <img
                 src={currentModalPhoto.image}
                 alt={currentModalPhoto.caption}
-                className="w-full h-full object-contain max-h-[60vh] mx-auto select-none"
+                style={{ transform: `translateX(${modalDragOffset}px)` }}
+                className="w-full h-full object-contain max-h-[60vh] mx-auto select-none transition-transform duration-150"
+                draggable={false}
               />
 
               {/* Next Button */}
