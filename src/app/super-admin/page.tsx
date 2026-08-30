@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { TenantStore } from '@/lib/tenantStore';
 import { Tenant } from '@/types/tenant';
 import { TenantQRCodeModal } from '@/components/admin/TenantQRCodeModal';
-import { Search, AlertTriangle } from 'lucide-react';
+import { Search, AlertTriangle, Crown, ExternalLink, Key, Lock, Copy, Eye, EyeOff, X, Check } from 'lucide-react';
 
 export default function SuperAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -19,6 +19,9 @@ export default function SuperAdminPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedQrTenant, setSelectedQrTenant] = useState<Tenant | null>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [showMainSiteModal, setShowMainSiteModal] = useState(false);
+  const [showMainSitePass, setShowMainSitePass] = useState(false);
+  const [copiedPassText, setCopiedPassText] = useState<string | null>(null);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [tenantToDelete, setTenantToDelete] = useState<{ slug: string; name: string } | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
@@ -200,6 +203,22 @@ export default function SuperAdminPage() {
     }).catch(() => {});
   };
 
+  const mainSiteTenant = tenants.find((t) => (t.slug || '').toLowerCase().trim() === 'soulove') ||
+    tenants.find((t) => (t.slug || '').toLowerCase().trim() === 'default') || {
+      slug: 'soulove',
+      name: 'الموقع الرئيسي (soulove)',
+      sitePassword: 'love',
+      adminPassword: 'love',
+      status: 'active'
+    };
+
+  const handleCopyPass = (text: string, label: string) => {
+    if (!text) return;
+    navigator.clipboard.writeText(text);
+    setCopiedPassText(label);
+    setTimeout(() => setCopiedPassText(null), 2500);
+  };
+
   const filteredTenants = tenants.filter((t) => {
     const matchesSearch =
       t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -332,6 +351,19 @@ export default function SuperAdminPage() {
               title="البحث"
             >
               <Search className="w-4 h-4" />
+            </button>
+
+            {/* MAIN SITE SOULOVE BUTTON */}
+            <button
+              type="button"
+              onClick={() => setShowMainSiteModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-500/20 via-pink-500/20 to-purple-500/20 hover:from-amber-500/30 hover:to-purple-500/30 border border-amber-500/40 text-amber-300 hover:text-amber-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-[0_0_15px_rgba(245,158,11,0.15)] shrink-0"
+              style={{ fontFamily: "'Cairo', sans-serif" }}
+              title="الموقع الرئيسي (soulove)"
+            >
+              <Crown className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+              <span className="hidden sm:inline">الموقع الرئيسي</span>
+              <span className="bg-amber-400/20 border border-amber-400/30 text-amber-200 text-[10px] px-1.5 py-0.5 rounded-md font-mono font-black">soulove 👑</span>
             </button>
 
             {/* LOGOUT BUTTON */}
@@ -687,6 +719,135 @@ export default function SuperAdminPage() {
                 إلغاء
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MAIN SITE SOULOVE MODAL POPUP */}
+      {showMainSiteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md dir-rtl animate-in fade-in duration-200">
+          <div className="max-w-md w-full p-6 rounded-2xl bg-[#161b22] border border-amber-500/40 text-right space-y-5 relative shadow-[0_0_40px_rgba(245,158,11,0.15)]">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                  <Crown className="w-5 h-5 fill-amber-400/20" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                    الموقع الرئيسي <span className="text-amber-400 font-mono text-xs px-2 py-0.5 rounded-full bg-amber-400/10 border border-amber-400/30">soulove</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 font-semibold" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                    اختصارات سريعة وكلمات السر الخاصة بالموقع الرئيسي
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowMainSiteModal(false)}
+                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Navigation Buttons */}
+            <div className="grid grid-cols-2 gap-3 pt-1">
+              <a
+                href="/soulove/admin"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-3 px-4 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 text-white font-black text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(244,114,182,0.3)] flex items-center justify-center gap-2 text-center"
+                style={{ fontFamily: "'Cairo', sans-serif" }}
+              >
+                <span>لوحة التحكم 🛠️</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+
+              <a
+                href="/soulove"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-black text-xs hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 text-center"
+                style={{ fontFamily: "'Cairo', sans-serif" }}
+              >
+                <span>صفحة الزائر 🌹</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+
+            {/* Passwords Box */}
+            <div className="p-4 rounded-xl bg-[#0d1117] border border-slate-800 space-y-3.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                  <Key className="w-3.5 h-3.5 text-amber-400" />
+                  بيانات الدخول لـ soulove
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowMainSitePass(!showMainSitePass)}
+                  className="text-[11px] text-slate-400 hover:text-slate-200 flex items-center gap-1 cursor-pointer"
+                >
+                  {showMainSitePass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  <span>{showMainSitePass ? 'إخفاء' : 'إظهار'}</span>
+                </button>
+              </div>
+
+              {/* Site Password */}
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[#161b22] border border-slate-800">
+                <div className="flex items-center gap-2 text-xs">
+                  <Lock className="w-3.5 h-3.5 text-pink-400 shrink-0" />
+                  <span className="text-slate-400 font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>كلمة سر الزائر:</span>
+                  <span className="font-mono text-pink-300 font-bold">
+                    {showMainSitePass ? (mainSiteTenant.sitePassword || 'love') : '••••••••'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopyPass(mainSiteTenant.sitePassword || 'love', 'site')}
+                  className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs flex items-center gap-1"
+                >
+                  {copiedPassText === 'site' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+
+              {/* Admin Password */}
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-lg bg-[#161b22] border border-slate-800">
+                <div className="flex items-center gap-2 text-xs">
+                  <Key className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="text-slate-400 font-bold" style={{ fontFamily: "'Cairo', sans-serif" }}>كلمة سر التحكم:</span>
+                  <span className="font-mono text-amber-300 font-bold">
+                    {showMainSitePass ? (mainSiteTenant.adminPassword || 'love') : '••••••••'}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleCopyPass(mainSiteTenant.adminPassword || 'love', 'admin')}
+                  className="p-1.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition-colors cursor-pointer text-xs flex items-center gap-1"
+                >
+                  {copiedPassText === 'admin' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            {copiedPassText && (
+              <p className="text-[11px] text-emerald-400 font-bold text-center animate-in fade-in" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                تم نسخ كلمة السر بنجاح ✨
+              </p>
+            )}
+
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={() => setShowMainSiteModal(false)}
+              className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors cursor-pointer"
+              style={{ fontFamily: "'Cairo', sans-serif" }}
+            >
+              إغلاق
+            </button>
+
           </div>
         </div>
       )}
