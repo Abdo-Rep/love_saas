@@ -304,19 +304,22 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="max-w-lg w-full rounded-3xl bg-[#1c0617] border border-pink-400/40 p-4 relative shadow-[0_0_50px_rgba(244,114,182,0.4)] text-center space-y-4"
+            className="max-w-lg w-full rounded-3xl bg-[#1c0617] border border-pink-400/40 p-4 relative shadow-[0_0_50px_rgba(244,114,182,0.4)] text-center flex flex-col gap-3"
           >
-            {/* Close Button */}
-            <button
-              onClick={() => setSelectedPhotoIndex(null)}
-              className="absolute top-3 left-3 p-2 rounded-full bg-black/60 border border-pink-400/40 text-pink-200 hover:text-white transition-colors cursor-pointer z-20"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            {/* Top Modal Header: Counter Badge (Right) & Close X Button (Left) */}
+            <div className="flex items-center justify-between w-full pb-2 border-b border-pink-400/20">
+              <div className="px-3 py-1 rounded-full bg-black/60 border border-pink-400/30 text-[11px] font-bold text-amber-200" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                {selectedPhotoIndex + 1} / {photos.length}
+              </div>
 
-            {/* Photo counter badge */}
-            <div className="absolute top-3 right-3 px-3 py-1 rounded-full bg-black/60 border border-pink-400/30 text-[10px] font-bold text-amber-200 z-20" style={{ fontFamily: "'Cairo', sans-serif" }}>
-              {selectedPhotoIndex + 1} / {photos.length}
+              <button
+                type="button"
+                onClick={() => setSelectedPhotoIndex(null)}
+                className="p-1.5 rounded-full bg-black/60 border border-pink-400/40 text-pink-200 hover:text-white transition-colors cursor-pointer"
+                title="إغلاق"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Image Area with Touch Swipe & Left/Right Navigation Arrows */}
@@ -327,7 +330,7 @@ export const HorizontalLoveGallery: React.FC<Props> = ({ onNext }) => {
               onPointerDown={handleModalTouchStart}
               onPointerMove={handleModalTouchMove}
               onPointerUp={handleModalTouchEnd}
-              className="relative rounded-2xl overflow-hidden max-h-[60vh] border border-pink-400/20 flex items-center justify-center bg-black/40 touch-pan-y cursor-grab active:cursor-grabbing"
+              className="relative rounded-2xl overflow-hidden max-h-[58vh] border border-pink-400/20 flex items-center justify-center bg-black/40 touch-pan-y cursor-grab active:cursor-grabbing"
             >
               {/* Prev Button */}
               {photos.length > 1 && (
