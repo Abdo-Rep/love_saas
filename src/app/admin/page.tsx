@@ -245,6 +245,16 @@ function AdminPageContent() {
     }
   };
 
+  const [showVoiceChangeConfirmModal, setShowVoiceChangeConfirmModal] = useState(false);
+
+  const handleVoiceRecordClick = () => {
+    if (config.voiceAudioUrl) {
+      setShowVoiceChangeConfirmModal(true);
+    } else {
+      startVoiceRecording();
+    }
+  };
+
   const stopVoiceRecording = () => {
     if (voiceMediaRecorderRef.current && isRecordingVoice) {
       voiceMediaRecorderRef.current.stop();
@@ -1092,7 +1102,7 @@ function AdminPageContent() {
                   {!isRecordingVoice ? (
                     <button
                       type="button"
-                      onClick={startVoiceRecording}
+                      onClick={handleVoiceRecordClick}
                       className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-500 to-amber-400 text-white font-black text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_25px_rgba(244,63,94,0.5)] flex items-center gap-2 cursor-pointer border border-white/30"
                     >
                       <Mic className="w-4 h-4 animate-bounce" />
@@ -1386,6 +1396,48 @@ function AdminPageContent() {
               <button
                 type="button"
                 onClick={() => setShowLogoutModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl bg-white/10 border border-pink-400/20 text-pink-200 font-bold text-xs hover:bg-white/20 transition-all cursor-pointer"
+                style={{ fontFamily: "'Cairo', sans-serif" }}
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONFIRM VOICE CHANGE MODAL */}
+      {showVoiceChangeConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn dir-rtl">
+          <div className="max-w-sm w-full p-6 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 shadow-[0_0_50px_rgba(244,63,94,0.4)] text-center space-y-5 relative">
+            <div className="w-14 h-14 rounded-full bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mx-auto text-rose-400 animate-pulse">
+              <Mic className="w-7 h-7" />
+            </div>
+
+            <div>
+              <h3 className="text-lg font-black text-white" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                تأكيد تغيير الفويس الحالي 🎙️
+              </h3>
+              <p className="text-xs text-pink-200/80 mt-2 font-bold leading-relaxed" style={{ fontFamily: "'Cairo', sans-serif" }}>
+                هل أنت متأكد من تغيير الفويس الحالي؟
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVoiceChangeConfirmModal(false);
+                  startVoiceRecording();
+                }}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-bold text-xs hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(244,63,94,0.5)] cursor-pointer"
+                style={{ fontFamily: "'Cairo', sans-serif" }}
+              >
+                نعم، تغيير الفويس
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowVoiceChangeConfirmModal(false)}
                 className="flex-1 py-3 px-4 rounded-xl bg-white/10 border border-pink-400/20 text-pink-200 font-bold text-xs hover:bg-white/20 transition-all cursor-pointer"
                 style={{ fontFamily: "'Cairo', sans-serif" }}
               >

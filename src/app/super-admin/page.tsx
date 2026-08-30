@@ -762,7 +762,7 @@ export default function SuperAdminPage() {
                 className="py-3 px-4 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-600 text-white font-black text-xs hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(244,114,182,0.3)] flex items-center justify-center gap-2 text-center"
                 style={{ fontFamily: "'Cairo', sans-serif" }}
               >
-                <span>لوحة التحكم 🛠️</span>
+                <span>لوحة التحكم</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
 
@@ -773,7 +773,7 @@ export default function SuperAdminPage() {
                 className="py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-black text-xs hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 text-center"
                 style={{ fontFamily: "'Cairo', sans-serif" }}
               >
-                <span>صفحة الزائر 🌹</span>
+                <span>صفحة الزائر</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
