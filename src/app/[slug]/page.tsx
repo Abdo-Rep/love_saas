@@ -30,6 +30,16 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
   useEffect(() => {
     setMounted(true);
 
+    if (typeof window !== 'undefined' && slug) {
+      let formattedTitle = decodeURIComponent(slug).trim();
+      if (formattedTitle.includes('-')) {
+        formattedTitle = formattedTitle.split('-').map(s => s.trim()).filter(Boolean).join(' & ');
+      } else if (formattedTitle.includes('_')) {
+        formattedTitle = formattedTitle.split('_').map(s => s.trim()).filter(Boolean).join(' & ');
+      }
+      document.title = formattedTitle;
+    }
+
     let isMounted = true;
     const fetchFromCloud = async () => {
       try {
