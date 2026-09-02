@@ -45,8 +45,23 @@ export default function SuperAdminPage() {
     setIsCheckingAuth(false);
   }, []);
 
+  const [copiedToastText, setCopiedToastText] = useState<string | null>(null);
+
+  const handleCopyPassword = (pass: string, label: string) => {
+    if (!pass) return;
+    navigator.clipboard.writeText(pass);
+    setCopiedToastText(`تم نسخ كلمة السر بنجاح ✨ (${pass})`);
+    setTimeout(() => setCopiedToastText(null), 2500);
+  };
+
   useEffect(() => {
     if (isAuthenticated) {
+      // Instant 0ms local state render
+      const local = TenantStore.getAllTenants();
+      if (local && local.length > 0) {
+        setTenants(local);
+        setIsLoadingData(false);
+      }
       refreshData();
     }
   }, [isAuthenticated]);
@@ -476,11 +491,19 @@ export default function SuperAdminPage() {
                   {/* Passwords */}
                   <td className="p-3.5 whitespace-nowrap">
                     <div className="flex items-center gap-2 font-mono text-[11px]">
-                      <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300" title="كلمة سر الموقع">
-                        موقع: {tenant.config?.sitePassword || tenant.sitePassword || 'love'}
+                      <span
+                        onClick={() => handleCopyPassword(tenant.config?.sitePassword || tenant.sitePassword || 'love', `موقع /${tenant.slug}`)}
+                        className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 hover:border-pink-500/50 hover:text-pink-300 text-slate-300 cursor-pointer transition-all active:scale-95"
+                        title="اضغط لنسخ كلمة سر الموقع فورا"
+                      >
+                        موقع: {tenant.config?.sitePassword || tenant.sitePassword || 'love'} 📋
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 text-slate-300" title="كلمة سر الأدمن">
-                        أدمن: {tenant.adminPassword || 'love'}
+                      <span
+                        onClick={() => handleCopyPassword(tenant.adminPassword || 'love', `أدمن /${tenant.slug}`)}
+                        className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 hover:border-amber-500/50 hover:text-amber-300 text-slate-300 cursor-pointer transition-all active:scale-95"
+                        title="اضغط لنسخ كلمة سر الأدمن فورا"
+                      >
+                        أدمن: {tenant.adminPassword || 'love'} 📋
                       </span>
                     </div>
                   </td>
@@ -847,8 +870,18 @@ export default function SuperAdminPage() {
             >
               إغلاق
             </button>
-
           </div>
+        </div>
+      )}
+
+      {/* FLOATING INSTANT PASSWORD COPY TOAST */}
+      {copiedToastText && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl bg-slate-900 border border-emerald-500/50 text-emerald-300 text-xs font-bold shadow-2xl flex items-center gap-2 animate-in fade-in slide-in-from-bottom-4 duration-200 dir-rtl"
+          style={{ fontFamily: "'Cairo', sans-serif" }}
+        >
+          <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{copiedToastText}</span>
         </div>
       )}
 
