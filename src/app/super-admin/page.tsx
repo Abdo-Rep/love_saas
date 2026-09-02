@@ -56,18 +56,32 @@ export default function SuperAdminPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      // Instant 0ms local state render
+      // 1. Instant 0ms session cache render of all DB sites
+      try {
+        if (typeof window !== 'undefined') {
+          const cached = sessionStorage.getItem('solaf_superadmin_tenants_cache');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setTenants(parsed);
+              setIsLoadingData(false);
+            }
+          }
+        }
+      } catch {}
+
+      // Fallback to TenantStore
       const local = TenantStore.getAllTenants();
       if (local && local.length > 0) {
-        setTenants(local);
+        setTenants((prev) => (prev.length === 0 ? local : prev));
         setIsLoadingData(false);
       }
+
       refreshData();
     }
   }, [isAuthenticated]);
 
   const refreshData = async () => {
-    setIsLoadingData(true);
     setApiError(null);
     try {
       const res = await fetch(`/api/tenants?t=${Date.now()}`, { cache: 'no-store' });
@@ -79,6 +93,11 @@ export default function SuperAdminPage() {
       const json = await res.json();
       if (json?.success && Array.isArray(json.tenants)) {
         setTenants(json.tenants);
+        try {
+          if (typeof window !== 'undefined') {
+            sessionStorage.setItem('solaf_superadmin_tenants_cache', JSON.stringify(json.tenants));
+          }
+        } catch {}
       } else {
         setApiError(json?.error || 'عذراً، لا يمكن جلب بيانات المستأجرين من API قاعدة البيانات.');
       }
@@ -496,14 +515,14 @@ export default function SuperAdminPage() {
                         className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 hover:border-pink-500/50 hover:text-pink-300 text-slate-300 cursor-pointer transition-all active:scale-95"
                         title="اضغط لنسخ كلمة سر الموقع فورا"
                       >
-                        موقع: {tenant.config?.sitePassword || tenant.sitePassword || 'love'} 📋
+                        موقع: {tenant.config?.sitePassword || tenant.sitePassword || 'love'}
                       </span>
                       <span
                         onClick={() => handleCopyPassword(tenant.adminPassword || 'love', `أدمن /${tenant.slug}`)}
                         className="px-2 py-0.5 rounded bg-slate-900 border border-slate-800 hover:border-amber-500/50 hover:text-amber-300 text-slate-300 cursor-pointer transition-all active:scale-95"
                         title="اضغط لنسخ كلمة سر الأدمن فورا"
                       >
-                        أدمن: {tenant.adminPassword || 'love'} 📋
+                        أدمن: {tenant.adminPassword || 'love'}
                       </span>
                     </div>
                   </td>
