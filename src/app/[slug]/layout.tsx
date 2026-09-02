@@ -5,7 +5,7 @@ interface Props {
   children: React.ReactNode;
 }
 
-export function formatSlugToTitle(slug: string): string {
+function formatSlugToTitle(slug: string): string {
   if (!slug) return 'Soulove';
   const cleanSlug = decodeURIComponent(slug).trim();
   if (cleanSlug.includes('-')) {

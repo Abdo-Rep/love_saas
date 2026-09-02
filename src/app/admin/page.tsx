@@ -592,6 +592,71 @@ function AdminPageContent() {
               <span className="text-[11px] text-pink-200/60 block">تستخدمها أنت فقط للدخول والتعديل في هذه اللوحة.</span>
             </div>
           </div>
+
+          {/* VISITOR LANDING SCREEN TEXT CONTROLS */}
+          <div className="pt-4 border-t border-pink-500/20 space-y-4">
+            <h4 className="text-sm font-black text-amber-200 flex items-center gap-2" style={{ fontFamily: "'Cairo', sans-serif" }}>
+              <Sparkles className="w-4 h-4 text-pink-400" />
+              <span>تخصيص نصوص واجهة تسجيل دخول الزائر (الصفحة الأولى)</span>
+            </h4>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-bold">
+              <div>
+                <label className="block text-pink-200 mb-1 font-extrabold">شارة الشريط العلوي:</label>
+                <input
+                  type="text"
+                  placeholder="رحلة العشق الملكية ✨"
+                  value={config.landingBadge ?? ''}
+                  onChange={(e) => updateConfig({ landingBadge: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-black/60 border border-pink-400/40 text-white font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-amber-300 mb-1 font-extrabold">عنوان الترحيب الرئيسي:</label>
+                <input
+                  type="text"
+                  placeholder="إلى أميرتي وسر سعادتي"
+                  value={config.landingTitle ?? ''}
+                  onChange={(e) => updateConfig({ landingTitle: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-black/60 border border-pink-400/40 text-amber-200 font-bold"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-pink-200 mb-1 font-extrabold">الوصف والعبارة الشاعرية:</label>
+                <textarea
+                  rows={2}
+                  placeholder="عالمٌ خُصص لأجلكِ وحدكِ.. حيث تبتسم الذكريات وتُحكى أجمل حكايات العشق ✨"
+                  value={config.landingSubtitle ?? ''}
+                  onChange={(e) => updateConfig({ landingSubtitle: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-black/60 border border-pink-400/40 text-white leading-relaxed"
+                />
+              </div>
+
+              <div>
+                <label className="block text-pink-200 mb-1 font-extrabold">توضيح مربع كلمة السر (Placeholder):</label>
+                <input
+                  type="text"
+                  placeholder="اكتب كلمة السر هنا ✨"
+                  value={config.passwordPlaceholder ?? ''}
+                  onChange={(e) => updateConfig({ passwordPlaceholder: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-black/60 border border-pink-400/40 text-white"
+                />
+              </div>
+
+              <div>
+                <label className="block text-amber-300 mb-1 font-extrabold">نص زر الفتح والدخول:</label>
+                <input
+                  type="text"
+                  placeholder="دخول عالمنا الخاص 🚀"
+                  value={config.enterButtonText ?? ''}
+                  onChange={(e) => updateConfig({ enterButtonText: e.target.value })}
+                  className="w-full p-3 rounded-xl bg-black/60 border border-pink-400/40 text-amber-200 font-bold"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1080,7 +1145,7 @@ function AdminPageContent() {
               <span>الرسالة الصوتية المخصصة (الفويس الصوتي)</span>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-pink-200 text-sm mb-1.5 font-extrabold">عنوان الرسالة الصوتية الرئيسي:</label>
                 <input
@@ -1092,7 +1157,19 @@ function AdminPageContent() {
                 />
               </div>
 
-              <div className="flex flex-col items-center gap-4 pt-2 border-t border-white/10 text-center">
+              <div>
+                <label className="block text-amber-300 text-sm mb-1.5 font-extrabold">✨ نص زر الانتقال للأمنيات:</label>
+                <input
+                  type="text"
+                  value={config.voiceButtonText ?? ''}
+                  onChange={(e) => updateConfig({ voiceButtonText: e.target.value })}
+                  placeholder="التالي: أمنيات المستقبل 🗺️✨"
+                  className="w-full p-4 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-amber-200 font-black text-base"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-4 pt-2 border-t border-white/10 text-center">
                 {/* LIVE MICROPHONE RECORDER SECTION */}
                 <div className="w-full p-4 rounded-2xl bg-black/60 border border-pink-400/30 flex flex-col items-center gap-3">
                   <span className="text-xs font-black text-amber-300">
@@ -1176,12 +1253,7 @@ function AdminPageContent() {
                       </button>
                     </div>
                   </div>
-                ) : (
-                  <p className="text-xs text-pink-200/70 font-semibold">
-                    لم يتم تسجيل أو رفع فويس مخصص بعد (يستخدم تسجيل افتراضي رومانسي).
-                  </p>
-                )}
-              </div>
+                ) : null}
             </div>
           </div>
         </div>
