@@ -45,7 +45,11 @@ const TABS_CONFIG = [
 function AdminPageContent() {
   const { config: globalConfig, updateConfig: applyGlobalConfig } = useConfig();
   const [draftConfig, setDraftConfig] = useState<AppConfig>(globalConfig);
+  const [savedConfig, setSavedConfig] = useState<AppConfig | null>(null);
   const [hasInitializedDraft, setHasInitializedDraft] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState('');
+  const [saveError, setSaveError] = useState('');
   const config = draftConfig;
 
   let tenantCtx: any = null;
@@ -57,38 +61,33 @@ function AdminPageContent() {
   const urlSlug = searchParams?.get('slug');
   const currentSlug = (urlSlug || tenantCtx?.currentTenant?.slug || 'default').toLowerCase().trim();
 
-  // Initialize draftConfig when globalConfig or currentTenant loads
+  // Initialize draftConfig and savedConfig ONCE on mount or when tenant loads
   React.useEffect(() => {
-    if (globalConfig && !hasInitializedDraft) {
-      setDraftConfig({
+    if (!hasInitializedDraft && globalConfig) {
+      const initialAdminPass = (tenantCtx?.currentTenant?.adminPassword || tenantCtx?.currentTenant?.config?.adminPassword || globalConfig.adminPassword || 'love').trim();
+      const initialSitePass = (tenantCtx?.currentTenant?.sitePassword || tenantCtx?.currentTenant?.config?.sitePassword || globalConfig.sitePassword || 'love').trim();
+      const initial: AppConfig = {
         ...globalConfig,
-        adminPassword: globalConfig.adminPassword || tenantCtx?.currentTenant?.adminPassword || 'love',
-        sitePassword: globalConfig.sitePassword || tenantCtx?.currentTenant?.sitePassword || 'love',
-      });
+        ...(tenantCtx?.currentTenant?.config || {}),
+        adminPassword: initialAdminPass,
+        sitePassword: initialSitePass,
+      };
+      setDraftConfig(initial);
+      setSavedConfig(initial);
       setHasInitializedDraft(true);
     }
   }, [globalConfig, hasInitializedDraft, tenantCtx?.currentTenant]);
-
-  React.useEffect(() => {
-    if (tenantCtx?.currentTenant) {
-      const tenantAdminPass = tenantCtx.currentTenant.adminPassword || tenantCtx.currentTenant.config?.adminPassword;
-      const tenantSitePass = tenantCtx.currentTenant.sitePassword || tenantCtx.currentTenant.config?.sitePassword;
-      if (tenantAdminPass || tenantSitePass) {
-        setDraftConfig((prev) => ({
-          ...prev,
-          adminPassword: prev.adminPassword || tenantAdminPass || 'love',
-          sitePassword: prev.sitePassword || tenantSitePass || 'love',
-        }));
-      }
-    }
-  }, [tenantCtx?.currentTenant]);
 
   const updateConfig = (updates: Partial<AppConfig>) => {
     setDraftConfig((prev) => ({ ...prev, ...updates }));
   };
 
+  const hasUnsavedChanges = React.useMemo(() => {
+    if (!savedConfig) return false;
+    return JSON.stringify(draftConfig) !== JSON.stringify(savedConfig);
+  }, [draftConfig, savedConfig]);
+
   const [activeStep, setActiveStep] = useState<number>(1);
-  const [saveMessage, setSaveMessage] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -188,10 +187,24 @@ function AdminPageContent() {
   };
 
   const handleSave = async () => {
+    if (isSaving) return;
+
+    const cleanAdminPass = (draftConfig.adminPassword || '').trim();
+    const cleanSitePass = (draftConfig.sitePassword || '').trim();
+
+    if (!cleanAdminPass || !cleanSitePass) {
+      setSaveError('⚠️ رجاء كتابة كلمات المرور (كلمة سر الموقع وكلمة سر لوحة التحكم) قبل الحفظ!');
+      setActiveStep(1);
+      setTimeout(() => setSaveError(''), 4500);
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError('');
+    setSaveMessage('');
+
     try {
       const activeSlug = currentSlug || 'default';
-      const cleanAdminPass = (draftConfig.adminPassword || tenantCtx?.currentTenant?.adminPassword || 'love').trim();
-      const cleanSitePass = (draftConfig.sitePassword || tenantCtx?.currentTenant?.sitePassword || 'love').trim();
 
       const updatedDraftConfig: AppConfig = {
         ...draftConfig,
@@ -232,6 +245,9 @@ function AdminPageContent() {
         cache: 'no-store'
       });
 
+      setSavedConfig(updatedDraftConfig);
+      setDraftConfig(updatedDraftConfig);
+
       if (res.ok) {
         setSaveMessage('تم حفظ وتطبيق جميع التغييرات بنجاح على السيرفر والداتا بيز والموقع بالكامل ✨💖');
       } else {
@@ -239,8 +255,10 @@ function AdminPageContent() {
       }
     } catch {
       setSaveMessage('تم حفظ التغييرات بنجاح ✨💖');
+    } finally {
+      setIsSaving(false);
+      setTimeout(() => setSaveMessage(''), 3500);
     }
-    setTimeout(() => setSaveMessage(''), 3500);
   };
 
   const [isUploadingAudio, setIsUploadingAudio] = useState(false);
@@ -473,6 +491,13 @@ function AdminPageContent() {
         </div>
       )}
 
+      {/* FLOATING SAVE ERROR TOAST NOTIFICATION */}
+      {saveError && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 p-4 px-6 rounded-2xl bg-red-950/95 border-2 border-red-400 text-red-100 text-xs sm:text-sm font-black shadow-[0_0_40px_rgba(239,68,68,0.6)] backdrop-blur-xl animate-bounce text-center">
+          {saveError}
+        </div>
+      )}
+
       {/* STICKY TOP HEADER WITH SAVE & LOGOUT LINKS */}
       <header className="sticky top-0 z-40 bg-[#090108]/95 backdrop-blur-xl py-3.5 border-b border-pink-500/30 mb-6 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xl">
         <div className="flex items-center gap-3 text-right">
@@ -490,11 +515,31 @@ function AdminPageContent() {
         <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap justify-end">
           <button
             onClick={handleSave}
-            className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-xs sm:text-sm border border-white/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_#f472b6] flex items-center justify-center gap-2 shrink-0 cursor-pointer"
+            disabled={!hasUnsavedChanges || isSaving}
+            className={`px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shrink-0 transition-all ${
+              hasUnsavedChanges && !isSaving
+                ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white border border-white/40 hover:scale-105 active:scale-95 shadow-[0_0_20px_#f472b6] cursor-pointer'
+                : 'bg-white/10 text-pink-200/40 border border-white/10 cursor-not-allowed opacity-60 shadow-none'
+            }`}
             style={{ fontFamily: "'Cairo', sans-serif" }}
+            title={hasUnsavedChanges ? 'حفظ التغييرات' : 'تم حفظ كافة التغييرات'}
           >
-            <Save className="w-4 h-4 text-white" />
-            <span>حفظ التغييرات</span>
+            {isSaving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>جاري الحفظ...</span>
+              </>
+            ) : hasUnsavedChanges ? (
+              <>
+                <Save className="w-4 h-4 text-white" />
+                <span>حفظ التغييرات</span>
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4 text-emerald-400" />
+                <span className="text-pink-200/70">تم الحفظ</span>
+              </>
+            )}
           </button>
 
           <button
@@ -573,9 +618,6 @@ function AdminPageContent() {
                   onChange={(e) => {
                     const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
                     updateConfig({ sitePassword: val });
-                    if (tenantCtx?.currentTenant) {
-                      TenantStore.updateTenant(tenantCtx.currentTenant.slug, { sitePassword: val });
-                    }
                   }}
                   className="w-full p-4 pl-24 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-amber-300 font-mono font-black text-base focus:border-amber-300 transition-all shadow-inner"
                 />
@@ -590,7 +632,7 @@ function AdminPageContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleCopyText(draftConfig.sitePassword || tenantCtx?.currentTenant?.sitePassword || 'love', 'كلمة سر الموقع')}
+                    onClick={() => handleCopyText(draftConfig.sitePassword || '', 'كلمة سر الموقع')}
                     className="p-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/40 text-amber-300 transition cursor-pointer"
                     title="نسخ كلمة السر"
                   >
@@ -612,9 +654,6 @@ function AdminPageContent() {
                   onChange={(e) => {
                     const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
                     updateConfig({ adminPassword: val });
-                    if (tenantCtx?.currentTenant) {
-                      TenantStore.updateTenant(tenantCtx.currentTenant.slug, { adminPassword: val });
-                    }
                   }}
                   className="w-full p-4 pl-24 rounded-2xl bg-black/60 border-2 border-pink-400/40 text-rose-300 font-mono font-black text-base focus:border-rose-300 transition-all shadow-inner"
                 />
@@ -629,7 +668,7 @@ function AdminPageContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleCopyText(draftConfig.adminPassword || tenantCtx?.currentTenant?.adminPassword || 'love', 'كلمة سر لوحة التحكم')}
+                    onClick={() => handleCopyText(draftConfig.adminPassword || '', 'كلمة سر لوحة التحكم')}
                     className="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/40 border border-rose-400/40 text-rose-300 transition cursor-pointer"
                     title="نسخ كلمة السر"
                   >
