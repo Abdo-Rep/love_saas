@@ -42,6 +42,7 @@ export interface CharacterModelOption {
 export interface AppConfig {
   // Step 1: Password Gate Landing Page
   sitePassword: string;
+  adminPassword?: string;
   passwordGreeting: string;
   herName: string;
   landingBadge: string;

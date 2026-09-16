@@ -50,12 +50,18 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
             const found = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim());
             if (found && isMounted) {
               const { createDefaultConfigForTenant: cdf } = await import('@/lib/tenantStore');
+              const finalAdminPass = found.adminPassword || found.admin_password || found.config?.adminPassword || 'love';
+              const finalSitePass = found.sitePassword || found.site_password || found.config?.sitePassword || 'love';
               const mergedConfig = {
-                ...cdf(found.name || 'أميرتي', found.sitePassword || 'love'),
-                ...found.config
+                ...cdf(found.name || 'أميرتي', finalSitePass, finalAdminPass),
+                ...found.config,
+                adminPassword: finalAdminPass,
+                sitePassword: finalSitePass
               };
               const withConfig = {
                 ...found,
+                adminPassword: finalAdminPass,
+                sitePassword: finalSitePass,
                 config: mergedConfig
               };
               setCloudTenant(withConfig);

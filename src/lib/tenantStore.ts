@@ -2,8 +2,9 @@ import { Tenant } from '@/types/tenant';
 import { AppConfig } from '@/types/config';
 
 // DEFAULT ROMANTIC CONFIG TEMPLATE FOR NEW TENANTS
-export const createDefaultConfigForTenant = (herName: string = 'أميرتي', sitePassword: string = 'love'): AppConfig => ({
+export const createDefaultConfigForTenant = (herName: string = 'أميرتي', sitePassword: string = 'love', adminPassword: string = 'love'): AppConfig => ({
   sitePassword,
+  adminPassword,
   passwordGreeting: 'أهلاً بكِ في عالمنا الخاص.. أدخلي كلمة السر لتبدأ الرحلة ✨',
   herName: 'أميرتي',
   landingBadge: 'رحلة العشق الملكية 👑',
@@ -156,16 +157,18 @@ export const TenantStore = {
     herName: string = 'أميرتي'
   ): Tenant => {
     const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+    const finalAdminPass = (adminPassword || 'love').trim();
+    const finalSitePass = (sitePassword || 'love').trim();
 
     const newTenant: Tenant = {
       id: `tenant-${cleanSlug}`,
       slug: cleanSlug,
       name: name || `موقع ${cleanSlug}`,
-      adminPassword: adminPassword || 'love',
-      sitePassword: sitePassword || 'love',
+      adminPassword: finalAdminPass,
+      sitePassword: finalSitePass,
       createdAt: new Date().toISOString(),
       status: 'active',
-      config: createDefaultConfigForTenant(herName || 'أميرتي', sitePassword || 'love')
+      config: createDefaultConfigForTenant(herName || 'أميرتي', finalSitePass, finalAdminPass)
     };
 
     const existingIdx = inMemoryTenants.findIndex((t) => t.slug.toLowerCase() === cleanSlug);
@@ -184,13 +187,19 @@ export const TenantStore = {
     if (idx === -1) return null;
 
     const currentTenant = inMemoryTenants[idx];
+    const newAdminPass = updates.adminPassword ?? updates.config?.adminPassword ?? currentTenant.adminPassword ?? currentTenant.config?.adminPassword ?? 'love';
+    const newSitePass = updates.sitePassword ?? updates.config?.sitePassword ?? currentTenant.sitePassword ?? currentTenant.config?.sitePassword ?? 'love';
+
     const updatedTenant: Tenant = {
       ...currentTenant,
       ...updates,
+      adminPassword: newAdminPass,
+      sitePassword: newSitePass,
       config: {
         ...currentTenant.config,
         ...updates.config,
-        sitePassword: updates.sitePassword || updates.config?.sitePassword || currentTenant.config.sitePassword
+        adminPassword: newAdminPass,
+        sitePassword: newSitePass
       }
     };
 
@@ -205,10 +214,18 @@ export const TenantStore = {
 
     const currentTenant = inMemoryTenants[idx];
     const updatedConfig = { ...currentTenant.config, ...newConfig };
-    const updatedTenant = {
+    const newAdminPass = newConfig.adminPassword ?? currentTenant.adminPassword ?? currentTenant.config?.adminPassword ?? 'love';
+    const newSitePass = newConfig.sitePassword ?? currentTenant.sitePassword ?? currentTenant.config?.sitePassword ?? 'love';
+
+    const updatedTenant: Tenant = {
       ...currentTenant,
-      config: updatedConfig,
-      sitePassword: newConfig.sitePassword || currentTenant.sitePassword
+      adminPassword: newAdminPass,
+      sitePassword: newSitePass,
+      config: {
+        ...updatedConfig,
+        adminPassword: newAdminPass,
+        sitePassword: newSitePass
+      }
     };
 
     inMemoryTenants[idx] = updatedTenant;

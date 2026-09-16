@@ -30,17 +30,22 @@ function toApp(row: any) {
   if (row.voice_message_subtitle) relationalFields.voiceMessageSubtitle = row.voice_message_subtitle;
   if (row.story_song_url !== undefined) relationalFields.storySongUrl = row.story_song_url;
 
+  const adminPass = row.admin_password ?? row.adminPassword ?? baseConfig.adminPassword ?? 'love';
+  const sitePass = row.site_password ?? row.sitePassword ?? baseConfig.sitePassword ?? 'love';
+
   const mergedConfig = {
     ...baseConfig,
     ...relationalFields,
+    adminPassword: adminPass,
+    sitePassword: sitePass,
   };
 
   return {
     id: row.id || `tenant-${row.slug}`,
     slug: row.slug,
     name: row.name,
-    adminPassword: row.admin_password ?? row.adminPassword ?? 'love',
-    sitePassword: row.site_password ?? row.sitePassword ?? 'love',
+    adminPassword: adminPass,
+    sitePassword: sitePass,
     createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
     status: row.status ?? 'active',
     config: mergedConfig,
@@ -50,16 +55,22 @@ function toApp(row: any) {
 function toDb(t: any) {
   const cfg = t.config || {};
   const cleanSlug = (t.slug || '').toLowerCase().trim();
+  const adminPass = t.adminPassword ?? t.admin_password ?? cfg.adminPassword ?? 'love';
+  const sitePass = t.sitePassword ?? t.site_password ?? cfg.sitePassword ?? 'love';
 
   return {
     id: t.id || `tenant-${cleanSlug}`,
     slug: cleanSlug,
     name: t.name || `موقع ${cleanSlug}`,
-    admin_password: t.adminPassword ?? t.admin_password ?? 'love',
-    site_password: t.sitePassword ?? t.site_password ?? 'love',
+    admin_password: adminPass,
+    site_password: sitePass,
     created_at: t.createdAt ?? t.created_at ?? new Date().toISOString(),
     status: t.status ?? 'active',
-    config: cfg,
+    config: {
+      ...cfg,
+      adminPassword: adminPass,
+      sitePassword: sitePass,
+    },
   };
 }
 

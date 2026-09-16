@@ -52,10 +52,18 @@ export const TenantProvider: React.FC<{ children: React.ReactNode; initialSlug?:
   const updateCurrentTenantConfig = (newConfig: Partial<AppConfig>) => {
     if (!currentTenant) return;
     const updatedConfig = { ...currentTenant.config, ...newConfig };
+    const newAdminPass = newConfig.adminPassword ?? currentTenant.adminPassword ?? currentTenant.config?.adminPassword ?? 'love';
+    const newSitePass = newConfig.sitePassword ?? currentTenant.sitePassword ?? currentTenant.config?.sitePassword ?? 'love';
+
     const updatedTenant: Tenant = {
       ...currentTenant,
-      config: updatedConfig,
-      sitePassword: newConfig.sitePassword || currentTenant.sitePassword
+      adminPassword: newAdminPass,
+      sitePassword: newSitePass,
+      config: {
+        ...updatedConfig,
+        adminPassword: newAdminPass,
+        sitePassword: newSitePass
+      }
     };
 
     setCurrentTenant(updatedTenant);

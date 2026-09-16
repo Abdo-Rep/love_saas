@@ -57,13 +57,31 @@ function AdminPageContent() {
   const urlSlug = searchParams?.get('slug');
   const currentSlug = (urlSlug || tenantCtx?.currentTenant?.slug || 'default').toLowerCase().trim();
 
-  // Initialize draftConfig ONCE when globalConfig loads or slug changes (prevents input value reverting)
+  // Initialize draftConfig when globalConfig or currentTenant loads
   React.useEffect(() => {
     if (globalConfig && !hasInitializedDraft) {
-      setDraftConfig(globalConfig);
+      setDraftConfig({
+        ...globalConfig,
+        adminPassword: globalConfig.adminPassword || tenantCtx?.currentTenant?.adminPassword || 'love',
+        sitePassword: globalConfig.sitePassword || tenantCtx?.currentTenant?.sitePassword || 'love',
+      });
       setHasInitializedDraft(true);
     }
-  }, [globalConfig, hasInitializedDraft]);
+  }, [globalConfig, hasInitializedDraft, tenantCtx?.currentTenant]);
+
+  React.useEffect(() => {
+    if (tenantCtx?.currentTenant) {
+      const tenantAdminPass = tenantCtx.currentTenant.adminPassword || tenantCtx.currentTenant.config?.adminPassword;
+      const tenantSitePass = tenantCtx.currentTenant.sitePassword || tenantCtx.currentTenant.config?.sitePassword;
+      if (tenantAdminPass || tenantSitePass) {
+        setDraftConfig((prev) => ({
+          ...prev,
+          adminPassword: prev.adminPassword || tenantAdminPass || 'love',
+          sitePassword: prev.sitePassword || tenantSitePass || 'love',
+        }));
+      }
+    }
+  }, [tenantCtx?.currentTenant]);
 
   const updateConfig = (updates: Partial<AppConfig>) => {
     setDraftConfig((prev) => ({ ...prev, ...updates }));
@@ -103,7 +121,14 @@ function AdminPageContent() {
     } catch {}
   }, [currentSlug]);
 
-  const expectedAdminPass = tenantCtx?.currentTenant?.adminPassword || config.adminPassword || 'love';
+  const expectedAdminPass = (
+    tenantCtx?.currentTenant?.adminPassword ||
+    tenantCtx?.currentTenant?.admin_password ||
+    tenantCtx?.currentTenant?.config?.adminPassword ||
+    draftConfig.adminPassword ||
+    globalConfig?.adminPassword ||
+    'love'
+  ).trim();
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,25 +140,19 @@ function AdminPageContent() {
 
     setAdminAuthError('');
 
-    // Instant local check first (0ms latency)
-    if (cleanInput === expectedAdminPass || cleanInput === 'love') {
-      setIsAdminAuthenticated(true);
-      try {
-        sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
-      } catch {}
-      setAdminAuthError('');
-      return;
-    }
-
+    // Fetch latest tenant data from API to guarantee we validate against the latest saved password on server
     try {
       let realAdminPass = expectedAdminPass;
-      const res = await fetch('/api/tenants');
+      const res = await fetch(`/api/tenants?slug=${encodeURIComponent(currentSlug)}&t=${Date.now()}`, { cache: 'no-store' });
       if (res.ok) {
         const json = await res.json();
         if (json?.success && Array.isArray(json.tenants)) {
           const found = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === currentSlug.toLowerCase().trim());
           if (found) {
-            realAdminPass = found.adminPassword || found.admin_password || realAdminPass;
+            realAdminPass = (found.adminPassword || found.admin_password || found.config?.adminPassword || realAdminPass).trim();
+            if (tenantCtx?.setCurrentTenantDirectly) {
+              tenantCtx.setCurrentTenantDirectly(found);
+            }
           }
         }
       }
@@ -148,7 +167,16 @@ function AdminPageContent() {
         setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌ غير مسموح بالدخول!');
       }
     } catch {
-      setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌');
+      // Fallback local check
+      if (cleanInput === expectedAdminPass) {
+        setIsAdminAuthenticated(true);
+        try {
+          sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
+        } catch {}
+        setAdminAuthError('');
+      } else {
+        setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌ غير مسموح بالدخول!');
+      }
     }
   };
 
@@ -162,25 +190,45 @@ function AdminPageContent() {
   const handleSave = async () => {
     try {
       const activeSlug = currentSlug || 'default';
+      const cleanAdminPass = (draftConfig.adminPassword || tenantCtx?.currentTenant?.adminPassword || 'love').trim();
+      const cleanSitePass = (draftConfig.sitePassword || tenantCtx?.currentTenant?.sitePassword || 'love').trim();
+
+      const updatedDraftConfig: AppConfig = {
+        ...draftConfig,
+        adminPassword: cleanAdminPass,
+        sitePassword: cleanSitePass,
+      };
       
-      applyGlobalConfig(draftConfig);
-      TenantStore.updateTenantConfig(activeSlug, draftConfig);
+      applyGlobalConfig(updatedDraftConfig);
+      TenantStore.updateTenantConfig(activeSlug, updatedDraftConfig);
       
       const currentTenantData = TenantStore.getTenantBySlug(activeSlug) || {
         id: `t-${activeSlug}`,
         slug: activeSlug,
         name: draftConfig.herName ? `موقع ${draftConfig.herName}` : `موقع ${activeSlug}`,
-        adminPassword: draftConfig.adminPassword || 'love',
-        sitePassword: draftConfig.sitePassword || 'love',
+        adminPassword: cleanAdminPass,
+        sitePassword: cleanSitePass,
         createdAt: new Date().toISOString(),
         status: 'active',
-        config: draftConfig
+        config: updatedDraftConfig
       };
+
+      const tenantToSave = {
+        ...currentTenantData,
+        adminPassword: cleanAdminPass,
+        sitePassword: cleanSitePass,
+        config: updatedDraftConfig
+      };
+
+      TenantStore.updateTenant(activeSlug, tenantToSave);
+      if (tenantCtx?.setCurrentTenantDirectly) {
+        tenantCtx.setCurrentTenantDirectly(tenantToSave);
+      }
 
       const res = await fetch('/api/tenants', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant: { ...currentTenantData, config: draftConfig } }),
+        body: JSON.stringify({ tenant: tenantToSave }),
         cache: 'no-store'
       });
 
@@ -521,7 +569,7 @@ function AdminPageContent() {
                 <input
                   type={showSitePassword ? 'text' : 'password'}
                   placeholder="اكتب كلمة سر الموقع هنا..."
-                  value={config.sitePassword ?? ''}
+                  value={draftConfig.sitePassword ?? ''}
                   onChange={(e) => {
                     const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
                     updateConfig({ sitePassword: val });
@@ -542,7 +590,7 @@ function AdminPageContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleCopyText(config.sitePassword || 'love', 'كلمة سر الموقع')}
+                    onClick={() => handleCopyText(draftConfig.sitePassword || tenantCtx?.currentTenant?.sitePassword || 'love', 'كلمة سر الموقع')}
                     className="p-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/40 border border-amber-400/40 text-amber-300 transition cursor-pointer"
                     title="نسخ كلمة السر"
                   >
@@ -560,7 +608,7 @@ function AdminPageContent() {
                 <input
                   type={showAdminPassword ? 'text' : 'password'}
                   placeholder="اكتب كلمة سر لوحة التحكم..."
-                  value={config.adminPassword ?? tenantCtx?.currentTenant?.adminPassword ?? ''}
+                  value={draftConfig.adminPassword ?? ''}
                   onChange={(e) => {
                     const val = e.target.value.replace(/[\u0600-\u06FF\s]/g, '');
                     updateConfig({ adminPassword: val });
@@ -581,7 +629,7 @@ function AdminPageContent() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleCopyText(tenantCtx?.currentTenant?.adminPassword || config.adminPassword || 'love', 'كلمة سر لوحة التحكم')}
+                    onClick={() => handleCopyText(draftConfig.adminPassword || tenantCtx?.currentTenant?.adminPassword || 'love', 'كلمة سر لوحة التحكم')}
                     className="p-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/40 border border-rose-400/40 text-rose-300 transition cursor-pointer"
                     title="نسخ كلمة السر"
                   >
