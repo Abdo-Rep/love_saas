@@ -89,7 +89,11 @@ export async function GET(req: Request) {
     // 1. Check Server Memory Cache for Instant Response (1ms latency)
     const cached = apiCache.get(cacheKey);
     if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-      return NextResponse.json(cached.data);
+      return NextResponse.json(cached.data, {
+        headers: {
+          'Cache-Control': 'public, max-age=10, s-maxage=30, stale-while-revalidate=60',
+        },
+      });
     }
 
     let endpoint = `${SUPABASE_URL}/rest/v1/tenants?select=*&order=created_at.desc`;
@@ -107,14 +111,22 @@ export async function GET(req: Request) {
       if (Array.isArray(data)) {
         const responseData = { success: true, tenants: data.map(toApp) };
         apiCache.set(cacheKey, { timestamp: Date.now(), data: responseData });
-        return NextResponse.json(responseData);
+        return NextResponse.json(responseData, {
+          headers: {
+            'Cache-Control': 'public, max-age=10, s-maxage=30, stale-while-revalidate=60',
+          },
+        });
       }
     }
   } catch (e: any) {
     console.error('[GET /api/tenants] error:', e?.message);
   }
 
-  return NextResponse.json({ success: true, tenants: [] });
+  return NextResponse.json({ success: true, tenants: [] }, {
+    headers: {
+      'Cache-Control': 'public, max-age=5, s-maxage=10',
+    },
+  });
 }
 
 // POST: upsert tenant(s) to Supabase Cloud DB & invalidate cache

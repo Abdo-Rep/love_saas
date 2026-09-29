@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const SUPABASE_REST_URL = process.env.DATABASE_URL || '';
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const SUPABASE_STORAGE_URL = SUPABASE_REST_URL;
+const SUPABASE_REST_URL = (process.env.DATABASE_URL || '').replace(/\/$/, '');
 
 export async function GET(req: Request) {
   try {
@@ -14,36 +12,21 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Missing path' }, { status: 400 });
     }
 
-    if (SUPABASE_STORAGE_URL || SUPABASE_REST_URL) {
-      const candidateUrls = [
-        `${SUPABASE_STORAGE_URL}/storage/v1/object/public/site-media/${path}`,
-        `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/${path}`,
-        `${SUPABASE_STORAGE_URL}/storage/v1/object/public/audio/${path}`,
-      ];
+    const cleanPath = path.replace(/^\/+/, '');
 
-      for (const fileUrl of candidateUrls) {
-        if (!fileUrl.startsWith('http')) continue;
-        try {
-          const res = await fetch(fileUrl, {
-            cache: 'no-store',
-            headers: SERVICE_ROLE_KEY ? { 'Authorization': `Bearer ${SERVICE_ROLE_KEY}` } : {},
-          });
-
-          if (res.ok) {
-            const contentType = res.headers.get('content-type') || 'audio/mpeg';
-            const arrayBuffer = await res.arrayBuffer();
-            return new NextResponse(arrayBuffer, {
-              headers: {
-                'Content-Type': contentType,
-                'Cache-Control': 'public, max-age=31536000, immutable',
-              },
-            });
-          }
-        } catch (_) {}
-      }
+    if (SUPABASE_REST_URL) {
+      // Direct redirect to public Supabase Storage CDN to prevent Vercel Fast Origin Transfer
+      const directUrl = `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/${encodeURIComponent(cleanPath).replace(/%2F/g, '/')}`;
+      return NextResponse.redirect(directUrl, {
+        status: 307,
+        headers: {
+          'Cache-Control': 'public, max-age=31536000, s-maxage=31536000, immutable',
+          'CDN-Cache-Control': 'public, s-maxage=31536000, immutable',
+        },
+      });
     }
 
-    return NextResponse.json({ error: 'Audio file not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Audio storage not configured' }, { status: 404 });
   } catch (err: any) {
     return NextResponse.json({ error: err?.message || 'Proxy Error' }, { status: 500 });
   }

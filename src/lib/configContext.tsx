@@ -1,16 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AppConfig, CharacterModelOption } from '@/types/config';
+import { AppConfig } from '@/types/config';
 import { useTenant } from './tenantContext';
-
-// ONLY 4 EXACT HIGH-PERFORMANCE MODELS: 2 BOYS + 2 GIRLS
-export const availableCharacterModels: CharacterModelOption[] = [
-  { id: 'm1', name: 'الشاب الأنيق ببدلة المشي', file: '/models/passive_marker_man.fbx', icon: '🕺', description: 'الشاب الأنيق في المشية الملوكية' },
-  { id: 'm2', name: 'ذا بوس - قائد المسرح', file: '/models/The Boss.fbx', icon: '👔', description: 'شخصية ذا بوس المشهورة' },
-  { id: 'm3', name: 'الفتاة العصرية (Ch02)', file: '/models/Ch02_nonPBR.fbx', icon: '👸', description: 'الفتاة الأنيقة بسويت شيرت أصفر' },
-  { id: 'm4', name: 'الفتاة اللطيفة (Ch46)', file: '/models/Ch46_nonPBR.fbx', icon: '🌸', description: 'الفتاة اللطيفة بشعر ملون' },
-];
 
 const defaultConfig: AppConfig = {
   // Step 1: Password Gate Landing Page
