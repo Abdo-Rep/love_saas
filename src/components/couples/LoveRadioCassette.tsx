@@ -95,8 +95,10 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
     <div className="min-h-screen w-full flex flex-col items-center justify-between py-10 px-4 relative z-10 text-white dir-rtl">
       {/* Hidden Audio Player */}
       <audio
+        key={playableVoiceUrl}
         ref={audioRef}
         src={playableVoiceUrl}
+        preload="metadata"
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleTimeUpdate}
         onPlay={() => {

@@ -274,19 +274,28 @@ function AdminPageContent() {
   const startVoiceRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const supportedMimeType = typeof MediaRecorder !== 'undefined'
+        ? ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'].find((type) => MediaRecorder.isTypeSupported(type)) || ''
+        : '';
+
+      const mediaRecorder = supportedMimeType
+        ? new MediaRecorder(stream, { mimeType: supportedMimeType })
+        : new MediaRecorder(stream);
+
       voiceMediaRecorderRef.current = mediaRecorder;
       voiceAudioChunksRef.current = [];
 
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
+        if (event.data && event.data.size > 0) {
           voiceAudioChunksRef.current.push(event.data);
         }
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(voiceAudioChunksRef.current, { type: 'audio/webm' });
-        const voiceFile = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+        const mimeType = mediaRecorder.mimeType || supportedMimeType || 'audio/webm';
+        const ext = mimeType.includes('mp4') ? 'mp4' : mimeType.includes('ogg') ? 'ogg' : 'webm';
+        const audioBlob = new Blob(voiceAudioChunksRef.current, { type: mimeType });
+        const voiceFile = new File([audioBlob], `voice_${Date.now()}.${ext}`, { type: mimeType });
         try {
           setIsUploadingVoice(true);
           const uploadedUrl = await uploadAudioToCloud(voiceFile);
@@ -299,7 +308,7 @@ function AdminPageContent() {
         stream.getTracks().forEach((track) => track.stop());
       };
 
-      mediaRecorder.start();
+      mediaRecorder.start(250);
       setIsRecordingVoice(true);
       setVoiceRecordingTime(0);
 
@@ -323,7 +332,12 @@ function AdminPageContent() {
 
   const stopVoiceRecording = () => {
     if (voiceMediaRecorderRef.current && isRecordingVoice) {
-      voiceMediaRecorderRef.current.stop();
+      if (voiceMediaRecorderRef.current.state !== 'inactive') {
+        try {
+          voiceMediaRecorderRef.current.requestData?.();
+        } catch (_) {}
+        voiceMediaRecorderRef.current.stop();
+      }
       setIsRecordingVoice(false);
       if (voiceTimerRef.current) clearInterval(voiceTimerRef.current);
     }
@@ -1207,7 +1221,7 @@ function AdminPageContent() {
                 </div>
 
                 <div className="flex items-center justify-between gap-3 w-full pt-2 border-t border-white/10">
-                  <audio controls src={getPlayableAudioUrl(config.storySongUrl)} className="w-full h-11 rounded-xl" />
+                  <audio key={config.storySongUrl} controls src={getPlayableAudioUrl(config.storySongUrl)} className="w-full h-11 rounded-xl" />
                   <button
                     type="button"
                     onClick={() => updateConfig({ storySongUrl: '' })}
@@ -1329,7 +1343,7 @@ function AdminPageContent() {
                     </div>
 
                     <div className="flex items-center justify-between gap-3 w-full pt-2 border-t border-white/10">
-                      <audio controls src={getPlayableAudioUrl(config.voiceAudioUrl)} className="w-full h-11 rounded-xl" />
+                      <audio key={config.voiceAudioUrl} controls src={getPlayableAudioUrl(config.voiceAudioUrl)} className="w-full h-11 rounded-xl" />
                       <button
                         type="button"
                         onClick={() => updateConfig({ voiceAudioUrl: '' })}

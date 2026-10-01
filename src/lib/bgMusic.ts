@@ -1,3 +1,5 @@
+import { getPlayableAudioUrl } from './getPlayableAudioUrl';
+
 type TimeListener = (currentTime: number, duration: number) => void;
 type PlayStateListener = (playing: boolean) => void;
 
@@ -13,7 +15,9 @@ class BgMusicManager {
   private timeListeners: Set<TimeListener> = new Set();
   private interactionListenerAttached: boolean = false;
 
-  public setTrack(url: string) {
+  public setTrack(rawUrl: string) {
+    if (!rawUrl) return;
+    const url = getPlayableAudioUrl(rawUrl);
     if (!url) return;
     if (this.currentUrl === url && this.audio) return;
     
