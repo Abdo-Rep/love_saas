@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ConfigProvider } from '@/lib/configContext';
+import { DynamicManifest } from '@/components/common/DynamicManifest';
 
 export const viewport: Viewport = {
   themeColor: '#090108',
@@ -16,7 +17,6 @@ const heartSvgIcon = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/sv
 export const metadata: Metadata = {
   title: 'سولاف',
   description: 'منصة الحب والذكريات الرومانسية',
-  manifest: '/manifest.json',
   icons: {
     icon: heartSvgIcon,
     shortcut: heartSvgIcon,
@@ -49,6 +49,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
       </head>
       <body className="bg-[#090108] text-white antialiased selection:bg-[#f472b6] selection:text-white min-h-[100dvh] max-w-full overflow-x-hidden">
+        <DynamicManifest />
         <ConfigProvider>
           {children}
         </ConfigProvider>

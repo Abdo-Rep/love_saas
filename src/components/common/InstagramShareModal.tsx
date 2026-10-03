@@ -41,8 +41,14 @@ export const InstagramShareModal: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="relative w-full max-w-sm bg-cosmic-deep border border-cosmic-rosegold/50 rounded-2xl p-6 shadow-2xl">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm bg-cosmic-deep border border-cosmic-rosegold/50 rounded-2xl p-6 shadow-2xl cursor-default"
+      >
         <button
           onClick={onClose}
           className="absolute top-4 left-4 text-gray-400 hover:text-white p-1 rounded-full bg-white/5"

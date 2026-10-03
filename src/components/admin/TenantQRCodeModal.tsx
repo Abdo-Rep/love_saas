@@ -43,8 +43,14 @@ export const TenantQRCodeModal: React.FC<Props> = ({ slug, tenantName: _tenantNa
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 dir-rtl">
-      <div className="max-w-sm w-full p-6 rounded-2xl bg-[#161b22] border border-slate-800 shadow-2xl flex flex-col items-center gap-4 text-center">
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 dir-rtl cursor-pointer"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="max-w-sm w-full p-6 rounded-2xl bg-[#161b22] border border-slate-800 shadow-2xl flex flex-col items-center gap-4 text-center cursor-default"
+      >
         
         {/* HEADER */}
         <div className="w-full flex items-center justify-between border-b border-slate-800 pb-3">

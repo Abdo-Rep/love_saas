@@ -94,8 +94,14 @@ export const OpenWhenLetters: React.FC<Props> = ({ onNext }) => {
 
       {/* LETTER FULL MODAL */}
       {isOpenModal && letters[activeCategory] && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in">
-          <div className="max-w-lg w-full rounded-3xl bg-gradient-to-b from-[#2a041c] via-[#1a0212] to-black border-2 border-pink-400/40 p-6 sm:p-8 shadow-[0_0_50px_rgba(244,114,182,0.5)] relative overflow-hidden flex flex-col gap-5 text-right">
+        <div
+          onClick={() => setIsOpenModal(false)}
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xl flex items-center justify-center p-4 animate-fade-in cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-lg w-full rounded-3xl bg-gradient-to-b from-[#2a041c] via-[#1a0212] to-black border-2 border-pink-400/40 p-6 sm:p-8 shadow-[0_0_50px_rgba(244,114,182,0.5)] relative overflow-hidden flex flex-col gap-5 text-right cursor-default"
+          >
             
             <button
               onClick={() => setIsOpenModal(false)}

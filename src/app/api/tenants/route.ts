@@ -12,6 +12,8 @@ function getHeaders(extra?: Record<string, string>) {
     'apikey': SUPABASE_KEY,
     'Authorization': `Bearer ${SUPABASE_KEY}`,
     'Content-Type': 'application/json',
+    'Accept-Profile': 'romantic-new-version',
+    'Content-Profile': 'romantic-new-version',
     'Prefer': 'resolution=merge-duplicates,return=representation',
     ...extra,
   };
@@ -91,12 +93,13 @@ export async function GET(req: Request) {
     if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
       return NextResponse.json(cached.data, {
         headers: {
-          'Cache-Control': 'public, max-age=10, s-maxage=30, stale-while-revalidate=60',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+          'Pragma': 'no-cache',
         },
       });
     }
 
-    let endpoint = `${SUPABASE_URL}/rest/v1/tenants?select=*&order=created_at.desc`;
+    let endpoint = `${SUPABASE_URL}/rest/v1/tenants?select=id,slug,name,admin_password,site_password,status,created_at&order=created_at.desc`;
     if (cleanSlug) {
       endpoint = `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}&select=*`;
     }
@@ -113,7 +116,8 @@ export async function GET(req: Request) {
         apiCache.set(cacheKey, { timestamp: Date.now(), data: responseData });
         return NextResponse.json(responseData, {
           headers: {
-            'Cache-Control': 'public, max-age=10, s-maxage=30, stale-while-revalidate=60',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma': 'no-cache',
           },
         });
       }
@@ -124,7 +128,7 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ success: true, tenants: [] }, {
     headers: {
-      'Cache-Control': 'public, max-age=5, s-maxage=10',
+      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
     },
   });
 }

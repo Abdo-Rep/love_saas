@@ -15,6 +15,18 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
 
   useEffect(() => {
     let isMounted = true;
+
+    // Instant 0ms load if tenant exists in local memory / store
+    try {
+      const { TenantStore } = require('@/lib/tenantStore');
+      const local = TenantStore.getTenantBySlug(slug);
+      if (local && isMounted) {
+        setFoundTenant(local);
+        setCurrentTenantDirectly(local);
+        setLoading(false);
+      }
+    } catch {}
+
     const fetchTenant = async () => {
       try {
         const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, { cache: 'no-store' });

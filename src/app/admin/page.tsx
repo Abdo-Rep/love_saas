@@ -529,29 +529,24 @@ function AdminPageContent() {
         <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap justify-end">
           <button
             onClick={handleSave}
-            disabled={!hasUnsavedChanges || isSaving}
+            disabled={isSaving}
             className={`px-5 py-2.5 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 shrink-0 transition-all ${
-              hasUnsavedChanges && !isSaving
-                ? 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white border border-white/40 hover:scale-105 active:scale-95 shadow-[0_0_20px_#f472b6] cursor-pointer'
-                : 'bg-white/10 text-pink-200/40 border border-white/10 cursor-not-allowed opacity-60 shadow-none'
+              isSaving
+                ? 'bg-rose-700/80 text-white cursor-wait'
+                : 'bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white border border-white/40 hover:scale-105 active:scale-95 shadow-[0_0_20px_#f472b6] cursor-pointer'
             }`}
             style={{ fontFamily: "'Cairo', sans-serif" }}
-            title={hasUnsavedChanges ? 'حفظ التغييرات' : 'تم حفظ كافة التغييرات'}
+            title="حفظ كافة التغييرات على الموقع والسيرفر"
           >
             {isSaving ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 <span>جاري الحفظ...</span>
               </>
-            ) : hasUnsavedChanges ? (
-              <>
-                <Save className="w-4 h-4 text-white" />
-                <span>حفظ التغييرات</span>
-              </>
             ) : (
               <>
-                <Check className="w-4 h-4 text-emerald-400" />
-                <span className="text-pink-200/70">تم الحفظ</span>
+                <Save className="w-4 h-4 text-white" />
+                <span>حفظ التغييرات ✨</span>
               </>
             )}
           </button>
@@ -1539,8 +1534,14 @@ function AdminPageContent() {
 
       {/* LOGOUT CONFIRMATION MODAL */}
       {showLogoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
-          <div className="max-w-sm w-full p-6 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 shadow-[0_0_50px_rgba(244,63,94,0.4)] text-center space-y-5 relative">
+        <div 
+          onClick={() => setShowLogoutModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-sm w-full p-6 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 shadow-[0_0_50px_rgba(244,63,94,0.4)] text-center space-y-5 relative cursor-default"
+          >
             <div className="w-14 h-14 rounded-full bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mx-auto text-rose-400 animate-pulse">
               <KeyRound className="w-7 h-7" />
             </div>
@@ -1581,8 +1582,14 @@ function AdminPageContent() {
 
       {/* CONFIRM VOICE CHANGE MODAL */}
       {showVoiceChangeConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn dir-rtl">
-          <div className="max-w-sm w-full p-6 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 shadow-[0_0_50px_rgba(244,63,94,0.4)] text-center space-y-5 relative">
+        <div 
+          onClick={() => setShowVoiceChangeConfirmModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn dir-rtl cursor-pointer"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-sm w-full p-6 rounded-3xl bg-gradient-to-b from-[#1a0824] to-[#0c0314] border-2 border-pink-400/40 shadow-[0_0_50px_rgba(244,63,94,0.4)] text-center space-y-5 relative cursor-default"
+          >
             <div className="w-14 h-14 rounded-full bg-rose-500/20 border border-rose-400/40 flex items-center justify-center mx-auto text-rose-400 animate-pulse">
               <Mic className="w-7 h-7" />
             </div>

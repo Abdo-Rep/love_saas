@@ -41,6 +41,17 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     }
 
     let isMounted = true;
+
+    // Instant 0ms load if tenant exists in memory / cache
+    try {
+      const { TenantStore } = require('@/lib/tenantStore');
+      const local = TenantStore.getTenantBySlug(slug);
+      if (local && isMounted) {
+        setCloudTenant(local);
+        setIsLoading(false);
+      }
+    } catch {}
+
     const fetchFromCloud = async () => {
       try {
         const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, { cache: 'no-store' });

@@ -333,8 +333,14 @@ export default function SuperAdminPage() {
       
       {/* API ERROR MODAL DIALOG */}
       {apiError && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#161b22] border border-red-500/40 rounded-2xl p-6 max-w-md w-full text-center space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200">
+        <div
+          onClick={() => setApiError(null)}
+          className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-[#161b22] border border-red-500/40 rounded-2xl p-6 max-w-md w-full text-center space-y-4 shadow-2xl animate-in fade-in zoom-in duration-200 cursor-default"
+          >
             <div className="w-14 h-14 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center mx-auto border border-red-500/30">
               <AlertTriangle className="w-7 h-7 animate-pulse" />
             </div>
@@ -593,8 +599,14 @@ export default function SuperAdminPage() {
 
       {/* CALM MODAL: CREATE NEW CLIENT */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="max-w-md w-full p-6 rounded-2xl bg-[#161b22] border border-slate-800 shadow-2xl flex flex-col gap-4 text-right">
+        <div
+          onClick={() => setShowCreateModal(false)}
+          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-md w-full p-6 rounded-2xl bg-[#161b22] border border-slate-800 shadow-2xl flex flex-col gap-4 text-right cursor-default"
+          >
             
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <h2 className="text-base font-bold text-slate-100" style={{ fontFamily: "'Cairo', sans-serif" }}>
@@ -691,8 +703,14 @@ export default function SuperAdminPage() {
 
       {/* DELETE CONFIRMATION MODAL */}
       {tenantToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm dir-rtl">
-          <div className="max-w-sm w-full p-6 rounded-2xl bg-[#161b22] border border-slate-800 text-center space-y-4 relative">
+        <div
+          onClick={() => setTenantToDelete(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm dir-rtl cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-sm w-full p-6 rounded-2xl bg-[#161b22] border border-slate-800 text-center space-y-4 relative cursor-default"
+          >
             <div>
               <h3 className="text-base font-bold text-slate-100" style={{ fontFamily: "'Cairo', sans-serif" }}>
                 تأكيد حذف النسخة
@@ -729,8 +747,14 @@ export default function SuperAdminPage() {
 
       {/* CALM LOGOUT CONFIRMATION MODAL */}
       {showLogoutModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm dir-rtl">
-          <div className="max-w-sm w-full p-6 rounded-2xl bg-[#161b22] border border-slate-800 text-center space-y-4 relative">
+        <div
+          onClick={() => setShowLogoutModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm dir-rtl cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-sm w-full p-6 rounded-2xl bg-[#161b22] border border-slate-800 text-center space-y-4 relative cursor-default"
+          >
             <div>
               <h3 className="text-base font-bold text-slate-100" style={{ fontFamily: "'Cairo', sans-serif" }}>
                 تأكيد تسجيل الخروج
@@ -767,8 +791,14 @@ export default function SuperAdminPage() {
 
       {/* MAIN SITE SOULOVE MODAL POPUP */}
       {showMainSiteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md dir-rtl animate-in fade-in duration-200">
-          <div className="max-w-md w-full p-6 rounded-2xl bg-[#161b22] border border-amber-500/40 text-right space-y-5 relative shadow-[0_0_40px_rgba(245,158,11,0.15)]">
+        <div
+          onClick={() => setShowMainSiteModal(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md dir-rtl animate-in fade-in duration-200 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="max-w-md w-full p-6 rounded-2xl bg-[#161b22] border border-amber-500/40 text-right space-y-5 relative shadow-[0_0_40px_rgba(245,158,11,0.15)] cursor-default"
+          >
             
             {/* Header */}
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
