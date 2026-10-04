@@ -142,7 +142,7 @@ export async function GET(req: Request) {
       } catch (_) {}
     }
 
-    // Fallback: search subfolders dynamically in site-media
+    // Fallback 1: search subfolders dynamically in site-media
     try {
       const listRes = await fetch(`${SUPABASE_REST_URL}/storage/v1/object/list/site-media`, {
         method: 'POST',
@@ -176,6 +176,32 @@ export async function GET(req: Request) {
         }
       }
     } catch (_) {}
+
+    // Fallback 2: If a legacy/migrated audio file is missing, serve the default romantic song from storage
+    const defaultFallbackUrls = [
+      `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/music-up_1791135914106_ci7do.mp3`,
+      `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/music-up_1791099296337_p4wx7.mp3`,
+      `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/music-1791142908035.m4a`,
+    ];
+
+    for (const fallbackUrl of defaultFallbackUrls) {
+      try {
+        const fbRes = await fetch(fallbackUrl, { cache: 'no-store', headers: fetchHeaders });
+        if (fbRes.ok) {
+          const contentType = resolveContentType(fallbackUrl, fbRes.headers.get('content-type'));
+          const arrayBuffer = await fbRes.arrayBuffer();
+          const buffer = Buffer.from(arrayBuffer);
+
+          audioCache.set(cleanPath, {
+            buffer,
+            contentType,
+            timestamp: Date.now(),
+          });
+
+          return serveAudioBuffer(req, buffer, contentType);
+        }
+      } catch (_) {}
+    }
 
     return NextResponse.json({ error: 'Audio file not found' }, { status: 404 });
   } catch (err: any) {
