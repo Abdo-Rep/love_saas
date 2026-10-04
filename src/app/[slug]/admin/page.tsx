@@ -10,22 +10,27 @@ interface TenantAdminWrapperProps {
 
 function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
   const { currentTenant, setCurrentTenantDirectly } = useTenant();
-  const [loading, setLoading] = useState(true);
-  const [foundTenant, setFoundTenant] = useState<any>(null);
+  const [foundTenant, setFoundTenant] = useState<any>(() => {
+    try {
+      const { TenantStore, createDefaultConfigForTenant } = require('@/lib/tenantStore');
+      const local = TenantStore.getTenantBySlug(slug);
+      if (local) return local;
+      return {
+        id: `tenant-${slug}`,
+        slug: slug.toLowerCase().trim(),
+        name: slug,
+        adminPassword: 'love',
+        sitePassword: 'love',
+        status: 'active',
+        config: createDefaultConfigForTenant(slug, 'love', 'love')
+      };
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     let isMounted = true;
-
-    // Instant 0ms load if tenant exists in local memory / store
-    try {
-      const { TenantStore } = require('@/lib/tenantStore');
-      const local = TenantStore.getTenantBySlug(slug);
-      if (local && isMounted) {
-        setFoundTenant(local);
-        setCurrentTenantDirectly(local);
-        setLoading(false);
-      }
-    } catch {}
 
     const fetchTenant = async () => {
       try {
@@ -37,16 +42,12 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
             if (match && isMounted) {
               setFoundTenant(match);
               setCurrentTenantDirectly(match);
-              setLoading(false);
               return;
             }
           }
         }
       } catch (e) {
         console.error('Error fetching admin tenant:', e);
-      }
-      if (isMounted) {
-        setLoading(false);
       }
     };
 
@@ -56,15 +57,6 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
       isMounted = false;
     };
   }, [slug, setCurrentTenantDirectly]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen w-full bg-[#090108] text-white flex flex-col items-center justify-center p-4 gap-3">
-        <div className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-pink-300 font-medium">جاري التحقق من لوحة التحكم... ✨</p>
-      </div>
-    );
-  }
 
   const activeTenant = (currentTenant && currentTenant.slug.toLowerCase() === slug.toLowerCase()) ? currentTenant : foundTenant;
 

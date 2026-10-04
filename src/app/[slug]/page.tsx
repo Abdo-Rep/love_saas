@@ -24,8 +24,24 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
   const { currentTenant, setCurrentTenantDirectly } = useTenant();
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [cloudTenant, setCloudTenant] = useState<any>(null);
+  const [cloudTenant, setCloudTenant] = useState<any>(() => {
+    try {
+      const { TenantStore, createDefaultConfigForTenant } = require('@/lib/tenantStore');
+      const local = TenantStore.getTenantBySlug(slug);
+      if (local) return local;
+      return {
+        id: `tenant-${slug}`,
+        slug: slug.toLowerCase().trim(),
+        name: slug,
+        adminPassword: 'love',
+        sitePassword: 'love',
+        status: 'active',
+        config: createDefaultConfigForTenant(slug, 'love', 'love')
+      };
+    } catch {
+      return null;
+    }
+  });
 
   useEffect(() => {
     setMounted(true);
@@ -41,16 +57,6 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     }
 
     let isMounted = true;
-
-    // Instant 0ms load if tenant exists in memory / cache
-    try {
-      const { TenantStore } = require('@/lib/tenantStore');
-      const local = TenantStore.getTenantBySlug(slug);
-      if (local && isMounted) {
-        setCloudTenant(local);
-        setIsLoading(false);
-      }
-    } catch {}
 
     const fetchFromCloud = async () => {
       try {
@@ -77,17 +83,12 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
               };
               setCloudTenant(withConfig);
               setCurrentTenantDirectly(withConfig);
-              setIsLoading(false);
               return;
             }
           }
         }
       } catch (err) {
         console.error('Error fetching cloud tenant:', err);
-      }
-
-      if (isMounted) {
-        setIsLoading(false);
       }
     };
 
@@ -107,13 +108,8 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     }
   }, [currentStep]);
 
-  if (!mounted || isLoading) {
-    return (
-      <div className="min-h-screen w-full bg-[#090108] text-white flex flex-col items-center justify-center p-4 gap-3">
-        <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-pink-300 font-medium">جاري تحميل رحلة العشق... ✨</p>
-      </div>
-    );
+  if (!mounted) {
+    return <div className="min-h-screen w-full bg-[#090108]" />;
   }
 
   const activeTenant = (currentTenant && currentTenant.slug.toLowerCase() === slug.toLowerCase()) ? currentTenant : cloudTenant;

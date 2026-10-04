@@ -99,7 +99,7 @@ export async function GET(req: Request) {
       });
     }
 
-    let endpoint = `${SUPABASE_URL}/rest/v1/tenants?select=id,slug,name,admin_password,site_password,status,created_at&order=created_at.desc`;
+    let endpoint = `${SUPABASE_URL}/rest/v1/tenants?select=id,slug,name,admin_password,site_password,status,created_at&order=created_at.asc`;
     if (cleanSlug) {
       endpoint = `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}&select=*`;
     }
@@ -185,6 +185,46 @@ export async function POST(req: Request) {
   }
 }
 
+// PATCH: partial update (e.g. status toggle or password) without modifying full config
+export async function PATCH(req: Request) {
+  try {
+    const body = await req.json();
+    const slug = (body?.slug || '').toLowerCase().trim();
+
+    if (!slug) {
+      return NextResponse.json({ success: false, error: 'Slug required' }, { status: 400 });
+    }
+
+    const updates: Record<string, any> = {};
+    if (body.status !== undefined) updates.status = body.status;
+    if (body.name !== undefined) updates.name = body.name;
+    if (body.adminPassword !== undefined) updates.admin_password = body.adminPassword;
+    if (body.sitePassword !== undefined) updates.site_password = body.sitePassword;
+
+    if (SUPABASE_URL && SUPABASE_KEY && Object.keys(updates).length > 0) {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}`,
+        {
+          method: 'PATCH',
+          headers: getHeaders({ 'Prefer': 'return=representation' }),
+          body: JSON.stringify(updates),
+        }
+      );
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('[PATCH /api/tenants] Supabase error:', res.status, errText);
+        return NextResponse.json({ success: false, error: errText }, { status: res.status });
+      }
+    }
+
+    // Invalidate Server Memory Cache
+    apiCache.clear();
+    return NextResponse.json({ success: true });
+  } catch (e: any) {
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
+  }
+}
+
 // DELETE: remove tenant by slug & invalidate cache
 export async function DELETE(req: Request) {
   try {
@@ -197,11 +237,22 @@ export async function DELETE(req: Request) {
 
     if (SUPABASE_URL && SUPABASE_KEY) {
       try {
-        await fetch(
+        const res = await fetch(
           `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}`,
-          { method: 'DELETE', headers: getHeaders() }
+          {
+            method: 'DELETE',
+            headers: getHeaders({ 'Prefer': 'return=representation' }),
+          }
         );
-      } catch (_) { }
+        if (!res.ok) {
+          const errText = await res.text();
+          console.error('[DELETE /api/tenants] Supabase error:', res.status, errText);
+          return NextResponse.json({ success: false, error: errText }, { status: res.status });
+        }
+      } catch (err: any) {
+        console.error('[DELETE /api/tenants] fetch error:', err?.message);
+        return NextResponse.json({ success: false, error: err?.message }, { status: 500 });
+      }
     }
 
     // Invalidate Server Memory Cache on Delete

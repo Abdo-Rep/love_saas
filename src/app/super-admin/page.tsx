@@ -202,7 +202,7 @@ export default function SuperAdminPage() {
     }
   };
 
-  const handleToggleStatus = (slug: string, currentStatus: string) => {
+  const handleToggleStatus = async (slug: string, currentStatus: string) => {
     const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
     const cleanSlug = slug.toLowerCase().trim();
 
@@ -211,30 +211,44 @@ export default function SuperAdminPage() {
       prev.map((t) => (t.slug.toLowerCase().trim() === cleanSlug ? { ...t, status: nextStatus } : t))
     );
 
-    const updated = TenantStore.updateTenant(slug, { status: nextStatus });
-    if (updated) {
-      fetch('/api/tenants', {
-        method: 'POST',
+    try {
+      const res = await fetch('/api/tenants', {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant: updated }),
+        body: JSON.stringify({ slug: cleanSlug, status: nextStatus }),
         cache: 'no-store'
-      }).catch(() => {});
+      });
+      if (!res.ok) {
+        console.error('Failed to toggle status on server');
+        refreshData();
+      }
+    } catch (err) {
+      console.error('Error toggling status:', err);
+      refreshData();
     }
   };
 
-  const handleDeleteClient = (slug: string, _name?: string) => {
+  const handleDeleteClient = async (slug: string, _name?: string) => {
     const cleanSlug = slug.toLowerCase().trim();
 
     // Instant optimistic UI update (0ms latency)
     setTenants((prev) => prev.filter((t) => t.slug.toLowerCase().trim() !== cleanSlug));
 
-    TenantStore.deleteTenant(slug);
-    fetch('/api/tenants', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: cleanSlug }),
-      cache: 'no-store'
-    }).catch(() => {});
+    try {
+      const res = await fetch('/api/tenants', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: cleanSlug }),
+        cache: 'no-store'
+      });
+      if (!res.ok) {
+        console.error('Failed to delete on server');
+        refreshData();
+      }
+    } catch (err) {
+      console.error('Error deleting tenant:', err);
+      refreshData();
+    }
   };
 
   const mainSiteTenant = tenants.find((t) => (t.slug || '').toLowerCase().trim() === 'soulove') ||
@@ -253,14 +267,21 @@ export default function SuperAdminPage() {
     setTimeout(() => setCopiedPassText(null), 2500);
   };
 
-  const filteredTenants = tenants.filter((t) => {
-    const matchesSearch =
-      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.slug.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus =
-      statusFilter === 'all' || t.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Sort from Oldest to Newest (الأقدم للأحدث)
+  const filteredTenants = tenants
+    .filter((t) => {
+      const matchesSearch =
+        (t.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (t.slug || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus =
+        statusFilter === 'all' || t.status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
+    .sort((a, b) => {
+      const timeA = new Date(a.createdAt || 0).getTime();
+      const timeB = new Date(b.createdAt || 0).getTime();
+      return timeA - timeB; // Oldest to Newest
+    });
 
   // 0. PREVENT ANY LOGIN FLICKER / FLASH WHILE CHECKING SESSION
   if (isCheckingAuth) {
