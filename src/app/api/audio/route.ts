@@ -99,10 +99,15 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Audio storage not configured' }, { status: 404 });
     }
 
+    const fileName = cleanPath.split('/').pop() || cleanPath;
+
     const candidateUrls = [
       `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/${cleanPath}`,
       `${SUPABASE_REST_URL}/storage/v1/object/site-media/${cleanPath}`,
       `${SUPABASE_REST_URL}/storage/v1/object/authenticated/site-media/${cleanPath}`,
+      `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/soulove/music/${fileName}`,
+      `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/music/${fileName}`,
+      `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/voice/${fileName}`,
       `${SUPABASE_REST_URL}/storage/v1/object/public/audio/${cleanPath}`,
       `${SUPABASE_REST_URL}/storage/v1/object/audio/${cleanPath}`,
     ];
@@ -122,7 +127,7 @@ export async function GET(req: Request) {
         });
 
         if (res.ok) {
-          const contentType = resolveContentType(cleanPath, res.headers.get('content-type'));
+          const contentType = resolveContentType(fileName, res.headers.get('content-type'));
           const arrayBuffer = await res.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
 
@@ -136,6 +141,41 @@ export async function GET(req: Request) {
         }
       } catch (_) {}
     }
+
+    // Fallback: search subfolders dynamically in site-media
+    try {
+      const listRes = await fetch(`${SUPABASE_REST_URL}/storage/v1/object/list/site-media`, {
+        method: 'POST',
+        headers: { ...fetchHeaders, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prefix: '', limit: 100 }),
+        cache: 'no-store',
+      });
+      if (listRes.ok) {
+        const folders = (await listRes.json()).filter((i: any) => i.name && !i.name.includes('.'));
+        for (const f of folders) {
+          for (const sub of ['music', 'voice', 'memories', 'gallery', '']) {
+            const relPath = `${f.name}${sub ? '/' + sub : ''}/${fileName}`;
+            const subUrl = `${SUPABASE_REST_URL}/storage/v1/object/public/site-media/${relPath}`;
+            try {
+              const sRes = await fetch(subUrl, { cache: 'no-store', headers: fetchHeaders });
+              if (sRes.ok) {
+                const contentType = resolveContentType(fileName, sRes.headers.get('content-type'));
+                const arrayBuffer = await sRes.arrayBuffer();
+                const buffer = Buffer.from(arrayBuffer);
+
+                audioCache.set(cleanPath, {
+                  buffer,
+                  contentType,
+                  timestamp: Date.now(),
+                });
+
+                return serveAudioBuffer(req, buffer, contentType);
+              }
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_) {}
 
     return NextResponse.json({ error: 'Audio file not found' }, { status: 404 });
   } catch (err: any) {

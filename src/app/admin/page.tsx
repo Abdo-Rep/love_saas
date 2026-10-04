@@ -375,7 +375,7 @@ function AdminPageContent() {
     };
 
     try {
-      const slug = tenantCtx?.tenant?.slug || 'default';
+      const slug = currentSlug || tenantCtx?.currentTenant?.slug || 'default';
       const CHUNK_SIZE = 2.5 * 1024 * 1024;
       const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
       const uploadId = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;

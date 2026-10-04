@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const SUPABASE_REST_URL = process.env.DATABASE_URL || '';
+const SUPABASE_REST_URL = (process.env.DATABASE_URL || process.env.SUPABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const SUPABASE_STORAGE_URL = SUPABASE_REST_URL;
 const BUCKET = 'site-media';
