@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
 
-const SUPABASE_URL = process.env.DATABASE_URL || '';
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
-// High-Performance Server Cache
-const apiCache = new Map<string, { timestamp: number; data: any }>();
-const CACHE_TTL_MS = 15000; // 15 seconds cache TTL for ultra-fast queries
+const SUPABASE_URL = (process.env.DATABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 function getHeaders(extra?: Record<string, string>) {
   return {
@@ -18,6 +17,12 @@ function getHeaders(extra?: Record<string, string>) {
     ...extra,
   };
 }
+
+const noCacheHeaders = {
+  'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+  'Pragma': 'no-cache',
+  'Expires': '0',
+};
 
 function toApp(row: any) {
   const baseConfig = row.config && typeof row.config === 'object' ? row.config : {};
@@ -76,28 +81,16 @@ function toDb(t: any) {
   };
 }
 
-// GET all tenants or specific tenant by slug (Ultra-fast cached response)
+// GET all tenants or specific tenant by slug (100% Direct from DB - No Cache)
 export async function GET(req: Request) {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
-    return NextResponse.json({ success: true, tenants: [] });
+    return NextResponse.json({ success: true, tenants: [] }, { headers: noCacheHeaders });
   }
 
   try {
     const { searchParams } = new URL(req.url);
     const slug = searchParams.get('slug');
     const cleanSlug = slug ? slug.toLowerCase().trim() : null;
-    const cacheKey = cleanSlug ? `slug_${cleanSlug}` : 'all';
-
-    // 1. Check Server Memory Cache for Instant Response (1ms latency)
-    const cached = apiCache.get(cacheKey);
-    if (cached && (Date.now() - cached.timestamp < CACHE_TTL_MS)) {
-      return NextResponse.json(cached.data, {
-        headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-          'Pragma': 'no-cache',
-        },
-      });
-    }
 
     let endpoint = `${SUPABASE_URL}/rest/v1/tenants?select=id,slug,name,admin_password,site_password,status,created_at&order=created_at.desc`;
     if (cleanSlug) {
@@ -112,29 +105,29 @@ export async function GET(req: Request) {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
-        const responseData = { success: true, tenants: data.map(toApp) };
-        apiCache.set(cacheKey, { timestamp: Date.now(), data: responseData });
-        return NextResponse.json(responseData, {
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-            'Pragma': 'no-cache',
-          },
-        });
+        return NextResponse.json({ success: true, tenants: data.map(toApp) }, { headers: noCacheHeaders });
       }
+    } else {
+      const errText = await res.text();
+      console.error('[GET /api/tenants] DB error:', res.status, errText);
     }
   } catch (e: any) {
     console.error('[GET /api/tenants] error:', e?.message);
   }
 
-  return NextResponse.json({ success: true, tenants: [] }, {
-    headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
-    },
-  });
+  return NextResponse.json({ success: true, tenants: [] }, { headers: noCacheHeaders });
 }
 
-// POST: upsert tenant(s) to Supabase Cloud DB & invalidate cache
+// PUT / POST: Upsert tenant into Supabase DB directly
+export async function PUT(req: Request) {
+  return handleUpsert(req);
+}
+
 export async function POST(req: Request) {
+  return handleUpsert(req);
+}
+
+async function handleUpsert(req: Request) {
   try {
     const body = await req.json();
     const toUpsert: any[] = [];
@@ -146,53 +139,46 @@ export async function POST(req: Request) {
     }
 
     if (!toUpsert.length) {
-      return NextResponse.json({ success: false, error: 'No tenant provided' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'No tenant provided' }, { status: 400, headers: noCacheHeaders });
     }
 
     if (!SUPABASE_URL || !SUPABASE_KEY) {
-      return NextResponse.json({ success: true, tenants: toUpsert.map(toApp) });
+      return NextResponse.json({ success: true, tenants: toUpsert.map(toApp) }, { headers: noCacheHeaders });
     }
 
     const rows = toUpsert.map(toDb);
     const payload = rows.length === 1 ? rows[0] : rows;
 
-    try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/tenants?on_conflict=slug`, {
-        method: 'POST',
-        headers: getHeaders({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
-        body: JSON.stringify(payload),
-      });
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/tenants?on_conflict=slug`, {
+      method: 'POST',
+      headers: getHeaders({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      body: JSON.stringify(payload),
+      cache: 'no-store'
+    });
 
-      if (res.ok) {
-        const data = await res.json();
-        const list = Array.isArray(data) ? data : [data];
-        // Invalidate Server Memory Cache on Save
-        apiCache.clear();
-        return NextResponse.json({ success: true, tenants: list.map(toApp) });
-      } else {
-        const errText = await res.text();
-        console.error('[POST /api/tenants] Supabase error:', res.status, errText);
-      }
-    } catch (err: any) {
-      console.error('[POST /api/tenants] fetch error:', err?.message);
+    if (res.ok) {
+      const data = await res.json();
+      const list = Array.isArray(data) ? data : [data];
+      return NextResponse.json({ success: true, tenants: list.map(toApp) }, { headers: noCacheHeaders });
+    } else {
+      const errText = await res.text();
+      console.error('[UPSERT /api/tenants] Supabase error:', res.status, errText);
+      return NextResponse.json({ success: false, error: errText }, { status: res.status, headers: noCacheHeaders });
     }
-
-    // Invalidate Server Memory Cache
-    apiCache.clear();
-    return NextResponse.json({ success: true, tenants: toUpsert.map(toApp) });
   } catch (e: any) {
-    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
+    console.error('[UPSERT /api/tenants] exception:', e?.message);
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500, headers: noCacheHeaders });
   }
 }
 
-// PATCH: partial update (e.g. status toggle or password) without modifying full config
+// PATCH: Partial update for status toggle or credentials
 export async function PATCH(req: Request) {
   try {
     const body = await req.json();
     const slug = (body?.slug || '').toLowerCase().trim();
 
     if (!slug) {
-      return NextResponse.json({ success: false, error: 'Slug required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Slug required' }, { status: 400, headers: noCacheHeaders });
     }
 
     const updates: Record<string, any> = {};
@@ -208,57 +194,50 @@ export async function PATCH(req: Request) {
           method: 'PATCH',
           headers: getHeaders({ 'Prefer': 'return=representation' }),
           body: JSON.stringify(updates),
+          cache: 'no-store'
         }
       );
       if (!res.ok) {
         const errText = await res.text();
         console.error('[PATCH /api/tenants] Supabase error:', res.status, errText);
-        return NextResponse.json({ success: false, error: errText }, { status: res.status });
+        return NextResponse.json({ success: false, error: errText }, { status: res.status, headers: noCacheHeaders });
       }
     }
 
-    // Invalidate Server Memory Cache
-    apiCache.clear();
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true }, { headers: noCacheHeaders });
   } catch (e: any) {
-    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500, headers: noCacheHeaders });
   }
 }
 
-// DELETE: remove tenant by slug & invalidate cache
+// DELETE: Hard Destroy tenant record from DB directly
 export async function DELETE(req: Request) {
   try {
     const body = await req.json();
     const slug = (body?.slug || '').toLowerCase().trim();
 
     if (!slug) {
-      return NextResponse.json({ success: false, error: 'Slug required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Slug required' }, { status: 400, headers: noCacheHeaders });
     }
 
     if (SUPABASE_URL && SUPABASE_KEY) {
-      try {
-        const res = await fetch(
-          `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}`,
-          {
-            method: 'DELETE',
-            headers: getHeaders({ 'Prefer': 'return=representation' }),
-          }
-        );
-        if (!res.ok) {
-          const errText = await res.text();
-          console.error('[DELETE /api/tenants] Supabase error:', res.status, errText);
-          return NextResponse.json({ success: false, error: errText }, { status: res.status });
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(slug)}`,
+        {
+          method: 'DELETE',
+          headers: getHeaders({ 'Prefer': 'return=representation' }),
+          cache: 'no-store'
         }
-      } catch (err: any) {
-        console.error('[DELETE /api/tenants] fetch error:', err?.message);
-        return NextResponse.json({ success: false, error: err?.message }, { status: 500 });
+      );
+      if (!res.ok) {
+        const errText = await res.text();
+        console.error('[DELETE /api/tenants] Supabase error:', res.status, errText);
+        return NextResponse.json({ success: false, error: errText }, { status: res.status, headers: noCacheHeaders });
       }
     }
 
-    // Invalidate Server Memory Cache on Delete
-    apiCache.clear();
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: 'Deleted from database' }, { headers: noCacheHeaders });
   } catch (e: any) {
-    return NextResponse.json({ success: false, error: e?.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: e?.message }, { status: 500, headers: noCacheHeaders });
   }
 }

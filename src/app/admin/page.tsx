@@ -61,12 +61,14 @@ function AdminPageContent() {
   const urlSlug = searchParams?.get('slug');
   const currentSlug = (urlSlug || tenantCtx?.currentTenant?.slug || 'default').toLowerCase().trim();
 
-  // Synchronize draftConfig whenever the tenant config is loaded from the cloud database
+  // Synchronize draftConfig ONCE when the tenant is loaded to prevent overwriting user edits/added photos
   const activeTenantConfig = tenantCtx?.currentTenant?.config;
   const activeTenantSlug = tenantCtx?.currentTenant?.slug;
+  const lastLoadedSlugRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    if (activeTenantConfig) {
+    if (activeTenantSlug && activeTenantConfig && lastLoadedSlugRef.current !== activeTenantSlug) {
+      lastLoadedSlugRef.current = activeTenantSlug;
       const initialAdminPass = (tenantCtx?.currentTenant?.adminPassword || activeTenantConfig.adminPassword || globalConfig?.adminPassword || 'love').trim();
       const initialSitePass = (tenantCtx?.currentTenant?.sitePassword || activeTenantConfig.sitePassword || globalConfig?.sitePassword || 'love').trim();
       const initial: AppConfig = {
@@ -77,7 +79,8 @@ function AdminPageContent() {
       };
       setDraftConfig(initial);
       setSavedConfig(initial);
-    } else if (globalConfig) {
+    } else if (!activeTenantSlug && globalConfig && !lastLoadedSlugRef.current) {
+      lastLoadedSlugRef.current = 'default';
       setDraftConfig(globalConfig);
       setSavedConfig(globalConfig);
     }
@@ -446,13 +449,53 @@ function AdminPageContent() {
     });
   };
 
-  // Image Upload handler (Compressed to WebP)
+  const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState<number | null>(null);
+
+  // Image Upload handler (Compressed to WebP & Uploaded to Supabase Cloud Storage)
   const handleImageUpload = async (index: number, file: File) => {
-    const webp = await compressToWebP(file, 0.85);
-    const newPhotos = [...(config.memoryPhotos || [])];
-    if (newPhotos[index]) {
-      newPhotos[index].image = webp;
-      updateConfig({ memoryPhotos: newPhotos });
+    try {
+      setUploadingPhotoIndex(index);
+      const activeSlug = currentSlug || 'default';
+      const webpDataUrl = await compressToWebP(file, 0.85);
+
+      // Attempt cloud upload to Supabase Storage
+      try {
+        const resBlob = await fetch(webpDataUrl).then((r) => r.blob());
+        const uploadFile = new File([resBlob], `gallery_${Date.now()}.webp`, { type: 'image/webp' });
+
+        const formData = new FormData();
+        formData.append('file', uploadFile);
+        formData.append('uploadId', `photo_${Date.now()}`);
+        formData.append('chunkIndex', '0');
+        formData.append('totalChunks', '1');
+
+        const uploadRes = await fetch(`/api/upload?category=gallery&slug=${encodeURIComponent(activeSlug)}`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (uploadRes.ok) {
+          const json = await uploadRes.json();
+          if (json?.success && (json.url || json.proxyUrl)) {
+            const finalUrl = json.url || json.proxyUrl;
+            const newPhotos = [...(draftConfig.memoryPhotos || [])];
+            if (newPhotos[index]) {
+              newPhotos[index].image = finalUrl;
+              updateConfig({ memoryPhotos: newPhotos });
+            }
+            return;
+          }
+        }
+      } catch (_) {}
+
+      // Fallback: use client-compressed WebP Data URL
+      const newPhotos = [...(draftConfig.memoryPhotos || [])];
+      if (newPhotos[index]) {
+        newPhotos[index].image = webpDataUrl;
+        updateConfig({ memoryPhotos: newPhotos });
+      }
+    } finally {
+      setUploadingPhotoIndex(null);
     }
   };
 
@@ -1115,12 +1158,26 @@ function AdminPageContent() {
                     <div className="w-full h-28 rounded-xl overflow-hidden bg-black/60 border border-pink-400/30 relative flex items-center justify-center">
                       <img src={photo.image} alt="" className="w-full h-full object-cover" />
                     </div>
-                    <label className="w-full py-2 rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 text-white text-center cursor-pointer hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md">
-                      <Upload className="w-3.5 h-3.5" />
-                      <span>اختيار صورة (WebP تلقائي) 📁</span>
+                    <label className={`w-full py-2 rounded-xl text-white text-center transition-all flex items-center justify-center gap-1.5 shadow-md ${
+                      uploadingPhotoIndex === idx
+                        ? 'bg-rose-700/80 cursor-wait'
+                        : 'bg-gradient-to-r from-rose-500 to-pink-500 hover:scale-105 active:scale-95 cursor-pointer'
+                    }`}>
+                      {uploadingPhotoIndex === idx ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          <span>جاري الرفع السحابي... ⏳</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>اختيار صورة (WebP سحابي) 📁</span>
+                        </>
+                      )}
                       <input
                         type="file"
                         accept="image/*"
+                        disabled={uploadingPhotoIndex !== null}
                         className="hidden"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
