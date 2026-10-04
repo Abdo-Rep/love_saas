@@ -120,8 +120,8 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     }
   }, [currentStep]);
 
-  if (!mounted) {
-    return null;
+  if (!mounted || siteState === 'checking') {
+    return <div className="min-h-screen w-full bg-[#090108]" />;
   }
 
   if (siteState === 'suspended' || siteState === 'not_found') {

@@ -65,13 +65,12 @@ function toDb(t: any) {
   const adminPass = t.adminPassword ?? t.admin_password ?? cfg.adminPassword ?? 'love';
   const sitePass = t.sitePassword ?? t.site_password ?? cfg.sitePassword ?? 'love';
 
-  return {
+  const record: Record<string, any> = {
     id: t.id || `tenant-${cleanSlug}`,
     slug: cleanSlug,
     name: t.name || `موقع ${cleanSlug}`,
     admin_password: adminPass,
     site_password: sitePass,
-    created_at: t.createdAt ?? t.created_at ?? new Date().toISOString(),
     status: t.status ?? 'active',
     config: {
       ...cfg,
@@ -79,6 +78,12 @@ function toDb(t: any) {
       sitePassword: sitePass,
     },
   };
+
+  if (t.created_at || t.createdAt) {
+    record.created_at = t.created_at || t.createdAt;
+  }
+
+  return record;
 }
 
 // GET all tenants or specific tenant by slug (100% Direct from DB - No Cache)

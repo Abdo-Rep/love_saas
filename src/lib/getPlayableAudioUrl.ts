@@ -39,14 +39,14 @@ export function getPlayableAudioUrl(url: string): string {
     }
   }
 
-  // 4. Return direct audio URLs (local static files or external HTTPS) directly
+  // 4. Return direct audio URLs (local static files or external HTTPS) directly (properly URI-encoded)
   if (
     trimmed.startsWith('/') ||
     trimmed.startsWith('http://') ||
     trimmed.startsWith('https://')
   ) {
-    return trimmed;
+    return encodeURI(decodeURI(trimmed));
   }
 
-  return trimmed;
+  return encodeURI(decodeURI(trimmed));
 }

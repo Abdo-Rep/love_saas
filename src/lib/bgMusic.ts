@@ -33,11 +33,6 @@ class BgMusicManager {
     audio.preload = 'auto';
     audio.loop = true;
     audio.volume = 0.85;
-
-    if (!url.startsWith('data:') && !url.startsWith('blob:')) {
-      audio.crossOrigin = 'anonymous';
-    }
-
     audio.src = url;
 
     audio.addEventListener('timeupdate', () => {

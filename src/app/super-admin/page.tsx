@@ -306,8 +306,8 @@ export default function SuperAdminPage() {
       return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
-      const timeA = new Date(a.createdAt || 0).getTime();
-      const timeB = new Date(b.createdAt || 0).getTime();
+      const timeA = new Date(a.createdAt || (a as any).created_at || 0).getTime();
+      const timeB = new Date(b.createdAt || (b as any).created_at || 0).getTime();
       return timeB - timeA; // Newest at top, Oldest at bottom
     });
 

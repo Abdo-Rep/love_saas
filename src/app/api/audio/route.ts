@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const SUPABASE_REST_URL = (process.env.DATABASE_URL || '').replace(/\/$/, '');
+const SUPABASE_REST_URL = (process.env.DATABASE_URL || process.env.SUPABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
 const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 interface CachedAudio {
@@ -65,6 +65,8 @@ function resolveContentType(cleanPath: string, rawContentType: string | null): s
       return 'audio/mpeg';
     case 'webm':
       return 'audio/webm';
+    case 'opus':
+      return 'audio/ogg; codecs=opus';
     case 'mp4':
     case 'm4a':
       return 'audio/mp4';
