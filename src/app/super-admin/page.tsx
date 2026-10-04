@@ -108,6 +108,8 @@ export default function SuperAdminPage() {
     }
   };
 
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanEmail = emailInput.trim();
@@ -118,6 +120,8 @@ export default function SuperAdminPage() {
     }
 
     setLoginError('');
+    setIsLoggingIn(true);
+
     try {
       const res = await fetch('/api/super-admin/login', {
         method: 'POST',
@@ -145,6 +149,8 @@ export default function SuperAdminPage() {
       } else {
         setLoginError('البريد الإلكتروني أو كلمة السر غير صحيحة');
       }
+    } finally {
+      setIsLoggingIn(false);
     }
   };
 
@@ -359,10 +365,18 @@ export default function SuperAdminPage() {
 
             <button
               type="submit"
-              className="w-full py-3 mt-2 rounded-xl bg-slate-100 text-slate-950 font-bold text-sm hover:bg-white transition-all cursor-pointer"
+              disabled={isLoggingIn}
+              className="w-full py-3 mt-2 rounded-xl bg-slate-100 hover:bg-white text-slate-950 font-bold text-sm transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75"
               style={{ fontFamily: "'Cairo', sans-serif" }}
             >
-              تسجيل الدخول
+              {isLoggingIn ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+                  <span>جاري التحقق... ✨</span>
+                </>
+              ) : (
+                <span>تسجيل الدخول</span>
+              )}
             </button>
           </form>
         </div>

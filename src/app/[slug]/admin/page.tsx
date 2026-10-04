@@ -70,11 +70,7 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
     };
   }, [slug, setCurrentTenantDirectly]);
 
-  if (adminState === 'checking') {
-    return <div className="min-h-screen w-full bg-[#090108]" />;
-  }
-
-  if (adminState === 'suspended' || adminState === 'not_found' || !foundTenant) {
+  if (adminState === 'suspended' || adminState === 'not_found') {
     return (
       <div className="min-h-screen w-full bg-[#121212] text-gray-200 flex flex-col items-center justify-center p-6 text-center select-none font-sans dir-rtl">
         <div className="max-w-md w-full flex flex-col items-center gap-4 text-right">

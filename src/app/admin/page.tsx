@@ -134,6 +134,8 @@ function AdminPageContent() {
     'love'
   ).trim();
 
+  const [isAdminLoggingIn, setIsAdminLoggingIn] = useState(false);
+
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = adminPassInput.trim();
@@ -143,8 +145,19 @@ function AdminPageContent() {
     }
 
     setAdminAuthError('');
+    setIsAdminLoggingIn(true);
 
-    // Fetch latest tenant data from API to guarantee we validate against the latest saved password on server
+    // 1. Ultra-fast local validation (0ms response)
+    if (cleanInput === expectedAdminPass) {
+      setIsAdminAuthenticated(true);
+      try {
+        sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
+      } catch {}
+      setIsAdminLoggingIn(false);
+      return;
+    }
+
+    // 2. Cloud fallback check if password was updated on another device
     try {
       let realAdminPass = expectedAdminPass;
       const res = await fetch(`/api/tenants?slug=${encodeURIComponent(currentSlug)}&t=${Date.now()}`, { cache: 'no-store' });
@@ -171,16 +184,9 @@ function AdminPageContent() {
         setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌ غير مسموح بالدخول!');
       }
     } catch {
-      // Fallback local check
-      if (cleanInput === expectedAdminPass) {
-        setIsAdminAuthenticated(true);
-        try {
-          sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
-        } catch {}
-        setAdminAuthError('');
-      } else {
-        setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌ غير مسموح بالدخول!');
-      }
+      setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌ غير مسموح بالدخول!');
+    } finally {
+      setIsAdminLoggingIn(false);
     }
   };
 
@@ -487,10 +493,18 @@ function AdminPageContent() {
 
             <button
               type="submit"
-              className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-sm border border-white/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_#f472b6] cursor-pointer"
+              disabled={isAdminLoggingIn}
+              className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 text-white font-black text-sm border border-white/40 hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_#f472b6] cursor-pointer flex items-center justify-center gap-2 disabled:opacity-75"
               style={{ fontFamily: "'Cairo', sans-serif" }}
             >
-              دخول لوحة التحكم 🚀
+              {isAdminLoggingIn ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>جاري التحقق... ✨</span>
+                </>
+              ) : (
+                <span>دخول لوحة التحكم 🚀</span>
+              )}
             </button>
           </form>
         </div>

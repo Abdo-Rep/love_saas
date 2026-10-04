@@ -120,11 +120,11 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     }
   }, [currentStep]);
 
-  if (!mounted || siteState === 'checking') {
-    return <div className="min-h-screen w-full bg-[#090108]" />;
+  if (!mounted) {
+    return null;
   }
 
-  if (siteState === 'suspended' || siteState === 'not_found' || !cloudTenant) {
+  if (siteState === 'suspended' || siteState === 'not_found') {
     return (
       <div className="min-h-screen w-full bg-[#121212] text-gray-200 flex flex-col items-center justify-center p-6 text-center select-none font-sans dir-rtl">
         <div className="max-w-md w-full flex flex-col items-center gap-4 text-right">
