@@ -156,15 +156,13 @@ async function handleUpsert(req: Request) {
 
     const res = await fetch(`${SUPABASE_URL}/rest/v1/tenants?on_conflict=slug`, {
       method: 'POST',
-      headers: getHeaders({ 'Prefer': 'resolution=merge-duplicates,return=representation' }),
+      headers: getHeaders({ 'Prefer': 'resolution=merge-duplicates,return=minimal' }),
       body: JSON.stringify(payload),
       cache: 'no-store'
     });
 
     if (res.ok) {
-      const data = await res.json();
-      const list = Array.isArray(data) ? data : [data];
-      return NextResponse.json({ success: true, tenants: list.map(toApp) }, { headers: noCacheHeaders });
+      return NextResponse.json({ success: true, tenants: toUpsert.map(toApp) }, { headers: noCacheHeaders });
     } else {
       const errText = await res.text();
       console.error('[UPSERT /api/tenants] Supabase error:', res.status, errText);

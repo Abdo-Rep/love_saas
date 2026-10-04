@@ -46,14 +46,24 @@ export const LoveRadioCassette: React.FC<Props> = ({ onNext }) => {
       // Pause background music forcefully before playing voice
       bgMusic.pause(true);
 
-      audioRef.current.play().then(() => {
-        setIsPlaying(true);
-      }).catch(() => {
-        setIsPlaying(false);
-        if (config.storySongUrl) {
-          bgMusic.play(config.storySongUrl, true);
-        }
-      });
+      const el = audioRef.current;
+      if (!el.src || el.src === '' || el.src !== playableVoiceUrl) {
+        el.src = playableVoiceUrl;
+      }
+
+      el.play()
+        .then(() => {
+          setIsPlaying(true);
+        })
+        .catch((err) => {
+          console.warn('[VoicePlayer] Playback error:', err);
+          try {
+            el.load();
+            el.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+          } catch (_) {
+            setIsPlaying(false);
+          }
+        });
     }
   };
 

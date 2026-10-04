@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Heart, Lock, Key, ArrowLeft, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useConfig } from '@/lib/configContext';
+import { bgMusic } from '@/lib/bgMusic';
 
 interface Props {
   onStart: () => void;
@@ -18,6 +19,13 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
   const handleTriggerUnlock = () => {
     setIsUnlocking(true);
     setError('');
+
+    // Start background music immediately via user gesture
+    if (config.storySongUrl) {
+      try {
+        bgMusic.play(config.storySongUrl, true);
+      } catch (_) {}
+    }
 
     try {
       confetti({

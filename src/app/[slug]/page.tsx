@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { TenantProvider, useTenant } from '@/lib/tenantContext';
+import { createDefaultConfigForTenant } from '@/lib/tenantStore';
 import { CelestialHeartLanding } from '@/components/fresh/CelestialHeartLanding';
 import { StarConstellationName } from '@/components/couples/StarConstellationName';
 import { LoveCounter } from '@/components/couples/LoveCounter';
@@ -54,11 +55,10 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
                 setSiteState('suspended');
                 return;
               }
-              const { createDefaultConfigForTenant: cdf } = await import('@/lib/tenantStore');
               const finalAdminPass = found.adminPassword || found.admin_password || found.config?.adminPassword || 'love';
               const finalSitePass = found.sitePassword || found.site_password || found.config?.sitePassword || 'love';
               const mergedConfig = {
-                ...cdf(found.name || 'أميرتي', finalSitePass, finalAdminPass),
+                ...createDefaultConfigForTenant(found.name || 'أميرتي', finalSitePass, finalAdminPass),
                 ...found.config,
                 adminPassword: finalAdminPass,
                 sitePassword: finalSitePass
@@ -121,7 +121,17 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
   }, [currentStep]);
 
   if (!mounted || siteState === 'checking') {
-    return <div className="min-h-screen w-full bg-[#090108]" />;
+    return (
+      <div className="min-h-screen w-full bg-[#1c0617] text-white flex flex-col items-center justify-center font-sans dir-rtl">
+        <CosmicMeteorsBackground />
+        <div className="flex flex-col items-center gap-3 z-10">
+          <div className="w-10 h-10 rounded-full border-2 border-pink-400 border-t-transparent animate-spin" />
+          <span className="text-xs font-bold text-pink-200/80 animate-pulse" style={{ fontFamily: "'Cairo', sans-serif" }}>
+            جاري تحضير عالمكم الخاص... ✨💖
+          </span>
+        </div>
+      </div>
+    );
   }
 
   if (siteState === 'suspended' || siteState === 'not_found') {
