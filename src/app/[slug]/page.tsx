@@ -43,7 +43,8 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
 
     let isMounted = true;
 
-    const fetchFromCloud = async () => {
+    // Initial full fetch
+    const fetchFullTenant = async () => {
       try {
         const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
@@ -85,18 +86,37 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
       }
     };
 
-    fetchFromCloud();
+    fetchFullTenant();
 
-    // Real-time Heartbeat Polling every 8 seconds to detect instant suspension/deletion without refresh
+    // Lightweight status-only Heartbeat (30ms) to detect live suspension/deletion without heavy payload
+    const checkLiveStatus = async () => {
+      try {
+        const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&checkStatusOnly=true&t=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          const json = await res.json();
+          if (json?.success && Array.isArray(json.tenants)) {
+            const match = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim());
+            if (!match) {
+              if (isMounted) setSiteState('not_found');
+            } else if (match.status === 'suspended') {
+              if (isMounted) setSiteState('suspended');
+            } else if (match.status === 'active') {
+              if (isMounted && siteState !== 'active') setSiteState('active');
+            }
+          }
+        }
+      } catch (_) {}
+    };
+
     const heartbeatInterval = setInterval(() => {
       if (isMounted) {
-        fetchFromCloud();
+        checkLiveStatus();
       }
-    }, 8000);
+    }, 6000);
 
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible' && isMounted) {
-        fetchFromCloud();
+        checkLiveStatus();
       }
     };
 
@@ -109,7 +129,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
       window.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('focus', onVisibilityChange);
     };
-  }, [slug, setCurrentTenantDirectly]);
+  }, [slug, setCurrentTenantDirectly, siteState]);
 
   // Instant top display on step change (no smooth scroll)
   useEffect(() => {
