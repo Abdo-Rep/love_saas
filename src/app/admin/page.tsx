@@ -61,22 +61,27 @@ function AdminPageContent() {
   const urlSlug = searchParams?.get('slug');
   const currentSlug = (urlSlug || tenantCtx?.currentTenant?.slug || 'default').toLowerCase().trim();
 
-  // Initialize draftConfig and savedConfig ONCE on mount or when tenant loads
+  // Synchronize draftConfig whenever the tenant config is loaded from the cloud database
+  const activeTenantConfig = tenantCtx?.currentTenant?.config;
+  const activeTenantSlug = tenantCtx?.currentTenant?.slug;
+
   React.useEffect(() => {
-    if (!hasInitializedDraft && globalConfig) {
-      const initialAdminPass = (tenantCtx?.currentTenant?.adminPassword || tenantCtx?.currentTenant?.config?.adminPassword || globalConfig.adminPassword || 'love').trim();
-      const initialSitePass = (tenantCtx?.currentTenant?.sitePassword || tenantCtx?.currentTenant?.config?.sitePassword || globalConfig.sitePassword || 'love').trim();
+    if (activeTenantConfig) {
+      const initialAdminPass = (tenantCtx?.currentTenant?.adminPassword || activeTenantConfig.adminPassword || globalConfig?.adminPassword || 'love').trim();
+      const initialSitePass = (tenantCtx?.currentTenant?.sitePassword || activeTenantConfig.sitePassword || globalConfig?.sitePassword || 'love').trim();
       const initial: AppConfig = {
-        ...globalConfig,
-        ...(tenantCtx?.currentTenant?.config || {}),
+        ...(globalConfig || {}),
+        ...activeTenantConfig,
         adminPassword: initialAdminPass,
         sitePassword: initialSitePass,
       };
       setDraftConfig(initial);
       setSavedConfig(initial);
-      setHasInitializedDraft(true);
+    } else if (globalConfig) {
+      setDraftConfig(globalConfig);
+      setSavedConfig(globalConfig);
     }
-  }, [globalConfig, hasInitializedDraft, tenantCtx?.currentTenant]);
+  }, [activeTenantSlug, activeTenantConfig, globalConfig]);
 
   const updateConfig = (updates: Partial<AppConfig>) => {
     setDraftConfig((prev) => ({ ...prev, ...updates }));

@@ -46,8 +46,27 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
 
     fetchTenant();
 
+    // Real-time Heartbeat Polling every 8 seconds to detect instant suspension/deletion without refresh
+    const heartbeatInterval = setInterval(() => {
+      if (isMounted) {
+        fetchTenant();
+      }
+    }, 8000);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isMounted) {
+        fetchTenant();
+      }
+    };
+
+    window.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', onVisibilityChange);
+
     return () => {
       isMounted = false;
+      clearInterval(heartbeatInterval);
+      window.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', onVisibilityChange);
     };
   }, [slug, setCurrentTenantDirectly]);
 
