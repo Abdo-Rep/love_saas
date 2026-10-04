@@ -203,13 +203,23 @@ export default function SuperAdminPage() {
   };
 
   const handleToggleStatus = async (slug: string, currentStatus: string) => {
-    const nextStatus = currentStatus === 'active' ? 'suspended' : 'active';
+    const nextStatus: 'active' | 'suspended' = currentStatus === 'active' ? 'suspended' : 'active';
     const cleanSlug = slug.toLowerCase().trim();
 
-    // Instant optimistic UI update (0ms latency)
-    setTenants((prev) =>
-      prev.map((t) => (t.slug.toLowerCase().trim() === cleanSlug ? { ...t, status: nextStatus } : t))
-    );
+    // Instant optimistic UI update & cache sync (0ms latency)
+    setTenants((prev) => {
+      const updated = prev.map((t) => (t.slug.toLowerCase().trim() === cleanSlug ? { ...t, status: nextStatus } : t));
+      try {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('solaf_superadmin_tenants_cache', JSON.stringify(updated));
+        }
+      } catch {}
+      return updated;
+    });
+
+    try {
+      TenantStore.updateTenant(cleanSlug, { status: nextStatus });
+    } catch {}
 
     try {
       const res = await fetch('/api/tenants', {
@@ -231,8 +241,20 @@ export default function SuperAdminPage() {
   const handleDeleteClient = async (slug: string, _name?: string) => {
     const cleanSlug = slug.toLowerCase().trim();
 
-    // Instant optimistic UI update (0ms latency)
-    setTenants((prev) => prev.filter((t) => t.slug.toLowerCase().trim() !== cleanSlug));
+    // Instant optimistic UI update & cache sync (0ms latency)
+    setTenants((prev) => {
+      const updated = prev.filter((t) => t.slug.toLowerCase().trim() !== cleanSlug);
+      try {
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('solaf_superadmin_tenants_cache', JSON.stringify(updated));
+        }
+      } catch {}
+      return updated;
+    });
+
+    try {
+      TenantStore.deleteTenant(cleanSlug);
+    } catch {}
 
     try {
       const res = await fetch('/api/tenants', {
@@ -267,7 +289,7 @@ export default function SuperAdminPage() {
     setTimeout(() => setCopiedPassText(null), 2500);
   };
 
-  // Sort from Oldest to Newest (الأقدم للأحدث)
+  // Sort: Newest at the top, Oldest at the bottom (الأحدث بالأعلى والأقدم بالأسفل)
   const filteredTenants = tenants
     .filter((t) => {
       const matchesSearch =
@@ -280,7 +302,7 @@ export default function SuperAdminPage() {
     .sort((a, b) => {
       const timeA = new Date(a.createdAt || 0).getTime();
       const timeB = new Date(b.createdAt || 0).getTime();
-      return timeA - timeB; // Oldest to Newest
+      return timeB - timeA; // Newest at top, Oldest at bottom
     });
 
   // 0. PREVENT ANY LOGIN FLICKER / FLASH WHILE CHECKING SESSION

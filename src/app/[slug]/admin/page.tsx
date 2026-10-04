@@ -10,24 +10,8 @@ interface TenantAdminWrapperProps {
 
 function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
   const { currentTenant, setCurrentTenantDirectly } = useTenant();
-  const [foundTenant, setFoundTenant] = useState<any>(() => {
-    try {
-      const { TenantStore, createDefaultConfigForTenant } = require('@/lib/tenantStore');
-      const local = TenantStore.getTenantBySlug(slug);
-      if (local) return local;
-      return {
-        id: `tenant-${slug}`,
-        slug: slug.toLowerCase().trim(),
-        name: slug,
-        adminPassword: 'love',
-        sitePassword: 'love',
-        status: 'active',
-        config: createDefaultConfigForTenant(slug, 'love', 'love')
-      };
-    } catch {
-      return null;
-    }
-  });
+  const [adminState, setAdminState] = useState<'checking' | 'active' | 'suspended' | 'not_found'>('checking');
+  const [foundTenant, setFoundTenant] = useState<any>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -37,17 +21,26 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
         const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
-          if (json?.success && Array.isArray(json.tenants)) {
+          if (json?.success && Array.isArray(json.tenants) && json.tenants.length > 0) {
             const match = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim());
             if (match && isMounted) {
+              if (match.status === 'suspended') {
+                setAdminState('suspended');
+                return;
+              }
               setFoundTenant(match);
               setCurrentTenantDirectly(match);
+              setAdminState('active');
               return;
             }
           }
         }
       } catch (e) {
         console.error('Error fetching admin tenant:', e);
+      }
+
+      if (isMounted) {
+        setAdminState('not_found');
       }
     };
 
@@ -58,9 +51,11 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
     };
   }, [slug, setCurrentTenantDirectly]);
 
-  const activeTenant = (currentTenant && currentTenant.slug.toLowerCase() === slug.toLowerCase()) ? currentTenant : foundTenant;
+  if (adminState === 'checking') {
+    return <div className="min-h-screen w-full bg-[#090108]" />;
+  }
 
-  if (!activeTenant || activeTenant.status === 'suspended') {
+  if (adminState === 'suspended' || adminState === 'not_found' || !foundTenant) {
     return (
       <div className="min-h-screen w-full bg-[#121212] text-gray-200 flex flex-col items-center justify-center p-6 text-center select-none font-sans dir-rtl">
         <div className="max-w-md w-full flex flex-col items-center gap-4 text-right">

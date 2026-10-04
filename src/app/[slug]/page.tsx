@@ -24,24 +24,8 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
   const { currentTenant, setCurrentTenantDirectly } = useTenant();
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
-  const [cloudTenant, setCloudTenant] = useState<any>(() => {
-    try {
-      const { TenantStore, createDefaultConfigForTenant } = require('@/lib/tenantStore');
-      const local = TenantStore.getTenantBySlug(slug);
-      if (local) return local;
-      return {
-        id: `tenant-${slug}`,
-        slug: slug.toLowerCase().trim(),
-        name: slug,
-        adminPassword: 'love',
-        sitePassword: 'love',
-        status: 'active',
-        config: createDefaultConfigForTenant(slug, 'love', 'love')
-      };
-    } catch {
-      return null;
-    }
-  });
+  const [siteState, setSiteState] = useState<'checking' | 'active' | 'suspended' | 'not_found'>('checking');
+  const [cloudTenant, setCloudTenant] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -63,9 +47,13 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
         const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, { cache: 'no-store' });
         if (res.ok) {
           const json = await res.json();
-          if (json?.success && Array.isArray(json.tenants)) {
+          if (json?.success && Array.isArray(json.tenants) && json.tenants.length > 0) {
             const found = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim());
             if (found && isMounted) {
+              if (found.status === 'suspended') {
+                setSiteState('suspended');
+                return;
+              }
               const { createDefaultConfigForTenant: cdf } = await import('@/lib/tenantStore');
               const finalAdminPass = found.adminPassword || found.admin_password || found.config?.adminPassword || 'love';
               const finalSitePass = found.sitePassword || found.site_password || found.config?.sitePassword || 'love';
@@ -83,12 +71,17 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
               };
               setCloudTenant(withConfig);
               setCurrentTenantDirectly(withConfig);
+              setSiteState('active');
               return;
             }
           }
         }
       } catch (err) {
         console.error('Error fetching cloud tenant:', err);
+      }
+
+      if (isMounted) {
+        setSiteState('not_found');
       }
     };
 
@@ -108,13 +101,11 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
     }
   }, [currentStep]);
 
-  if (!mounted) {
+  if (!mounted || siteState === 'checking') {
     return <div className="min-h-screen w-full bg-[#090108]" />;
   }
 
-  const activeTenant = (currentTenant && currentTenant.slug.toLowerCase() === slug.toLowerCase()) ? currentTenant : cloudTenant;
-
-  if (!activeTenant || activeTenant.status === 'suspended') {
+  if (siteState === 'suspended' || siteState === 'not_found' || !cloudTenant) {
     return (
       <div className="min-h-screen w-full bg-[#121212] text-gray-200 flex flex-col items-center justify-center p-6 text-center select-none font-sans dir-rtl">
         <div className="max-w-md w-full flex flex-col items-center gap-4 text-right">
