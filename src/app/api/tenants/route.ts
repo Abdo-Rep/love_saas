@@ -96,15 +96,10 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const slug = searchParams.get('slug');
     const cleanSlug = slug ? slug.toLowerCase().trim() : null;
-    const checkStatusOnly = searchParams.get('checkStatusOnly') === 'true';
 
     let endpoint = `${SUPABASE_URL}/rest/v1/tenants?select=id,slug,name,admin_password,site_password,status,created_at&order=created_at.desc`;
     if (cleanSlug) {
-      if (checkStatusOnly) {
-        endpoint = `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}&select=id,slug,status`;
-      } else {
-        endpoint = `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}&select=*`;
-      }
+      endpoint = `${SUPABASE_URL}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}&select=*`;
     }
 
     const res = await fetch(endpoint, {
@@ -115,9 +110,6 @@ export async function GET(req: Request) {
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data)) {
-        if (checkStatusOnly) {
-          return NextResponse.json({ success: true, tenants: data }, { headers: noCacheHeaders });
-        }
         return NextResponse.json({ success: true, tenants: data.map(toApp) }, { headers: noCacheHeaders });
       }
     } else {

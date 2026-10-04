@@ -38,7 +38,7 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
 
     setTimeout(() => {
       onStart();
-    }, 250);
+    }, 600);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,8 +55,8 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
 
   return (
     <div
-      className={`relative w-full min-h-[100dvh] overflow-y-auto bg-transparent flex flex-col items-center justify-between p-4 sm:p-8 text-center select-none transition-all duration-300 ${
-        isUnlocking ? 'scale-105 opacity-0 blur-sm' : 'scale-100 opacity-100'
+      className={`relative w-full min-h-[100dvh] overflow-y-auto bg-transparent flex flex-col items-center justify-between p-4 sm:p-8 text-center select-none transition-all duration-700 ${
+        isUnlocking ? 'scale-110 opacity-0 blur-sm' : 'scale-100 opacity-100'
       }`}
     >
       {/* Ambient Deep Glow */}

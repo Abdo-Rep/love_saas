@@ -4,8 +4,6 @@ import React, { useState, useEffect } from 'react';
 import { TenantProvider, useTenant } from '@/lib/tenantContext';
 import AdminPage from '@/app/admin/page';
 
-import { CosmicMeteorsBackground } from '@/components/common/CosmicMeteorsBackground';
-
 interface TenantAdminWrapperProps {
   slug: string;
 }
@@ -48,35 +46,16 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
 
     fetchTenant();
 
-    // Lightweight status-only Heartbeat (30ms) to detect live suspension/deletion without heavy payload
-    const checkLiveStatus = async () => {
-      try {
-        const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&checkStatusOnly=true&t=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
-          if (json?.success && Array.isArray(json.tenants)) {
-            const match = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim());
-            if (!match) {
-              if (isMounted) setAdminState('not_found');
-            } else if (match.status === 'suspended') {
-              if (isMounted) setAdminState('suspended');
-            } else if (match.status === 'active') {
-              if (isMounted && adminState !== 'active') setAdminState('active');
-            }
-          }
-        }
-      } catch (_) {}
-    };
-
+    // Real-time Heartbeat Polling every 8 seconds to detect instant suspension/deletion without refresh
     const heartbeatInterval = setInterval(() => {
       if (isMounted) {
-        checkLiveStatus();
+        fetchTenant();
       }
-    }, 6000);
+    }, 8000);
 
     const onVisibilityChange = () => {
       if (document.visibilityState === 'visible' && isMounted) {
-        checkLiveStatus();
+        fetchTenant();
       }
     };
 
@@ -89,20 +68,10 @@ function TenantAdminWrapper({ slug }: TenantAdminWrapperProps) {
       window.removeEventListener('visibilitychange', onVisibilityChange);
       window.removeEventListener('focus', onVisibilityChange);
     };
-  }, [slug, setCurrentTenantDirectly, adminState]);
+  }, [slug, setCurrentTenantDirectly]);
 
   if (adminState === 'checking') {
-    return (
-      <div className="min-h-screen w-full bg-[#1c0617] text-white flex flex-col items-center justify-center font-sans dir-rtl">
-        <CosmicMeteorsBackground />
-        <div className="flex flex-col items-center gap-3 z-10">
-          <div className="w-10 h-10 rounded-full border-2 border-pink-400 border-t-transparent animate-spin" />
-          <span className="text-xs font-bold text-pink-200/80 animate-pulse" style={{ fontFamily: "'Cairo', sans-serif" }}>
-            جاري فتح لوحة التحكم... ✨🔒
-          </span>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen w-full bg-[#090108]" />;
   }
 
   if (adminState === 'suspended' || adminState === 'not_found') {
