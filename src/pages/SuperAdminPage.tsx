@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { TenantStore } from '@/lib/tenantStore';
 import { Tenant } from '@/types/tenant';
+import { getSupabaseUrl, getSupabaseKey } from '@/lib/supabaseClient';
 import { Search, AlertTriangle, Crown, ExternalLink, Key, Lock, Copy, Eye, EyeOff, X, Check, Plus, DoorOpen } from 'lucide-react';
+
 
 export default function SuperAdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -194,8 +196,8 @@ export default function SuperAdminPage() {
       TenantStore.updateTenant(cleanSlug, { status: nextStatus });
     }
 
-    const url = (import.meta.env?.VITE_DATABASE_URL || import.meta.env?.VITE_SUPABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
-    const key = import.meta.env?.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+    const url = getSupabaseUrl();
+    const key = getSupabaseKey();
     if (url && key) {
       try {
         await fetch(`${url}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}`, {

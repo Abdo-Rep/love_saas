@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/api/supabase/:path*",
+      "destination": "http://31.220.93.65:8000/:path*"
+    },
+    {
+      "source": "/rest/:path*",
+      "destination": "http://31.220.93.65:8000/rest/:path*"
+    },
+    {
+      "source": "/storage/:path*",
+      "destination": "http://31.220.93.65:8000/storage/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

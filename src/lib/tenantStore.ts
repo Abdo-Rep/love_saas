@@ -1,5 +1,33 @@
 import { Tenant } from '@/types/tenant';
 import { AppConfig } from '@/types/config';
+import { getSupabaseUrl, getSupabaseKey, sanitizeAssetUrl } from './supabaseClient';
+
+function sanitizeConfigUrls(config: Record<string, any>): Record<string, any> {
+  if (!config || typeof config !== 'object') return config;
+  const clone = { ...config };
+  if (typeof clone.storySongUrl === 'string') {
+    clone.storySongUrl = sanitizeAssetUrl(clone.storySongUrl);
+  }
+  if (Array.isArray(clone.gallery)) {
+    clone.gallery = clone.gallery.map((g: any) => ({
+      ...g,
+      image: sanitizeAssetUrl(g?.image || ''),
+    }));
+  }
+  if (Array.isArray(clone.voiceNotes)) {
+    clone.voiceNotes = clone.voiceNotes.map((v: any) => ({
+      ...v,
+      audioUrl: sanitizeAssetUrl(v?.audioUrl || ''),
+    }));
+  }
+  if (Array.isArray(clone.musicList)) {
+    clone.musicList = clone.musicList.map((m: any) => ({
+      ...m,
+      url: sanitizeAssetUrl(m?.url || ''),
+    }));
+  }
+  return clone;
+}
 
 // DEFAULT ROMANTIC CONFIG TEMPLATE FOR NEW TENANTS
 export const createDefaultConfigForTenant = (herName: string = 'أميرتي', sitePassword: string = 'love', adminPassword: string = 'love'): AppConfig => ({
@@ -237,8 +265,8 @@ export const TenantStore = {
     const cleanSlug = slug.toLowerCase().trim();
     inMemoryTenants = inMemoryTenants.filter((t) => t.slug.toLowerCase() !== cleanSlug);
 
-    const url = (import.meta.env?.VITE_SUPABASE_URL || import.meta.env?.VITE_DATABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
-    const key = import.meta.env?.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+    const url = getSupabaseUrl();
+    const key = getSupabaseKey();
 
     try {
       const res = await fetch(`${url}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}`, {
@@ -281,8 +309,8 @@ export const TenantStore = {
 
   // Save single tenant directly to Cloud DB
   saveTenantToCloud: async (tenant: Tenant): Promise<boolean> => {
-    const url = (import.meta.env?.VITE_DATABASE_URL || import.meta.env?.VITE_SUPABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
-    const key = import.meta.env?.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+    const url = getSupabaseUrl();
+    const key = getSupabaseKey();
     if (!url || !key) return true;
 
     try {
@@ -326,8 +354,8 @@ export const TenantStore = {
 
   // Sync all tenants from Cloud DB
   syncFromSupabase: async (): Promise<Tenant[]> => {
-    const url = (import.meta.env?.VITE_SUPABASE_URL || import.meta.env?.VITE_DATABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
-    const key = import.meta.env?.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+    const url = getSupabaseUrl();
+    const key = getSupabaseKey();
 
     try {
       const res = await fetch(`${url}/rest/v1/tenants?select=*&order=created_at.desc`, {
@@ -342,7 +370,8 @@ export const TenantStore = {
         const data = await res.json();
         if (Array.isArray(data)) {
           const mapped: Tenant[] = data.map((row: any) => {
-            const baseConfig = row.config && typeof row.config === 'object' ? { ...row.config } : {};
+            const rawConfig = row.config && typeof row.config === 'object' ? { ...row.config } : {};
+            const baseConfig = sanitizeConfigUrls(rawConfig);
             const adminPass = (row.admin_password ?? row.adminPassword ?? baseConfig.adminPassword ?? '').trim();
             const sitePass = (row.site_password ?? row.sitePassword ?? baseConfig.sitePassword ?? '').trim();
             
@@ -387,8 +416,8 @@ export async function fetchTenantFromSupabaseDirect(slug: string): Promise<Tenan
     return inMem;
   }
 
-  const url = (import.meta.env?.VITE_SUPABASE_URL || import.meta.env?.VITE_DATABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
-  const key = import.meta.env?.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+  const url = getSupabaseUrl();
+  const key = getSupabaseKey();
 
   try {
     const res = await fetch(`${url}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}&select=*`, {
@@ -404,7 +433,8 @@ export async function fetchTenantFromSupabaseDirect(slug: string): Promise<Tenan
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
         const row = data[0];
-        const baseConfig = row.config && typeof row.config === 'object' ? { ...row.config } : {};
+        const rawConfig = row.config && typeof row.config === 'object' ? { ...row.config } : {};
+        const baseConfig = sanitizeConfigUrls(rawConfig);
         const adminPass = (row.admin_password ?? row.adminPassword ?? baseConfig.adminPassword ?? '').trim();
         const sitePass = (row.site_password ?? row.sitePassword ?? baseConfig.sitePassword ?? '').trim();
 
@@ -440,4 +470,5 @@ export async function fetchTenantFromSupabaseDirect(slug: string): Promise<Tenan
 
   return null;
 }
+
 

@@ -1,13 +1,16 @@
+import { getSupabaseUrl } from './supabaseClient';
+
 export function getPlayableAudioUrl(url: string): string {
   if (!url) return '';
-  const trimmed = url.trim();
+  let trimmed = url.trim();
   if (!trimmed) return '';
 
-  const supabaseUrl = (
-    import.meta.env?.VITE_SUPABASE_URL ||
-    import.meta.env?.VITE_DATABASE_URL ||
-    'http://31.220.93.65:8000'
-  ).replace(/\/$/, '');
+  const supabaseUrl = getSupabaseUrl();
+
+  // If on HTTPS and url points to self-hosted HTTP server, convert to same origin proxy
+  if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+    trimmed = trimmed.replace(/^http:\/\/31\.220\.93\.65:8000/, window.location.origin);
+  }
 
   // 1. Data URLs and blobs are always direct and self-contained
   if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
@@ -43,3 +46,4 @@ export function getPlayableAudioUrl(url: string): string {
   const cleanBare = trimmed.replace(/^\/+/, '');
   return `${supabaseUrl}/storage/v1/object/public/site-media/${cleanBare}`;
 }
+
