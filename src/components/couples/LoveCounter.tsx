@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { Heart, ArrowRight } from 'lucide-react';
 import { useConfig } from '@/lib/configContext';

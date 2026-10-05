@@ -1,13 +1,13 @@
-'use client';
-
 import React, { useState, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { AppConfig } from '@/types/config';
 import { useConfig } from '@/lib/configContext';
-import { useTenant } from '@/lib/tenantContext';
-import { TenantStore } from '@/lib/tenantStore';
+import { useTenant, TenantProvider } from '@/lib/tenantContext';
+import { TenantStore, fetchTenantFromSupabaseDirect, createDefaultConfigForTenant } from '@/lib/tenantStore';
 import { getPlayableAudioUrl } from '@/lib/getPlayableAudioUrl';
+import { uploadFileToSupabaseStorage } from '@/lib/storageApi';
 import {
+  AlertTriangle,
   KeyRound,
   Settings,
   Sparkles,
@@ -57,11 +57,12 @@ function AdminPageContent() {
     tenantCtx = useTenant();
   } catch {}
 
-  const searchParams = useSearchParams();
-  const urlSlug = searchParams?.get('slug');
+  const [searchParams] = useSearchParams();
+  const params = useParams<{ slug?: string }>();
+  const urlSlug = searchParams?.get('slug') || params?.slug;
   const currentSlug = (urlSlug || tenantCtx?.currentTenant?.slug || 'default').toLowerCase().trim();
 
-  // Synchronize draftConfig ONCE when the tenant is loaded to prevent overwriting user edits/added photos
+  // Synchronize draftConfig when tenant is loaded
   const activeTenantConfig = tenantCtx?.currentTenant?.config;
   const activeTenantSlug = tenantCtx?.currentTenant?.slug;
   const lastLoadedSlugRef = React.useRef<string | null>(null);
@@ -69,22 +70,18 @@ function AdminPageContent() {
   React.useEffect(() => {
     if (activeTenantSlug && activeTenantConfig && lastLoadedSlugRef.current !== activeTenantSlug) {
       lastLoadedSlugRef.current = activeTenantSlug;
-      const initialAdminPass = (tenantCtx?.currentTenant?.adminPassword || activeTenantConfig.adminPassword || globalConfig?.adminPassword || 'love').trim();
-      const initialSitePass = (tenantCtx?.currentTenant?.sitePassword || activeTenantConfig.sitePassword || globalConfig?.sitePassword || 'love').trim();
+      const initialAdminPass = (tenantCtx?.currentTenant?.adminPassword || activeTenantConfig.adminPassword || '').trim();
+      const initialSitePass = (tenantCtx?.currentTenant?.sitePassword || activeTenantConfig.sitePassword || '').trim();
       const initial: AppConfig = {
-        ...(globalConfig || {}),
+        ...createDefaultConfigForTenant(tenantCtx?.currentTenant?.name || 'أميرتي', initialSitePass, initialAdminPass),
         ...activeTenantConfig,
         adminPassword: initialAdminPass,
         sitePassword: initialSitePass,
       };
       setDraftConfig(initial);
       setSavedConfig(initial);
-    } else if (!activeTenantSlug && globalConfig && !lastLoadedSlugRef.current) {
-      lastLoadedSlugRef.current = 'default';
-      setDraftConfig(globalConfig);
-      setSavedConfig(globalConfig);
     }
-  }, [activeTenantSlug, activeTenantConfig, globalConfig]);
+  }, [activeTenantSlug, activeTenantConfig, tenantCtx?.currentTenant]);
 
   const updateConfig = (updates: Partial<AppConfig>) => {
     setDraftConfig((prev) => ({ ...prev, ...updates }));
@@ -111,13 +108,67 @@ function AdminPageContent() {
     setTimeout(() => setCopyToast(''), 2500);
   };
 
-  // Admin Authentication State
+  // Admin Authentication & Site Status State
+  const [siteStatus, setSiteStatus] = useState<'checking' | 'active' | 'suspended' | 'not_found'>('checking');
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
   const [adminPassInput, setAdminPassInput] = useState<string>('');
   const [adminAuthError, setAdminAuthError] = useState<string>('');
 
-  // Persist session on page refresh via sessionStorage
+  // Check tenant status and persist session on load
   React.useEffect(() => {
+    let isMounted = true;
+    const verifyStatus = async () => {
+      if (!currentSlug || currentSlug === 'default' || currentSlug === 'soulove') {
+        if (isMounted) setSiteStatus('active');
+        return;
+      }
+      try {
+        const found = await fetchTenantFromSupabaseDirect(currentSlug);
+        if (found && isMounted) {
+          if (found.status === 'suspended') {
+            setSiteStatus('suspended');
+            setIsAdminAuthenticated(false);
+            try {
+              sessionStorage.removeItem(`admin_authenticated_${currentSlug}`);
+            } catch {}
+            return;
+          }
+          if (tenantCtx?.setCurrentTenantDirectly) {
+            tenantCtx.setCurrentTenantDirectly(found);
+          }
+
+          const realAdminPass = (found.adminPassword || (found as any).admin_password || found.config?.adminPassword || '').trim();
+          const realSitePass = (found.sitePassword || (found as any).site_password || found.config?.sitePassword || '').trim();
+          const merged: AppConfig = {
+            ...createDefaultConfigForTenant(found.name || 'أميرتي', realSitePass, realAdminPass),
+            ...found.config,
+            adminPassword: realAdminPass,
+            sitePassword: realSitePass,
+          };
+          setDraftConfig(merged);
+          setSavedConfig(merged);
+
+          if (isMounted) setSiteStatus('active');
+          return;
+        } else if (!found && isMounted) {
+          setSiteStatus('not_found');
+          setIsAdminAuthenticated(false);
+          try {
+            sessionStorage.removeItem(`admin_authenticated_${currentSlug}`);
+          } catch {}
+          return;
+        }
+      } catch (err) {
+        console.warn('Error checking tenant status:', err);
+      }
+      if (isMounted) {
+        setSiteStatus('not_found');
+        setIsAdminAuthenticated(false);
+      }
+    };
+
+    verifyStatus();
+
     try {
       if (typeof window !== 'undefined' && currentSlug) {
         const stored = sessionStorage.getItem(`admin_authenticated_${currentSlug}`);
@@ -126,6 +177,10 @@ function AdminPageContent() {
         }
       }
     } catch {}
+
+    return () => {
+      isMounted = false;
+    };
   }, [currentSlug]);
 
   const expectedAdminPass = (
@@ -150,34 +205,51 @@ function AdminPageContent() {
     setAdminAuthError('');
     setIsAdminLoggingIn(true);
 
-    // 1. Ultra-fast local validation (0ms response)
-    if (cleanInput === expectedAdminPass) {
-      setIsAdminAuthenticated(true);
-      try {
-        sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
-      } catch {}
+    // 1. Check if suspended from current context first
+    if (tenantCtx?.currentTenant?.status === 'suspended') {
+      setSiteStatus('suspended');
+      setIsAdminAuthenticated(false);
+      setAdminAuthError('تم تعطيل هذا الموقع ولوحة التحكم الخاصة به من قبل الإدارة 🛑');
       setIsAdminLoggingIn(false);
       return;
     }
 
-    // 2. Cloud fallback check if password was updated on another device
+    // 2. Cloud check if suspended or password updated on DB
     try {
-      let realAdminPass = expectedAdminPass;
-      const res = await fetch(`/api/tenants?slug=${encodeURIComponent(currentSlug)}&t=${Date.now()}`, { cache: 'no-store' });
-      if (res.ok) {
-        const json = await res.json();
-        if (json?.success && Array.isArray(json.tenants)) {
-          const found = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === currentSlug.toLowerCase().trim());
-          if (found) {
-            realAdminPass = (found.adminPassword || found.admin_password || found.config?.adminPassword || realAdminPass).trim();
-            if (tenantCtx?.setCurrentTenantDirectly) {
-              tenantCtx.setCurrentTenantDirectly(found);
-            }
-          }
+      const found = await fetchTenantFromSupabaseDirect(currentSlug);
+      if (found) {
+        if (found.status === 'suspended') {
+          setSiteStatus('suspended');
+          setIsAdminAuthenticated(false);
+          setAdminAuthError('تم تعطيل هذا الموقع ولوحة التحكم الخاصة به من قبل الإدارة 🛑');
+          return;
+        }
+        if (tenantCtx?.setCurrentTenantDirectly) {
+          tenantCtx.setCurrentTenantDirectly(found);
+        }
+        const realAdminPass = (found.adminPassword || (found as any).admin_password || found.config?.adminPassword || expectedAdminPass).trim();
+        if (cleanInput === realAdminPass) {
+          setIsAdminAuthenticated(true);
+          try {
+            sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
+          } catch {}
+          setAdminAuthError('');
+          return;
+        }
+      } else {
+        // Fallback local check
+        if (cleanInput === expectedAdminPass) {
+          setIsAdminAuthenticated(true);
+          try {
+            sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
+          } catch {}
+          setAdminAuthError('');
+          return;
         }
       }
-
-      if (cleanInput === realAdminPass) {
+      setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌ غير مسموح بالدخول!');
+    } catch {
+      if (cleanInput === expectedAdminPass) {
         setIsAdminAuthenticated(true);
         try {
           sessionStorage.setItem(`admin_authenticated_${currentSlug}`, 'true');
@@ -186,8 +258,6 @@ function AdminPageContent() {
       } else {
         setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌ غير مسموح بالدخول!');
       }
-    } catch {
-      setAdminAuthError('كلمة سر الأدمن غير صحيحة ❌ غير مسموح بالدخول!');
     } finally {
       setIsAdminLoggingIn(false);
     }
@@ -252,21 +322,11 @@ function AdminPageContent() {
         tenantCtx.setCurrentTenantDirectly(tenantToSave);
       }
 
-      const res = await fetch('/api/tenants', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tenant: tenantToSave }),
-        cache: 'no-store'
-      });
+      TenantStore.saveTenantToCloud(tenantToSave);
 
       setSavedConfig(updatedDraftConfig);
       setDraftConfig(updatedDraftConfig);
-
-      if (res.ok) {
-        setSaveMessage('تم حفظ وتطبيق جميع التغييرات بنجاح على السيرفر والداتا بيز والموقع بالكامل ✨💖');
-      } else {
-        setSaveMessage('تم حفظ التغييرات بنجاح ✨💖');
-      }
+      setSaveMessage('تم حفظ وتطبيق جميع التغييرات بنجاح على السيرفر والداتا بيز والموقع بالكامل ✨💖');
     } catch {
       setSaveMessage('تم حفظ التغييرات بنجاح ✨💖');
     } finally {
@@ -362,9 +422,9 @@ function AdminPageContent() {
     const s = Math.floor(sec % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
+
   const uploadAudioToCloud = async (file: File): Promise<string> => {
     setIsUploadingAudio(true);
-
     const readFileAsDataUrl = (fileToRead: File): Promise<string> => {
       return new Promise((resolve) => {
         const reader = new FileReader();
@@ -376,43 +436,13 @@ function AdminPageContent() {
 
     try {
       const slug = currentSlug || tenantCtx?.currentTenant?.slug || 'default';
-      const CHUNK_SIZE = 2.5 * 1024 * 1024;
-      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
-      const uploadId = `up_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-
-      for (let i = 0; i < totalChunks; i++) {
-        const start = i * CHUNK_SIZE;
-        const end = Math.min(file.size, start + CHUNK_SIZE);
-        const chunkBlob = file.slice(start, end, file.type);
-
-        const formData = new FormData();
-        formData.append('file', chunkBlob, file.name);
-        formData.append('uploadId', uploadId);
-        formData.append('chunkIndex', i.toString());
-        formData.append('totalChunks', totalChunks.toString());
-
-        const res = await fetch(`/api/upload?category=music&slug=${encodeURIComponent(slug)}`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        const json = await res.json().catch(() => ({ error: 'فشل الرفع إلى السيرفر' }));
-
-        if (res.ok && json.success) {
-          if (json.isComplete && (json.proxyUrl || json.url)) {
-            setIsUploadingAudio(false);
-            return json.proxyUrl || json.url;
-          }
-        } else {
-          // If server upload fails, seamlessly fallback to Data URL
-          const dataUrl = await readFileAsDataUrl(file);
-          setIsUploadingAudio(false);
-          return dataUrl;
-        }
+      const uploadedUrl = await uploadFileToSupabaseStorage(file, 'music', slug);
+      if (uploadedUrl) {
+        setIsUploadingAudio(false);
+        return uploadedUrl;
       }
     } catch (_) {}
 
-    // Fallback if network or server error occurred
     const fallbackUrl = await readFileAsDataUrl(file);
     setIsUploadingAudio(false);
     return fallbackUrl;
@@ -451,7 +481,7 @@ function AdminPageContent() {
 
   const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState<number | null>(null);
 
-  // Image Upload handler (Compressed to WebP & Uploaded to Supabase Cloud Storage)
+  // Image Upload handler (Compressed to WebP & Uploaded directly to Supabase Cloud Storage)
   const handleImageUpload = async (index: number, file: File) => {
     try {
       setUploadingPhotoIndex(index);
@@ -462,29 +492,15 @@ function AdminPageContent() {
       try {
         const resBlob = await fetch(webpDataUrl).then((r) => r.blob());
         const uploadFile = new File([resBlob], `gallery_${Date.now()}.webp`, { type: 'image/webp' });
+        const cloudUrl = await uploadFileToSupabaseStorage(uploadFile, 'gallery', activeSlug);
 
-        const formData = new FormData();
-        formData.append('file', uploadFile);
-        formData.append('uploadId', `photo_${Date.now()}`);
-        formData.append('chunkIndex', '0');
-        formData.append('totalChunks', '1');
-
-        const uploadRes = await fetch(`/api/upload?category=gallery&slug=${encodeURIComponent(activeSlug)}`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (uploadRes.ok) {
-          const json = await uploadRes.json();
-          if (json?.success && (json.url || json.proxyUrl)) {
-            const finalUrl = json.url || json.proxyUrl;
-            const newPhotos = [...(draftConfig.memoryPhotos || [])];
-            if (newPhotos[index]) {
-              newPhotos[index].image = finalUrl;
-              updateConfig({ memoryPhotos: newPhotos });
-            }
-            return;
+        if (cloudUrl) {
+          const newPhotos = [...(draftConfig.memoryPhotos || [])];
+          if (newPhotos[index]) {
+            newPhotos[index].image = cloudUrl;
+            updateConfig({ memoryPhotos: newPhotos });
           }
+          return;
         }
       } catch (_) {}
 
@@ -498,6 +514,63 @@ function AdminPageContent() {
       setUploadingPhotoIndex(null);
     }
   };
+
+  if (siteStatus === 'checking') {
+    return (
+      <div className="min-h-screen w-full bg-[#090108] text-white flex flex-col items-center justify-center p-6 text-center select-none font-sans dir-rtl">
+        <div className="w-10 h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-xs text-pink-300/70 font-bold">جاري التحقق من بيانات الموقع...</p>
+      </div>
+    );
+  }
+
+  if (siteStatus === 'not_found') {
+    return (
+      <div className="min-h-screen w-full bg-[#090108] text-white flex flex-col items-center justify-center p-6 text-center select-none font-sans dir-rtl">
+        <div className="max-w-md w-full flex flex-col items-center gap-4 bg-[#1c0617]/80 border border-rose-500/20 rounded-3xl p-8 backdrop-blur-xl shadow-2xl">
+          <div className="w-16 h-16 rounded-full bg-rose-500/20 border border-rose-500/30 flex items-center justify-center text-rose-400 mb-2">
+            <AlertTriangle className="w-8 h-8 stroke-current" />
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-100">
+            الموقع غير موجود ❌
+          </h1>
+          <p className="text-xs text-pink-300/70">
+            هذا الرابط غير مسجل في النظام أو تم حذفه من قِبل إدارة المنصة.
+          </p>
+          <a
+            href="/"
+            className="mt-4 px-6 py-2.5 rounded-xl bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs transition-colors shadow-lg shadow-pink-600/30 cursor-pointer"
+          >
+            العودة للصفحة الرئيسية 🏠
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  if (siteStatus === 'suspended') {
+    return (
+      <div className="min-h-screen w-full bg-[#121212] text-gray-200 flex flex-col items-center justify-center p-6 text-center select-none font-sans dir-rtl">
+        <div className="max-w-md w-full flex flex-col items-center gap-4 text-right">
+          <div className="w-16 h-16 text-rose-400 mb-2">
+            <AlertTriangle className="w-full h-full stroke-current" />
+          </div>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-100">
+            لوحة التحكم معطلة
+          </h1>
+          <p className="text-sm text-gray-400">
+            تم تعطيل هذا الموقع ولوحة التحكم الخاصة به من قِبل إدارة المنصة.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-6 py-2.5 rounded-lg bg-[#2b2b2b] text-pink-400 hover:bg-[#383838] font-bold text-xs border border-gray-700 transition-colors cursor-pointer"
+          >
+            إعادة المحاولة 🔄
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdminAuthenticated) {
     return (
@@ -1709,13 +1782,19 @@ function AdminPageContent() {
 }
 
 export default function AdminPage() {
+  const [searchParams] = useSearchParams();
+  const params = useParams<{ slug?: string }>();
+  const slug = params?.slug || searchParams?.get('slug') || 'rawda';
+
   return (
-    <React.Suspense fallback={
-      <div className="min-h-screen w-full bg-[#090108] text-white flex items-center justify-center p-4">
-        <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
-      </div>
-    }>
-      <AdminPageContent />
-    </React.Suspense>
+    <TenantProvider initialSlug={slug}>
+      <React.Suspense fallback={
+        <div className="min-h-screen w-full bg-[#090108] text-white flex items-center justify-center p-4">
+          <div className="w-10 h-10 border-4 border-pink-400 border-t-transparent rounded-full animate-spin" />
+        </div>
+      }>
+        <AdminPageContent />
+      </React.Suspense>
+    </TenantProvider>
   );
 }

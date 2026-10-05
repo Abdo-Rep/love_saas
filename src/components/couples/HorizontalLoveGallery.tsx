@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useRef } from 'react';
 import { Calendar, ArrowRight, ChevronLeft, ChevronRight, LayoutGrid, Sliders, X, Maximize2 } from 'lucide-react';
 import { useConfig } from '@/lib/configContext';

@@ -1,9 +1,9 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
-import SuperAdminPage from './super-admin/page';
+import { useNavigate } from 'react-router-dom';
+import SuperAdminPage from './SuperAdminPage';
 
-export default function Home() {
+export default function HomePage() {
+  const navigate = useNavigate();
   const [isStandalone, setIsStandalone] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [secretClicks, setSecretClicks] = useState(0);
@@ -26,6 +26,7 @@ export default function Home() {
     setSecretClicks(nextClicks);
     if (nextClicks >= 3) {
       setShowAdmin(true);
+      navigate('/super-admin');
     }
   };
 

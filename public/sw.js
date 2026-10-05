@@ -1,7 +1,7 @@
-// PWA Service Worker - Cosmic Love
-// Fast-activation and complete cache-clearing to prevent background requests to obsolete endpoints
+// PWA Service Worker - Soulove
+// Fast activation & network-first handling for SPA static assets
 
-self.addEventListener('install', (event) => {
+self.addEventListener('install', () => {
   self.skipWaiting();
 });
 
@@ -9,22 +9,19 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          return caches.delete(cacheName);
-        })
+        cacheNames.map((cacheName) => caches.delete(cacheName))
       );
     }).then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  // Never intercept or cache API requests or non-GET requests
-  const url = new URL(event.request.url);
-  if (event.request.method !== 'GET' || url.pathname.startsWith('/api/')) {
-    return;
-  }
+  if (event.request.method !== 'GET') return;
 
-  // Pass-through standard fetches without caching dead routes
+  const url = new URL(event.request.url);
+  // Don't intercept Supabase REST API or third-party requests
+  if (url.origin !== self.location.origin) return;
+
   event.respondWith(
     fetch(event.request).catch(async () => {
       const cached = await caches.match(event.request);

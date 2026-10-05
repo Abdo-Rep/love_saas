@@ -1,8 +1,7 @@
-'use client';
-
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { TenantProvider, useTenant } from '@/lib/tenantContext';
-import { createDefaultConfigForTenant } from '@/lib/tenantStore';
+import { createDefaultConfigForTenant, fetchTenantFromSupabaseDirect } from '@/lib/tenantStore';
 import { CelestialHeartLanding } from '@/components/fresh/CelestialHeartLanding';
 import { StarConstellationName } from '@/components/couples/StarConstellationName';
 import { LoveCounter } from '@/components/couples/LoveCounter';
@@ -22,16 +21,15 @@ interface SiteClientContentProps {
 }
 
 function SiteClientContent({ slug }: SiteClientContentProps) {
-  const { currentTenant, setCurrentTenantDirectly } = useTenant();
+  const { setCurrentTenantDirectly } = useTenant();
   const [mounted, setMounted] = useState(false);
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [siteState, setSiteState] = useState<'checking' | 'active' | 'suspended' | 'not_found'>('checking');
-  const [cloudTenant, setCloudTenant] = useState<any>(null);
 
   useEffect(() => {
     setMounted(true);
 
-    if (typeof window !== 'undefined' && slug) {
+    if (slug) {
       let formattedTitle = decodeURIComponent(slug).trim();
       if (formattedTitle.includes('-')) {
         formattedTitle = formattedTitle.split('-').map(s => s.trim()).filter(Boolean).join(' & ');
@@ -45,36 +43,32 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
 
     const fetchFromCloud = async () => {
       try {
-        const res = await fetch(`/api/tenants?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, { cache: 'no-store' });
-        if (res.ok) {
-          const json = await res.json();
-          if (json?.success && Array.isArray(json.tenants) && json.tenants.length > 0) {
-            const found = json.tenants.find((t: any) => (t.slug || '').toLowerCase().trim() === slug.toLowerCase().trim());
-            if (found && isMounted) {
-              if (found.status === 'suspended') {
-                setSiteState('suspended');
-                return;
-              }
-              const finalAdminPass = found.adminPassword || found.admin_password || found.config?.adminPassword || 'love';
-              const finalSitePass = found.sitePassword || found.site_password || found.config?.sitePassword || 'love';
-              const mergedConfig = {
-                ...createDefaultConfigForTenant(found.name || 'أميرتي', finalSitePass, finalAdminPass),
-                ...found.config,
-                adminPassword: finalAdminPass,
-                sitePassword: finalSitePass
-              };
-              const withConfig = {
-                ...found,
-                adminPassword: finalAdminPass,
-                sitePassword: finalSitePass,
-                config: mergedConfig
-              };
-              setCloudTenant(withConfig);
-              setCurrentTenantDirectly(withConfig);
-              setSiteState('active');
-              return;
-            }
+        const found = await fetchTenantFromSupabaseDirect(slug);
+        if (found && isMounted) {
+          if (found.status === 'suspended') {
+            setSiteState('suspended');
+            return;
           }
+          const finalAdminPass = (found.adminPassword || (found as any).admin_password || found.config?.adminPassword || '').trim();
+          const finalSitePass = (found.sitePassword || (found as any).site_password || found.config?.sitePassword || '').trim();
+          
+          const mergedConfig = {
+            ...createDefaultConfigForTenant(found.name || slug, finalSitePass, finalAdminPass),
+            ...(found.config || {}),
+            adminPassword: finalAdminPass,
+            sitePassword: finalSitePass
+          };
+
+          const withConfig = {
+            ...found,
+            adminPassword: finalAdminPass,
+            sitePassword: finalSitePass,
+            config: mergedConfig
+          };
+
+          setCurrentTenantDirectly(withConfig);
+          setSiteState('active');
+          return;
         }
       } catch (err) {
         console.error('Error fetching cloud tenant:', err);
@@ -87,37 +81,16 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
 
     fetchFromCloud();
 
-    // Real-time Heartbeat Polling every 8 seconds to detect instant suspension/deletion without refresh
-    const heartbeatInterval = setInterval(() => {
-      if (isMounted) {
-        fetchFromCloud();
-      }
-    }, 8000);
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isMounted) {
-        fetchFromCloud();
-      }
-    };
-
-    window.addEventListener('visibilitychange', onVisibilityChange);
-    window.addEventListener('focus', onVisibilityChange);
-
     return () => {
       isMounted = false;
-      clearInterval(heartbeatInterval);
-      window.removeEventListener('visibilitychange', onVisibilityChange);
-      window.removeEventListener('focus', onVisibilityChange);
     };
-  }, [slug, setCurrentTenantDirectly]);
+  }, [slug]);
 
-  // Instant top display on step change (no smooth scroll)
+  // Instant top display on step change
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo(0, 0);
-      document.body.scrollTop = 0;
-      document.documentElement.scrollTop = 0;
-    }
+    window.scrollTo(0, 0);
+    document.body.scrollTop = 0;
+    document.documentElement.scrollTop = 0;
   }, [currentStep]);
 
   if (!mounted || siteState === 'checking') {
@@ -151,7 +124,7 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
           </p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-4 px-6 py-2.5 rounded-lg bg-[#2b2b2b] text-blue-400 hover:bg-[#383838] font-bold text-xs border border-gray-700 transition-colors cursor-pointer"
+            className="mt-4 px-6 py-2.5 rounded-lg bg-[#2b2b2b] text-pink-400 hover:bg-[#383838] font-bold text-xs border border-gray-700 transition-colors cursor-pointer"
           >
             إعادة المحاولة 🔄
           </button>
@@ -206,7 +179,8 @@ function SiteClientContent({ slug }: SiteClientContentProps) {
   );
 }
 
-export default function TenantDynamicRoute({ params }: { params: { slug: string } }) {
+export default function TenantPage() {
+  const params = useParams<{ slug?: string }>();
   const slug = params?.slug || 'rawda';
 
   return (

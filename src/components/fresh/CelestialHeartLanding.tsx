@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState } from 'react';
 import { Heart, Lock, Key, ArrowLeft, Sparkles } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -44,9 +42,9 @@ export const CelestialHeartLanding: React.FC<Props> = ({ onStart }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanInput = (password || '').trim();
-    const cleanExpected = (config.sitePassword || 'love').trim();
+    const cleanExpected = (config.sitePassword || '').trim();
 
-    if (!cleanExpected || cleanInput === cleanExpected) {
+    if (!cleanExpected || cleanInput.toLowerCase() === cleanExpected.toLowerCase()) {
       handleTriggerUnlock();
     } else {
       setError('كلمة السر غير صحيحة 💔 جربي مرة تانية يا روحي ✨');

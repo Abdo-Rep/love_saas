@@ -233,19 +233,45 @@ export const TenantStore = {
   },
 
   // Delete tenant from memory and server
-  deleteTenant: (slug: string): boolean => {
+  deleteTenant: async (slug: string): Promise<boolean> => {
     const cleanSlug = slug.toLowerCase().trim();
     inMemoryTenants = inMemoryTenants.filter((t) => t.slug.toLowerCase() !== cleanSlug);
 
-    if (typeof window !== 'undefined') {
-      fetch('/api/tenants', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ slug: cleanSlug })
-      }).catch(() => { });
-    }
+    const url = (import.meta.env?.VITE_SUPABASE_URL || import.meta.env?.VITE_DATABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
+    const key = import.meta.env?.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
 
-    return true;
+    try {
+      const res = await fetch(`${url}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}`, {
+        method: 'DELETE',
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'Accept-Profile': 'romantic-new-version',
+          'Content-Profile': 'romantic-new-version',
+          Prefer: 'return=minimal',
+        },
+      });
+
+      // Also clean any cached item
+      if (typeof window !== 'undefined') {
+        try {
+          const cached = sessionStorage.getItem('solaf_superadmin_tenants_cache');
+          if (cached) {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed)) {
+              const updated = parsed.filter((t: any) => (t.slug || '').toLowerCase().trim() !== cleanSlug);
+              sessionStorage.setItem('solaf_superadmin_tenants_cache', JSON.stringify(updated));
+            }
+          }
+        } catch {}
+      }
+
+      return res.ok;
+    } catch (err) {
+      console.warn('Error deleting from Supabase:', err);
+      return false;
+    }
   },
 
   // Master password fallback
@@ -253,18 +279,165 @@ export const TenantStore = {
     return 'love_master_pass_2026';
   },
 
+  // Save single tenant directly to Cloud DB
+  saveTenantToCloud: async (tenant: Tenant): Promise<boolean> => {
+    const url = (import.meta.env?.VITE_DATABASE_URL || import.meta.env?.VITE_SUPABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
+    const key = import.meta.env?.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+    if (!url || !key) return true;
+
+    try {
+      const cleanSlug = (tenant.slug || '').toLowerCase().trim();
+      const cfg = (tenant.config || {}) as Record<string, any>;
+      const adminPass = tenant.adminPassword ?? cfg.adminPassword ?? 'love';
+      const sitePass = tenant.sitePassword ?? cfg.sitePassword ?? 'love';
+
+      const payload = {
+        id: tenant.id || `tenant-${cleanSlug}`,
+        slug: cleanSlug,
+        name: tenant.name || `موقع ${cleanSlug}`,
+        admin_password: adminPass,
+        site_password: sitePass,
+        status: tenant.status ?? 'active',
+        config: {
+          ...cfg,
+          adminPassword: adminPass,
+          sitePassword: sitePass,
+        },
+      };
+
+      const res = await fetch(`${url}/rest/v1/tenants?on_conflict=slug`, {
+        method: 'POST',
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'Accept-Profile': 'romantic-new-version',
+          'Content-Profile': 'romantic-new-version',
+          Prefer: 'resolution=merge-duplicates,return=minimal',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      return res.ok;
+    } catch {
+      return false;
+    }
+  },
+
   // Sync all tenants from Cloud DB
   syncFromSupabase: async (): Promise<Tenant[]> => {
+    const url = (import.meta.env?.VITE_SUPABASE_URL || import.meta.env?.VITE_DATABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
+    const key = import.meta.env?.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+
     try {
-      const res = await fetch(`/api/tenants?t=${Date.now()}`, { cache: 'no-store' });
+      const res = await fetch(`${url}/rest/v1/tenants?select=*&order=created_at.desc`, {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+          'Content-Type': 'application/json',
+          'Accept-Profile': 'romantic-new-version',
+        },
+      });
       if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.tenants)) {
-          inMemoryTenants = json.tenants;
-          return json.tenants;
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          const mapped: Tenant[] = data.map((row: any) => {
+            const baseConfig = row.config && typeof row.config === 'object' ? { ...row.config } : {};
+            const adminPass = (row.admin_password ?? row.adminPassword ?? baseConfig.adminPassword ?? '').trim();
+            const sitePass = (row.site_password ?? row.sitePassword ?? baseConfig.sitePassword ?? '').trim();
+            
+            return {
+              id: row.id || `tenant-${row.slug}`,
+              slug: row.slug,
+              name: row.name || (row.slug ? `موقع ${row.slug}` : 'موقع أميرتي'),
+              adminPassword: adminPass,
+              sitePassword: sitePass,
+              createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
+              status: row.status ?? 'active',
+              config: {
+                ...baseConfig,
+                adminPassword: adminPass,
+                sitePassword: sitePass,
+              },
+            };
+          });
+          inMemoryTenants = mapped;
+          try {
+            if (typeof window !== 'undefined') {
+              sessionStorage.setItem('solaf_superadmin_tenants_cache', JSON.stringify(mapped));
+            }
+          } catch {}
+          return mapped;
         }
       }
-    } catch {}
+    } catch (err) {
+      console.warn('[tenantStore] Sync error:', err);
+    }
     return inMemoryTenants;
   }
 };
+
+export async function fetchTenantFromSupabaseDirect(slug: string): Promise<Tenant | null> {
+  const cleanSlug = (slug || '').toLowerCase().trim();
+  if (!cleanSlug) return null;
+
+  // Check in-memory first for 0ms latency
+  const inMem = inMemoryTenants.find((t) => t.slug.toLowerCase().trim() === cleanSlug);
+  if (inMem && inMem.config && Object.keys(inMem.config).length > 2) {
+    return inMem;
+  }
+
+  const url = (import.meta.env?.VITE_SUPABASE_URL || import.meta.env?.VITE_DATABASE_URL || 'http://31.220.93.65:8000').replace(/\/$/, '');
+  const key = import.meta.env?.VITE_SUPABASE_SERVICE_ROLE_KEY || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+
+  try {
+    const res = await fetch(`${url}/rest/v1/tenants?slug=eq.${encodeURIComponent(cleanSlug)}&select=*`, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+        'Accept-Profile': 'romantic-new-version',
+      },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const row = data[0];
+        const baseConfig = row.config && typeof row.config === 'object' ? { ...row.config } : {};
+        const adminPass = (row.admin_password ?? row.adminPassword ?? baseConfig.adminPassword ?? '').trim();
+        const sitePass = (row.site_password ?? row.sitePassword ?? baseConfig.sitePassword ?? '').trim();
+
+        const mapped: Tenant = {
+          id: row.id || `tenant-${row.slug}`,
+          slug: row.slug,
+          name: row.name || (row.slug ? `موقع ${row.slug}` : 'موقع أميرتي'),
+          adminPassword: adminPass,
+          sitePassword: sitePass,
+          createdAt: row.created_at ?? row.createdAt ?? new Date().toISOString(),
+          status: row.status ?? 'active',
+          config: {
+            ...baseConfig,
+            adminPassword: adminPass,
+            sitePassword: sitePass,
+          },
+        };
+
+        // Cache in memory
+        const existingIdx = inMemoryTenants.findIndex((t) => t.slug.toLowerCase().trim() === cleanSlug);
+        if (existingIdx >= 0) {
+          inMemoryTenants[existingIdx] = mapped;
+        } else {
+          inMemoryTenants.push(mapped);
+        }
+
+        return mapped;
+      }
+    }
+  } catch (e) {
+    console.warn('[tenantStore] Supabase fetch error:', e);
+  }
+
+  return null;
+}
+

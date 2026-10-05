@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useEffect, useState } from 'react';
 import { Heart, RefreshCw } from 'lucide-react';
 import confetti from 'canvas-confetti';

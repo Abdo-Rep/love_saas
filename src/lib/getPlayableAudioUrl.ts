@@ -3,50 +3,43 @@ export function getPlayableAudioUrl(url: string): string {
   const trimmed = url.trim();
   if (!trimmed) return '';
 
+  const supabaseUrl = (
+    import.meta.env?.VITE_SUPABASE_URL ||
+    import.meta.env?.VITE_DATABASE_URL ||
+    'http://31.220.93.65:8000'
+  ).replace(/\/$/, '');
+
   // 1. Data URLs and blobs are always direct and self-contained
   if (trimmed.startsWith('data:') || trimmed.startsWith('blob:')) {
     return trimmed;
   }
 
-  // 2. Already pointing to our audio proxy
-  if (trimmed.startsWith('/api/audio')) {
-    return trimmed;
-  }
-
-  // 3. Convert any Supabase Storage URLs to HTTPS proxy URL /api/audio?path=...
-  if (trimmed.includes('/storage/v1/object/public/site-media/')) {
-    const relativePath = trimmed.split('/storage/v1/object/public/site-media/')[1];
-    return `/api/audio?path=${encodeURIComponent(relativePath.split('?')[0])}`;
-  }
-  if (trimmed.includes('/storage/v1/object/site-media/')) {
-    const relativePath = trimmed.split('/storage/v1/object/site-media/')[1];
-    return `/api/audio?path=${encodeURIComponent(relativePath.split('?')[0])}`;
-  }
-  if (trimmed.includes('/storage/v1/object/public/audio/')) {
-    const relativePath = trimmed.split('/storage/v1/object/public/audio/')[1];
-    return `/api/audio?path=${encodeURIComponent(relativePath.split('?')[0])}`;
-  }
-  if (trimmed.includes('/storage/v1/object/audio/')) {
-    const relativePath = trimmed.split('/storage/v1/object/audio/')[1];
-    return `/api/audio?path=${encodeURIComponent(relativePath.split('?')[0])}`;
-  }
-
-  // Handle port 9000 or raw IP storage URLs (e.g. http://31.220.93.65:9000/storage/...)
-  if (trimmed.includes(':9000/') || trimmed.includes('/storage/v1/object/')) {
-    const match = trimmed.match(/\/storage\/v1\/object\/(?:public\/)?(?:[^\/]+\/)(.+)$/);
-    if (match && match[1]) {
-      return `/api/audio?path=${encodeURIComponent(match[1].split('?')[0])}`;
-    }
-  }
-
-  // 4. Return direct audio URLs (local static files or external HTTPS) directly (properly URI-encoded)
-  if (
-    trimmed.startsWith('/') ||
-    trimmed.startsWith('http://') ||
-    trimmed.startsWith('https://')
-  ) {
+  // 2. Full HTTP / HTTPS external URLs
+  if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
     return encodeURI(decodeURI(trimmed));
   }
 
-  return encodeURI(decodeURI(trimmed));
+  // 3. If it was stored as legacy /api/audio?path=... convert to direct Supabase Storage public URL
+  if (trimmed.startsWith('/api/audio')) {
+    const searchPart = trimmed.split('?')[1] || '';
+    const params = new URLSearchParams(searchPart);
+    const path = params.get('path') || '';
+    if (path) {
+      const cleanPath = decodeURIComponent(path).replace(/^\/+/, '');
+      if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+        return cleanPath;
+      }
+      return `${supabaseUrl}/storage/v1/object/public/site-media/${cleanPath}`;
+    }
+  }
+
+  // 4. Static local sound files (/sound/...)
+  if (trimmed.startsWith('/sound/') || trimmed.startsWith('sound/')) {
+    const cleanSound = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+    return encodeURI(decodeURI(cleanSound));
+  }
+
+  // 5. Bare storage filenames (e.g. music-1234.mp3 or zyad-hana/music-123.mp3)
+  const cleanBare = trimmed.replace(/^\/+/, '');
+  return `${supabaseUrl}/storage/v1/object/public/site-media/${cleanBare}`;
 }

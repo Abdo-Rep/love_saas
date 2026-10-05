@@ -2,7 +2,8 @@
 /node_modules
 /.pnpm-store
 
-# Next.js build output
+# Build outputs
+/dist
 /.next/
 /out/
 /build

@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Play, Pause, ArrowRight } from 'lucide-react';
 import { useConfig } from '@/lib/configContext';

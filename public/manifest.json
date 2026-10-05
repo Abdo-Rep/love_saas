@@ -1,8 +1,8 @@
 {
-  "name": "لوحة تحكم المنصة الملكية 👑",
-  "short_name": "الأدمن 👑",
-  "description": "لوحة تحكم وإدارة النسخ والمواقع الرومانسية الفاخرة",
-  "start_url": "/super-admin",
+  "name": "سولاف - منصة الحب والذكريات 💖",
+  "short_name": "سولاف 💖",
+  "description": "عالمٌ خُصص لأجلكِ وحدكِ.. حيث تبتسم الذكريات وتُحكى أجمل حكايات العشق ✨",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -10,16 +10,16 @@
   "theme_color": "#090108",
   "icons": [
     {
-      "src": "/icon.png",
-      "sizes": "192x192",
+      "src": "/icon.svg",
+      "sizes": "192x192 512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/images/peasant_girl.jpg",
+      "sizes": "192x192 512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
     }
   ]
 }

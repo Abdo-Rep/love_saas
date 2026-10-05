@@ -1,5 +1,3 @@
-'use client';
-
 import React, { useEffect, useRef, useState } from 'react';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import confetti from 'canvas-confetti';

@@ -1,22 +1,32 @@
-'use client';
-
 import React, { useState } from 'react';
+import { Tenant } from '@/types/tenant';
+import { X, Copy, Download, QrCode, Check } from 'lucide-react';
 
 interface Props {
-  slug: string;
-  tenantName: string;
-  isOpen: boolean;
+  tenant?: Tenant | null;
+  slug?: string;
+  tenantName?: string;
+  isOpen?: boolean;
   onClose: () => void;
 }
 
-export const TenantQRCodeModal: React.FC<Props> = ({ slug, tenantName: _tenantName, isOpen, onClose }) => {
+export const TenantQRCodeModal: React.FC<Props> = ({
+  tenant,
+  slug: rawSlug,
+  tenantName: rawTenantName,
+  isOpen = true,
+  onClose,
+}) => {
   const [copied, setCopied] = useState(false);
 
   if (!isOpen) return null;
 
+  const slug = tenant?.slug || rawSlug || 'soulove';
+  const displayName = tenant?.name || rawTenantName || `موقع ${slug}`;
+
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://im-love-you-beby.vercel.app';
   const siteUrl = `${origin}/${slug}`;
-  
+
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(siteUrl)}&color=000000&bgcolor=ffffff&margin=10`;
 
   const handleCopyLink = () => {
@@ -44,72 +54,55 @@ export const TenantQRCodeModal: React.FC<Props> = ({ slug, tenantName: _tenantNa
 
   return (
     <div
-      onClick={onClose}
-      className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 dir-rtl cursor-pointer"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 selection:bg-pink-500 selection:text-white font-sans dir-rtl cursor-pointer"
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="max-w-sm w-full p-6 rounded-2xl bg-[#161b22] border border-slate-800 shadow-2xl flex flex-col items-center gap-4 text-center cursor-default"
-      >
-        
-        {/* HEADER */}
-        <div className="w-full flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 className="text-base font-bold text-slate-100" style={{ fontFamily: "'Cairo', sans-serif" }}>
-            رمز QR
-          </h3>
-          <button
-            onClick={onClose}
-            className="text-xs text-slate-400 hover:text-slate-200 cursor-pointer"
-            style={{ fontFamily: "'Cairo', sans-serif" }}
-          >
-            إغلاق
-          </button>
+      <div className="bg-[#1c0617] border border-pink-500/30 rounded-3xl p-6 sm:p-8 max-w-sm w-full relative text-center shadow-2xl cursor-default">
+        <button
+          onClick={onClose}
+          className="absolute top-4 left-4 p-2 text-pink-400/60 hover:text-pink-200 transition-colors cursor-pointer"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="inline-flex p-3 bg-pink-500/10 border border-pink-500/20 rounded-2xl mb-3">
+          <QrCode className="w-6 h-6 text-pink-400" />
         </div>
 
-        {/* QR CODE IMAGE IN CLEAN CONTAINER */}
-        <div className="p-3 rounded-xl bg-white border border-slate-700 shadow-md">
+        <h3 className="text-base font-bold text-pink-100 mb-1">
+          رمز QR لموقع {displayName}
+        </h3>
+        <p className="text-xs text-pink-300/60 mb-5 font-mono">/{slug}</p>
+
+        {/* QR Code Container */}
+        <div className="bg-white p-4 rounded-2xl inline-block mb-5 shadow-inner">
           <img
             src={qrImageUrl}
             alt={`QR Code for ${slug}`}
-            className="w-48 h-48 object-contain rounded-lg"
+            className="w-48 h-48 sm:w-56 sm:h-56 object-contain rounded-lg"
           />
         </div>
 
-        {/* URL & COPY */}
-        <div className="w-full p-2 rounded-xl bg-[#0d1117] border border-slate-800 flex items-center justify-between gap-2 text-xs">
-          <span className="font-mono text-slate-300 truncate dir-ltr text-left flex-1 px-1">
-            {siteUrl}
-          </span>
+        {/* Action Buttons */}
+        <div className="space-y-2.5">
           <button
             onClick={handleCopyLink}
-            className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition-all shrink-0 cursor-pointer"
-            style={{ fontFamily: "'Cairo', sans-serif" }}
+            className="w-full py-2.5 px-4 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-600/20 transition-all cursor-pointer"
           >
-            {copied ? 'تم النسخ' : 'نسخ'}
+            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            <span>{copied ? 'تم نسخ الرابط بنجاح ✨' : 'نسخ رابط الموقع 🔗'}</span>
           </button>
-        </div>
 
-        {/* ACTION BUTTONS */}
-        <div className="grid grid-cols-2 gap-2.5 w-full pt-1">
           <button
             onClick={handleDownloadQR}
-            className="py-2.5 px-3 rounded-xl bg-slate-100 text-slate-950 font-bold text-xs hover:bg-white transition-all cursor-pointer"
-            style={{ fontFamily: "'Cairo', sans-serif" }}
+            className="w-full py-2.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-pink-200 font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
           >
-            تحميل الكود
+            <Download className="w-4 h-4 text-pink-400" />
+            <span>تحميل صورة الـ QR 📱</span>
           </button>
-
-          <a
-            href={siteUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all text-center cursor-pointer border border-slate-700"
-            style={{ fontFamily: "'Cairo', sans-serif" }}
-          >
-            فتح الموقع
-          </a>
         </div>
-
       </div>
     </div>
   );

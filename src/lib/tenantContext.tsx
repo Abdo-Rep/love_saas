@@ -1,6 +1,4 @@
-'use client';
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Tenant } from '@/types/tenant';
 import { AppConfig } from '@/types/config';
 import { TenantStore } from './tenantStore';
@@ -21,54 +19,61 @@ export const TenantProvider: React.FC<{ children: React.ReactNode; initialSlug?:
   initialSlug = 'rawda'
 }) => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
-  const [currentTenant, setCurrentTenant] = useState<Tenant | null>(null);
+  const [currentTenant, setCurrentTenant] = useState<Tenant | null>(() => {
+    if (initialSlug) {
+      return TenantStore.getTenantBySlug(initialSlug);
+    }
+    return null;
+  });
 
-  const refreshTenants = () => {
+  const refreshTenants = useCallback(() => {
     const list = TenantStore.getAllTenants();
     setTenants(list);
-  };
+  }, []);
 
-  const loadTenantBySlug = (slug: string): Tenant | null => {
+  const loadTenantBySlug = useCallback((slug: string): Tenant | null => {
     const found = TenantStore.getTenantBySlug(slug);
     if (found) {
       setCurrentTenant(found);
       return found;
     }
     return null;
-  };
+  }, []);
 
-  const setCurrentTenantDirectly = (tenant: Tenant) => {
+  const setCurrentTenantDirectly = useCallback((tenant: Tenant) => {
     setCurrentTenant(tenant);
     TenantStore.updateTenant(tenant.slug, tenant);
-  };
+  }, []);
 
   useEffect(() => {
     refreshTenants();
     if (initialSlug) {
       loadTenantBySlug(initialSlug);
     }
-  }, [initialSlug]);
+  }, [initialSlug, refreshTenants, loadTenantBySlug]);
 
-  const updateCurrentTenantConfig = (newConfig: Partial<AppConfig>) => {
-    if (!currentTenant) return;
-    const updatedConfig = { ...currentTenant.config, ...newConfig };
-    const newAdminPass = newConfig.adminPassword ?? currentTenant.adminPassword ?? currentTenant.config?.adminPassword ?? 'love';
-    const newSitePass = newConfig.sitePassword ?? currentTenant.sitePassword ?? currentTenant.config?.sitePassword ?? 'love';
+  const updateCurrentTenantConfig = useCallback((newConfig: Partial<AppConfig>) => {
+    setCurrentTenant((prev) => {
+      if (!prev) return null;
+      const updatedConfig = { ...prev.config, ...newConfig };
+      const newAdminPass = newConfig.adminPassword ?? prev.adminPassword ?? prev.config?.adminPassword ?? '';
+      const newSitePass = newConfig.sitePassword ?? prev.sitePassword ?? prev.config?.sitePassword ?? '';
 
-    const updatedTenant: Tenant = {
-      ...currentTenant,
-      adminPassword: newAdminPass,
-      sitePassword: newSitePass,
-      config: {
-        ...updatedConfig,
+      const updatedTenant: Tenant = {
+        ...prev,
         adminPassword: newAdminPass,
-        sitePassword: newSitePass
-      }
-    };
+        sitePassword: newSitePass,
+        config: {
+          ...updatedConfig,
+          adminPassword: newAdminPass,
+          sitePassword: newSitePass
+        }
+      };
 
-    setCurrentTenant(updatedTenant);
-    TenantStore.updateTenantConfig(currentTenant.slug, newConfig);
-  };
+      TenantStore.updateTenantConfig(prev.slug, newConfig);
+      return updatedTenant;
+    });
+  }, []);
 
   return (
     <TenantContext.Provider
